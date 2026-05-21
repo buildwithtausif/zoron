@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.8",
-  "versionCode": 14,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.8/zoron_optimizations_v2.9.8.zip",
-  "changelog": "v2.9.8 Update:\n- **Hotfix**: Properly compiled the new error dialog and fallback paths into the APK. The app will now explicitly show a copyable error prompt and properly search for the `whyred_opt` script via the absolute `/data/adb/modules` path if the device hasn't been rebooted yet."
+  "version": "v2.9.9",
+  "versionCode": 15,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.9/zoron_optimizations_v2.9.9.zip",
+  "changelog": "v2.9.9 Update:\n- **Root cause fix**: Windows CRLF line endings were corrupting shell scripts inside the zip. Scripts are now stripped of \\r during Magisk installation AND at runtime.\n- **Robust script discovery**: App searches multiple paths and reports diagnostics if whyred_opt is not found.\n- **POSIX shell fixes**: Replaced bash-only == with POSIX = for mksh compatibility."
 }

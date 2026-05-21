@@ -19,10 +19,10 @@ optimize_thermals() {
     local mode=$1
     if [ -d /sys/class/thermal/thermal_zone0 ]; then
         for tz in /sys/class/thermal/thermal_zone*; do
-            if [ "$mode" == "strict" ]; then
+            if [ "$mode" = "strict" ]; then
                 echo enabled > $tz/mode 2>/dev/null
                 echo 1000 > $tz/passive_delay 2>/dev/null
-            elif [ "$mode" == "stock" ]; then
+            elif [ "$mode" = "stock" ]; then
                 echo 0 > $tz/passive_delay 2>/dev/null
             else
                 echo enabled > $tz/mode 2>/dev/null

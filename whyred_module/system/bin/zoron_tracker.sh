@@ -11,7 +11,7 @@ fi
 
 while true; do
     BATTERY=$(dumpsys battery | grep level | grep -o "[0-9]*" | head -n 1)
-    PROFILE=$(cat /data/adb/modules/whyred_battery_optimizer/profile.txt 2>/dev/null || echo "unknown")
+    PROFILE=$(cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo "unknown")
     TIMESTAMP=$(date +%s)
     
     LINES=$(wc -l < $CSV_FILE 2>/dev/null || echo 0)

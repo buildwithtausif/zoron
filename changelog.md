@@ -1,7 +1,12 @@
 # Zoron Changelog
 
-## v2.9.8
-- **Hotfix**: Properly compiled the new error dialog and fallback paths into the APK. The app will now explicitly show a copyable error prompt and properly search for the `whyred_opt` script via the absolute `/data/adb/modules` path if the device hasn't been rebooted yet.
+## v2.9.9
+- **Root cause fix**: Windows CRLF (`\r\n`) line endings were corrupting shell scripts inside the Magisk module zip. Git's `core.autocrlf=true` was silently converting LF to CRLF in the working tree. This caused the Android shell (`mksh`) to fail parsing the `whyred_opt` script with `<stdin>[14]` errors.
+- Scripts are now stripped of `\r` during Magisk installation (`customize.sh`) AND at runtime (`sed 's/\r$//'` before execution).
+- Added `.gitattributes` to force LF line endings for all shell scripts.
+- **Robust script discovery**: The app now searches multiple paths (`/system/bin/`, `/data/adb/modules/`) and reports full diagnostic info if the script is not found.
+- **POSIX shell fixes**: Replaced bash-only `==` with POSIX `=` for `mksh` compatibility.
+- Fixed `zoron_tracker.sh` reading profile from wrong path.
 
 ## v2.9.6
 - **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from `/data/local/tmp` to prevent SELinux and noexec mount denials.

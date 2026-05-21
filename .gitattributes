@@ -1,0 +1,7 @@
+# Force LF line endings for all shell scripts — critical for Android/Linux execution
+*.sh text eol=lf
+whyred_opt text eol=lf
+zoron_tracker.sh text eol=lf
+
+# Also force LF for module.prop (parsed by Magisk)
+module.prop text eol=lf

@@ -220,9 +220,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void applyProfile(String profile) {
         new Thread(() -> {
-            String scriptCmd = "if [ -f /system/bin/whyred_opt ]; then sh /system/bin/whyred_opt " + profile + "; " +
-                               "elif [ -f /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt ]; then sh /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt " + profile + "; " +
-                               "else echo 'Module scripts not found. Please reboot your device to apply Magisk module.'; exit 1; fi";
+            // Build a robust command that:
+            // 1. Finds whyred_opt from multiple known locations
+            // 2. Strips any \r (CRLF artifacts from Windows) before execution
+            // 3. Passes the profile argument correctly
+            String scriptCmd = String.join("; ",
+                "SCRIPT_PATH=\"\"",
+                "for p in /system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
+                    "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
+                "if [ -z \"$SCRIPT_PATH\" ]; then " +
+                    "echo 'ERROR: whyred_opt not found at any known path.'; " +
+                    "echo 'Searched: /system/bin/whyred_opt, /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt'; " +
+                    "echo 'Module ID: '$(ls /data/adb/modules/ 2>/dev/null); " +
+                    "echo 'Please reflash the Zoron module and reboot.'; " +
+                    "exit 1; fi",
+                "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + profile
+            );
             Shell.Result result = Shell.cmd(scriptCmd).exec();
             new Handler(Looper.getMainLooper()).post(() -> {
                 if (result.isSuccess()) {
@@ -230,8 +243,10 @@ public class MainActivity extends AppCompatActivity {
                     refreshDashboard();
                 } else {
                     StringBuilder err = new StringBuilder("Error applying " + profile + " profile:\n");
-                    err.append("Exit Code: ").append(result.getCode()).append("\n");
+                    err.append("Exit Code: ").append(result.getCode()).append("\n\n");
+                    err.append("--- stdout ---\n");
                     for (String e : result.getOut()) err.append(e).append("\n");
+                    err.append("\n--- stderr ---\n");
                     for (String e : result.getErr()) err.append(e).append("\n");
                     showErrorDialog(err.toString());
                 }
