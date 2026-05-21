@@ -1,6 +1,6 @@
 {
-  "versionCode": 10,
-  "versionName": "v2.9.4",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.4/Zoron.apk",
-  "changelog": "v2.9.4 Update:\n- **Full Fixes Applied**: Completely fixed Magisk overlay bugs by mapping execution paths globally.\n- **App Version Code Fixed**: Synchronized Android APK `versionName` and `versionCode` properly so it upgrades correctly in the OS."
+  "versionCode": 11,
+  "versionName": "v2.9.5",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.5/Zoron.apk",
+  "changelog": "v2.9.5 Update:\n- **Adaptive App Icons**: Added full support for modern Android 8.0+ adaptive icons. The app icon will now shape-shift to match your launcher (circles, squarcles, teardrops) and supports Android 13+ monochrome Material You themed icons!"
 }

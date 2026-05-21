@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v2.9.5
+- **Adaptive App Icons**: Added full support for modern Android 8.0+ adaptive icons. The app icon will now shape-shift to match your launcher (circles, squarcles, teardrops) and supports Android 13+ monochrome Material You themed icons!
+
 ## v2.9.4
 - **Full Fixes Applied**: Completely fixed Magisk overlay bugs by mapping execution paths globally.
 - **App Version Code Fixed**: Synchronized Android APK `versionName` and `versionCode` properly so it upgrades correctly in the OS.
