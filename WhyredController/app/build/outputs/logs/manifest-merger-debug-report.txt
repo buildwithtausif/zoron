@@ -93,7 +93,7 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\conne\.gradle\cach
 	android:allowBackup
 		ADDED from D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:8:9-35
 	android:theme
-		ADDED from D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:13:9-67
+		ADDED from D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:13:9-43
 	android:name
 		ADDED from D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:7:9-33
 activity#com.zoron.whyred.SplashActivity

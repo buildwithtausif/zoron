@@ -10,7 +10,7 @@
         android:label="zoron"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+        android:theme="@style/Theme.Zoron">
         <activity
             android:name=".SplashActivity"
             android:exported="true">

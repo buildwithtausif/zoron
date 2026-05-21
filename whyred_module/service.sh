@@ -28,8 +28,8 @@ else
 fi
 
 # Apply the profile
-/system/bin/whyred_opt $PROFILE
+/data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt $PROFILE
 rm -f $MARKER_FILE
 
 # Start the battery tracker daemon
-nohup /system/bin/zoron_tracker.sh >/dev/null 2>&1 &
+nohup /data/adb/modules/whyred_battery_optimizer/system/bin/zoron_tracker.sh >/dev/null 2>&1 &

@@ -41,8 +41,8 @@
 27-->D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:11:9-54
 28        android:supportsRtl="true"
 28-->D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:12:9-35
-29        android:theme="@style/Theme.AppCompat.Light.DarkActionBar" >
-29-->D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:13:9-67
+29        android:theme="@style/Theme.Zoron" >
+29-->D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:13:9-43
 30        <activity
 30-->D:\Projects\zoron\WhyredController\app\src\main\AndroidManifest.xml:14:9-21:20
 31            android:name="com.zoron.whyred.SplashActivity"

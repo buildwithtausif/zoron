@@ -4,9 +4,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -32,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Toolbar toolbar = findViewById(R.id.topAppBar);
+        setSupportActionBar(toolbar);
+
         tvLogs = findViewById(R.id.tvLogs);
         tvCurrentProfile = findViewById(R.id.tvCurrentProfile);
         tvCpuInfo = findViewById(R.id.tvCpuInfo);
@@ -44,8 +50,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnBalanced).setOnClickListener(v -> applyProfile("balanced"));
         findViewById(R.id.btnPerformance).setOnClickListener(v -> applyProfile("performance"));
 
-        // Check for OTA updates
-        OTAUpdater.checkUpdates(this);
+        // Check for OTA updates automatically on start
+        OTAUpdater.checkUpdates(this, false);
 
         updateRunnable = new Runnable() {
             @Override
@@ -55,6 +61,21 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         handler.post(updateRunnable);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_check_updates) {
+            OTAUpdater.checkUpdates(this, true);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -89,18 +110,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void refreshDashboard() {
         new Thread(() -> {
-            // Using libsu for persistent shell (no toast spam!)
             Shell.Result result = Shell.cmd(
                     "cat /data/adb/modules/whyred_battery_optimizer/profile.txt",
                     "echo '---SEP---'",
                     "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
                     "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron_logs/log.txt 2>/dev/null || echo 'No logs.'",
+                    "cat /data/adb/modules/whyred_battery_optimizer/logs/log.txt 2>/dev/null || echo 'No logs.'",
                     "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron_logs/battery.csv 2>/dev/null || echo ''"
+                    "cat /data/adb/modules/whyred_battery_optimizer/logs/battery.csv 2>/dev/null || echo ''"
             ).exec();
 
-            if (!result.isSuccess()) return;
+            if (!result.isSuccess()) {
+                runOnUiThread(() -> {
+                    tvCurrentProfile.setText("Current Profile: ERROR (Magisk Access Denied)");
+                    tvLogs.setText("Error reading data. Make sure module is flashed and active.");
+                });
+                return;
+            }
 
             StringBuilder out = new StringBuilder();
             for (String s : result.getOut()) {
@@ -175,10 +201,17 @@ public class MainActivity extends AppCompatActivity {
     private void applyProfile(String profile) {
         Toast.makeText(this, "Applying " + profile + "...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
-            Shell.cmd("/system/bin/whyred_opt " + profile).exec();
+            Shell.Result result = Shell.cmd("/data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt " + profile).exec();
+            
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Profile applied!", Toast.LENGTH_SHORT).show();
-                refreshDashboard();
+                if (result.isSuccess()) {
+                    Toast.makeText(MainActivity.this, "Profile applied successfully!", Toast.LENGTH_SHORT).show();
+                    refreshDashboard();
+                } else {
+                    StringBuilder err = new StringBuilder("Error: ");
+                    for (String e : result.getErr()) err.append(e).append(" ");
+                    Toast.makeText(MainActivity.this, err.toString(), Toast.LENGTH_LONG).show();
+                }
             });
         }).start();
     }

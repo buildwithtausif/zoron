@@ -1,193 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="?android:colorBackground">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="zoron"
-            android:textColor="#00FF7F"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp" />
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="zoron"
+            app:titleTextColor="?attr/colorPrimary"
+            app:titleCentered="true"
+            app:menu="@menu/menu_main" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- Dashboard Card -->
-        <androidx.cardview.widget.CardView
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="#1E1E1E"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="24dp">
+            android:orientation="vertical"
+            android:padding="20dp">
 
-            <LinearLayout
+            <!-- Dashboard Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardBackgroundColor="?attr/colorSurface"
+                android:layout_marginBottom="24dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="System Status"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvCurrentProfile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Current Profile: Loading..."
-                    android:textColor="#BBBBBB"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="8dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="System Status"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
 
-                <TextView
-                    android:id="@+id/tvCpuInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="CPU Governor: Loading..."
-                    android:textColor="#BBBBBB"
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    <TextView
+                        android:id="@+id/tvCurrentProfile"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Current Profile: Loading..."
+                        android:textColor="#BBBBBB"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
 
-        <!-- Battery Graph -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Battery Drain Over Time"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+                    <TextView
+                        android:id="@+id/tvCpuInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CPU Governor: Loading..."
+                        android:textColor="#BBBBBB"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="#1E1E1E"
-            app:cardCornerRadius="12dp"
-            android:layout_marginBottom="24dp">
+            <!-- Battery Graph -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Battery Drain Over Time"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
 
-            <com.github.mikephil.charting.charts.LineChart
-                android:id="@+id/batteryChart"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="250dp"
-                android:layout_margin="8dp" />
-        </androidx.cardview.widget.CardView>
+                android:layout_height="wrap_content"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardBackgroundColor="?attr/colorSurface"
+                android:layout_marginBottom="24dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Profile"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
-
-        <!-- No Tweak Button -->
-        <Button
-            android:id="@+id/btnNone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="No Tweak (Stock Device)"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#607D8B" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Restores stock Android frequencies and thermal behavior."
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Battery Button -->
-        <Button
-            android:id="@+id/btnBattery"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Battery Saver"
-            android:textColor="#000000"
-            android:backgroundTint="#00FF7F" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Limits CPU to 1.4GHz, strict thermal limits, aggressive cache."
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Balanced Button -->
-        <Button
-            android:id="@+id/btnBalanced"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Balanced"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#2196F3" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Normal CPU limits (1.6GHz), default thermals."
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Performance Button -->
-        <Button
-            android:id="@+id/btnPerformance"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Performance"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#F44336" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Highest frequencies (1.8GHz), relaxed thermals, max GPU."
-            android:textColor="#888888"
-            android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Logs Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Optimization Logs"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="#1E1E1E"
-            app:cardCornerRadius="8dp">
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/batteryChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"
+                    android:layout_margin="8dp" />
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
-                android:id="@+id/tvLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Profile"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- No Tweak Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No logs available."
-                android:textColor="#88FF88"
-                android:fontFamily="monospace"
+                android:text="No Tweak (Stock Device)"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#607D8B"
+                style="@style/Widget.Material3.Button" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Restores stock Android frequencies and thermal behavior."
+                android:textColor="#888888"
                 android:textSize="12sp"
-                android:padding="12dp"
-                android:minHeight="150dp" />
-        </androidx.cardview.widget.CardView>
+                android:layout_marginBottom="12dp" />
 
-    </LinearLayout>
-</ScrollView>
+            <!-- Battery Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBattery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Battery Saver"
+                android:textColor="#000000"
+                app:backgroundTint="#00FF7F"
+                style="@style/Widget.Material3.Button" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Limits CPU to 1.4GHz, strict thermal limits, aggressive cache."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Balanced Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBalanced"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Balanced"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#2196F3"
+                style="@style/Widget.Material3.Button" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Normal CPU limits (1.6GHz), default thermals."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Performance Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPerformance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Performance"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#F44336"
+                style="@style/Widget.Material3.Button" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Highest frequencies (1.8GHz), relaxed thermals, max GPU."
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Logs Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Optimization Logs"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardBackgroundColor="?attr/colorSurface">
+
+                <TextView
+                    android:id="@+id/tvLogs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No logs available."
+                    android:textColor="#88FF88"
+                    android:fontFamily="monospace"
+                    android:textSize="12sp"
+                    android:padding="12dp"
+                    android:minHeight="150dp" />
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

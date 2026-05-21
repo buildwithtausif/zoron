@@ -1,5 +1,5 @@
 #!/system/bin/sh
-LOG_DIR="/data/local/tmp/zoron_logs"
+LOG_DIR="/data/adb/modules/whyred_battery_optimizer/logs"
 CSV_FILE="$LOG_DIR/battery.csv"
 
 mkdir -p $LOG_DIR
