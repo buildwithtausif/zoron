@@ -24,12 +24,12 @@
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-mdpi\\ic_launcher.png"
     },
     {
-        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xhdpi_ic_launcher_round.png.flat",
-        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xhdpi\\ic_launcher_round.png"
-    },
-    {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher.png.flat",
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xhdpi\\ic_launcher_round.png"
     },
     {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher_round.png.flat",

@@ -1,7 +1,10 @@
 #!/system/bin/sh
 MODDIR=${0%/*}
-PROFILE_FILE="/data/adb/modules/whyred_battery_optimizer/profile.txt"
-MARKER_FILE="/data/adb/modules/whyred_battery_optimizer/boot_marker"
+PROFILE_FILE="/data/local/tmp/zoron/profile.txt"
+MARKER_FILE="/data/local/tmp/zoron/boot_marker"
+
+mkdir -p /data/local/tmp/zoron
+chmod 777 /data/local/tmp/zoron
 
 # Wait until boot completes
 while [ "$(getprop sys.boot_completed)" != "1" ]; do
@@ -26,10 +29,11 @@ else
     PROFILE="none"
     echo "none" > $PROFILE_FILE
 fi
+chmod 666 $PROFILE_FILE
 
 # Apply the profile
-/data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt $PROFILE
+/system/bin/whyred_opt $PROFILE
 rm -f $MARKER_FILE
 
 # Start the battery tracker daemon
-nohup /data/adb/modules/whyred_battery_optimizer/system/bin/zoron_tracker.sh >/dev/null 2>&1 &
+nohup /system/bin/zoron_tracker.sh >/dev/null 2>&1 &

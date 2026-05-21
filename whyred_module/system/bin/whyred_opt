@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 PROFILE=$1
-LOG_DIR="/data/adb/modules/whyred_battery_optimizer/logs"
+LOG_DIR="/data/local/tmp/zoron"
 LOG_FILE="$LOG_DIR/log.txt"
 CSV_FILE="$LOG_DIR/battery.csv"
 
@@ -103,5 +103,8 @@ case $PROFILE in
         ;;
 esac
 
-echo $PROFILE > /data/adb/modules/whyred_battery_optimizer/profile.txt
+mkdir -p $LOG_DIR
+chmod 777 $LOG_DIR
+echo $PROFILE > $LOG_DIR/profile.txt
+chmod 666 $LOG_DIR/profile.txt
 log "[*] Profile $PROFILE successfully saved."

@@ -6508,12 +6508,9 @@
     <item name="windowNoTitle">true</item>
   </style>
     <style name="Theme.Zoron" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#00FF7F</item>
-        <item name="colorOnPrimary">#000000</item>
-        <item name="colorSecondary">#03DAC5</item>
-        <item name="colorOnSecondary">#000000</item>
-        <item name="android:colorBackground">#000000</item>
-        <item name="colorSurface">#121212</item>
+        
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Zoron.Large</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zoron.Medium</item>
     </style>

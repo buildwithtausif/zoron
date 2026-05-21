@@ -23,7 +23,7 @@ import java.net.URL;
 public class OTAUpdater {
     // Official GitHub Raw URL for the unified module update
     private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json";
-    private static final int CURRENT_VERSION_CODE = 6; // v2.9.0
+    private static final int CURRENT_VERSION_CODE = 8; // v2.9.2
 
     public static void checkUpdates(Activity activity, boolean manualCheck) {
         new Thread(() -> {

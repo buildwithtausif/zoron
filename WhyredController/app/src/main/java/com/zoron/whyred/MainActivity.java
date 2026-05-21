@@ -111,13 +111,13 @@ public class MainActivity extends AppCompatActivity {
     private void refreshDashboard() {
         new Thread(() -> {
             Shell.Result result = Shell.cmd(
-                    "cat /data/adb/modules/whyred_battery_optimizer/profile.txt",
+                    "cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo ''",
                     "echo '---SEP---'",
-                    "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",
+                    "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo ''",
                     "echo '---SEP---'",
-                    "cat /data/adb/modules/whyred_battery_optimizer/logs/log.txt 2>/dev/null || echo 'No logs.'",
+                    "cat /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
                     "echo '---SEP---'",
-                    "cat /data/adb/modules/whyred_battery_optimizer/logs/battery.csv 2>/dev/null || echo ''"
+                    "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''"
             ).exec();
 
             if (!result.isSuccess()) {
@@ -199,17 +199,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void applyProfile(String profile) {
-        Toast.makeText(this, "Applying " + profile + "...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("/data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt " + profile).exec();
-            
-            runOnUiThread(() -> {
+            Shell.Result result = Shell.cmd("sh /system/bin/whyred_opt " + profile).exec();
+            new Handler(Looper.getMainLooper()).post(() -> {
                 if (result.isSuccess()) {
-                    Toast.makeText(MainActivity.this, "Profile applied successfully!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, profile.toUpperCase() + " profile applied!", Toast.LENGTH_SHORT).show();
                     refreshDashboard();
                 } else {
-                    StringBuilder err = new StringBuilder("Error: ");
-                    for (String e : result.getErr()) err.append(e).append(" ");
+                    StringBuilder err = new StringBuilder("Error:\n");
+                    for (String e : result.getOut()) err.append(e).append("\n");
+                    for (String e : result.getErr()) err.append(e).append("\n");
                     Toast.makeText(MainActivity.this, err.toString(), Toast.LENGTH_LONG).show();
                 }
             });

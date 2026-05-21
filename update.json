@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.0",
-  "versionCode": 6,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.0/zoron_optimizations_v2.9.0.zip",
+  "version": "v2.9.2",
+  "versionCode": 8,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.2/zoron_optimizations_v2.9.2.zip",
   "changelog": "https://raw.githubusercontent.com/buildwithtausif/zoron/main/changelog.md"
 }
