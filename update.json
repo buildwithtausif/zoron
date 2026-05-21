@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.6",
-  "versionCode": 12,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.6/zoron_optimizations_v2.9.6.zip",
-  "changelog": "v2.9.6 Update:\n- **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from /data/local/tmp to prevent SELinux and noexec mount denials."
+  "version": "v2.9.7",
+  "versionCode": 13,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.7/zoron_optimizations_v2.9.7.zip",
+  "changelog": "v2.9.7 Update:\n- **Error Dialog & Path Fallbacks**: Added an interactive error dialog with 'Copy to Clipboard' functionality to easily debug script errors. Implemented fallback paths to successfully find the Magisk executable even before device reboot."
 }

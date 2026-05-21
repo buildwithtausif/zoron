@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v2.9.7
+- **Error Dialog & Path Fallbacks**: Added an interactive error dialog with 'Copy to Clipboard' functionality to easily debug script errors. Implemented fallback paths to successfully find the Magisk executable even before device reboot.
+
 ## v2.9.6
 - **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from `/data/local/tmp` to prevent SELinux and noexec mount denials.
 

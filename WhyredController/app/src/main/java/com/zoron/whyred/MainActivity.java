@@ -1,5 +1,8 @@
 package com.zoron.whyred;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -8,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -198,18 +202,38 @@ public class MainActivity extends AppCompatActivity {
         batteryChart.invalidate();
     }
 
+    private void showErrorDialog(String errorMsg) {
+        new AlertDialog.Builder(this)
+            .setTitle("Execution Error")
+            .setMessage(errorMsg)
+            .setPositiveButton("Copy", (dialog, which) -> {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("Zoron Error", errorMsg);
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(clip);
+                    Toast.makeText(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
     private void applyProfile(String profile) {
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("whyred_opt " + profile).exec();
+            String scriptCmd = "if [ -f /system/bin/whyred_opt ]; then sh /system/bin/whyred_opt " + profile + "; " +
+                               "elif [ -f /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt ]; then sh /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt " + profile + "; " +
+                               "else echo 'Module scripts not found. Please reboot your device to apply Magisk module.'; exit 1; fi";
+            Shell.Result result = Shell.cmd(scriptCmd).exec();
             new Handler(Looper.getMainLooper()).post(() -> {
                 if (result.isSuccess()) {
                     Toast.makeText(MainActivity.this, profile.toUpperCase() + " profile applied!", Toast.LENGTH_SHORT).show();
                     refreshDashboard();
                 } else {
-                    StringBuilder err = new StringBuilder("Error:\n");
+                    StringBuilder err = new StringBuilder("Error applying " + profile + " profile:\n");
+                    err.append("Exit Code: ").append(result.getCode()).append("\n");
                     for (String e : result.getOut()) err.append(e).append("\n");
                     for (String e : result.getErr()) err.append(e).append("\n");
-                    Toast.makeText(MainActivity.this, err.toString(), Toast.LENGTH_LONG).show();
+                    showErrorDialog(err.toString());
                 }
             });
         }).start();

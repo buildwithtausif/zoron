@@ -1,6 +1,6 @@
 {
-  "versionCode": 12,
-  "versionName": "v2.9.6",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.6/Zoron.apk",
-  "changelog": "v2.9.6 Update:\n- **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from /data/local/tmp to prevent SELinux and noexec mount denials."
+  "versionCode": 13,
+  "versionName": "v2.9.7",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.7/Zoron.apk",
+  "changelog": "v2.9.7 Update:\n- **Error Dialog & Path Fallbacks**: Added an interactive error dialog with 'Copy to Clipboard' functionality to easily debug script errors. Implemented fallback paths to successfully find the Magisk executable even before device reboot."
 }
