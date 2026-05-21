@@ -1,4 +1,14 @@
-# Changelog
+# Zoron Changelog
+
+## v2.9.0
+- **Unified Native OTA**: App now seamlessly downloads the Magisk Module ZIP in the background and natively flashes it using root (libsu) without ever leaving the app.
+- **Expressive Material 3 UI**: Completely redesigned the dashboard to use Google's modern expressive fluid shapes.
+
+## v2.8.0
+- Migrated all UI elements to Android 16 Material 3 standards.
+- Fixed silent root script execution failures caused by CRLF line endings.
+- Relocated log tracking to Magisk module folder to bypass SELinux restrictions.
+- Added native OTA check in settings menu.
 
 ## v2.7.0
 - **Root Toast Spam Eliminated:** Overhauled the root execution engine using topjohnwu's `libsu`. The app now maintains a single persistent root shell, meaning Magisk will only prompt you for root access exactly once.

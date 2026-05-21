@@ -2,5 +2,5 @@
   "versionCode": 6,
   "versionName": "v2.9.0",
   "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.0/Zoron.apk",
-  "changelog": "- Eliminated root toast spam via libsu integration\n- Fixed 'none' profile persistence bug\n- Introduced robust dual OTA update mechanism"
+  "changelog": "- **Unified Native OTA**: App now seamlessly downloads the Magisk Module ZIP in the background and natively flashes it using root (libsu) without ever leaving the app.\n- **Expressive Material 3 UI**: Completely redesigned the dashboard to use Google's modern expressive fluid shapes."
 }
