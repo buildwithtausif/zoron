@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v2.9.4
+- **Full Fixes Applied**: Completely fixed Magisk overlay bugs by mapping execution paths globally.
+- **App Version Code Fixed**: Synchronized Android APK `versionName` and `versionCode` properly so it upgrades correctly in the OS.
+
 ## v2.9.2
 - **Android 16 Fix**: Fully implemented Material 3 `DynamicColors` to gracefully adapt to system Light/Dark mode instead of being stuck on bright green.
 - **SELinux Bypass**: Moved profile states and logs from Magisk restricted folders directly into `/data/local/tmp/zoron` globally writable space to fix `Permission Denied` silent failures.
