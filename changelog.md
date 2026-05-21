@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v2.9.2
+- **Android 16 Fix**: Fully implemented Material 3 `DynamicColors` to gracefully adapt to system Light/Dark mode instead of being stuck on bright green.
+- **SELinux Bypass**: Moved profile states and logs from Magisk restricted folders directly into `/data/local/tmp/zoron` globally writable space to fix `Permission Denied` silent failures.
+- **Debug Improvements**: Fixed error toasts not showing actual bash stdout/stderr on script failure.
+
 ## v2.9.0
 - **Unified Native OTA**: App now seamlessly downloads the Magisk Module ZIP in the background and natively flashes it using root (libsu) without ever leaving the app.
 - **Expressive Material 3 UI**: Completely redesigned the dashboard to use Google's modern expressive fluid shapes.
