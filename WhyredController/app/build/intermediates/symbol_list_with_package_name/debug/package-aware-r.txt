@@ -3165,14 +3165,14 @@ id bounce
 id bounceBoth
 id bounceEnd
 id bounceStart
-id btnBalanced
-id btnBattery
-id btnNone
-id btnPerformance
 id buttonPanel
 id cache_measures
 id callMeasure
 id cancel_button
+id cardBalanced
+id cardBattery
+id cardNone
+id cardPerformance
 id carryVelocity
 id center
 id centerCrop
@@ -4310,6 +4310,8 @@ style ShapeAppearance_MaterialComponents_LargeComponent
 style ShapeAppearance_MaterialComponents_MediumComponent
 style ShapeAppearance_MaterialComponents_SmallComponent
 style ShapeAppearance_MaterialComponents_Tooltip
+style ShapeAppearance_Zoron_Large
+style ShapeAppearance_Zoron_Medium
 style ShapeAppearanceOverlay_Material3_Button
 style ShapeAppearanceOverlay_Material3_Chip
 style ShapeAppearanceOverlay_Material3_Corner_Bottom

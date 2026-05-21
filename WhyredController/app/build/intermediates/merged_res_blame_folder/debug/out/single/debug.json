@@ -1,5 +1,9 @@
 [
     {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\menu_menu_main.xml.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\menu\\menu_main.xml"
+    },
+    {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xxxhdpi\\ic_launcher_round.png"
     },
@@ -16,20 +20,16 @@
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\layout\\activity_splash.xml"
     },
     {
-        "merged": "com.zoron.whyred.app-merged_res-31:/menu_menu_main.xml.flat",
-        "source": "com.zoron.whyred.app-main-33:/menu/menu_main.xml"
-    },
-    {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-mdpi_ic_launcher.png.flat",
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-mdpi\\ic_launcher.png"
     },
     {
-        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-hdpi\\ic_launcher.png"
-    },
-    {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xhdpi_ic_launcher_round.png.flat",
         "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-hdpi\\ic_launcher.png"
     },
     {
         "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher_round.png.flat",

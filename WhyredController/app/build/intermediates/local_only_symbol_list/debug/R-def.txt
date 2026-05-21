@@ -2,10 +2,10 @@ R_DEF: Internal format may change without notice
 local
 id action_check_updates
 id batteryChart
-id btnBalanced
-id btnBattery
-id btnNone
-id btnPerformance
+id cardBalanced
+id cardBattery
+id cardNone
+id cardPerformance
 id topAppBar
 id tvCpuInfo
 id tvCurrentProfile
@@ -16,4 +16,6 @@ layout activity_splash
 menu menu_main
 mipmap ic_launcher
 mipmap ic_launcher_round
+style ShapeAppearance.Zoron.Large
+style ShapeAppearance.Zoron.Medium
 style Theme.Zoron

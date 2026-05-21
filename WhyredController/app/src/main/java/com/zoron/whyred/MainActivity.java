@@ -45,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
 
         setupChart();
 
-        findViewById(R.id.btnNone).setOnClickListener(v -> applyProfile("none"));
-        findViewById(R.id.btnBattery).setOnClickListener(v -> applyProfile("battery"));
-        findViewById(R.id.btnBalanced).setOnClickListener(v -> applyProfile("balanced"));
-        findViewById(R.id.btnPerformance).setOnClickListener(v -> applyProfile("performance"));
+        findViewById(R.id.cardNone).setOnClickListener(v -> applyProfile("none"));
+        findViewById(R.id.cardBattery).setOnClickListener(v -> applyProfile("battery"));
+        findViewById(R.id.cardBalanced).setOnClickListener(v -> applyProfile("balanced"));
+        findViewById(R.id.cardPerformance).setOnClickListener(v -> applyProfile("performance"));
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);

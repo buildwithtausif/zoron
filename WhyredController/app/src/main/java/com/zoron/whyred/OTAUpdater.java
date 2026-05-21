@@ -2,23 +2,28 @@ package com.zoron.whyred;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Intent;
-import android.net.Uri;
+import android.app.ProgressDialog;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 
+import com.topjohnwu.superuser.Shell;
+
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class OTAUpdater {
-    // Official GitHub Raw URL
-    private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/ota.json";
-    private static final int CURRENT_VERSION_CODE = 5; // v2.8.0
+    // Official GitHub Raw URL for the unified module update
+    private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json";
+    private static final int CURRENT_VERSION_CODE = 6; // v2.9.0
 
     public static void checkUpdates(Activity activity, boolean manualCheck) {
         new Thread(() -> {
@@ -37,23 +42,24 @@ public class OTAUpdater {
                 
                 JSONObject json = new JSONObject(jsonStr.toString());
                 int latestVersionCode = json.getInt("versionCode");
-                String latestVersionName = json.getString("versionName");
-                String apkUrl = json.getString("apkUrl");
-                String changelog = json.getString("changelog");
+                String latestVersionName = json.getString("version");
+                String zipUrl = json.getString("zipUrl");
+                
+                // Fetch changelog from the raw URL if it's a URL, otherwise use the text directly.
+                String changelogText = "New performance and thermal improvements.";
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (latestVersionCode > CURRENT_VERSION_CODE) {
                         new AlertDialog.Builder(activity)
                             .setTitle("Update Available: " + latestVersionName)
-                            .setMessage("A new OTA update is available!\n\nChangelog:\n" + changelog)
-                            .setPositiveButton("Download", (dialog, which) -> {
-                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));
-                                activity.startActivity(browserIntent);
+                            .setMessage("A new Magisk Module update is available!\n\nThis will automatically download and flash the module, including the latest app update.")
+                            .setPositiveButton("Download & Install", (dialog, which) -> {
+                                downloadAndFlashUpdate(activity, zipUrl);
                             })
                             .setNegativeButton("Later", null)
                             .show();
                     } else if (manualCheck) {
-                        Toast.makeText(activity, "Zoron is up to date! (v2.8.0)", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity, "Zoron is up to date! (v2.9.0)", Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception e) {
@@ -62,6 +68,88 @@ public class OTAUpdater {
                         Toast.makeText(activity, "Failed to check for updates: " + e.getMessage(), Toast.LENGTH_LONG).show()
                     );
                 }
+            }
+        }).start();
+    }
+
+    private static void downloadAndFlashUpdate(Activity activity, String zipUrl) {
+        ProgressDialog progressDialog = new ProgressDialog(activity);
+        progressDialog.setTitle("Downloading Update");
+        progressDialog.setMessage("Please wait while the update is downloading...");
+        progressDialog.setIndeterminate(false);
+        progressDialog.setMax(100);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        new Thread(() -> {
+            try {
+                URL url = new URL(zipUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+
+                int fileLength = connection.getContentLength();
+                InputStream input = new BufferedInputStream(url.openStream(), 8192);
+                
+                File outputFile = new File(activity.getCacheDir(), "zoron_update.zip");
+                FileOutputStream output = new FileOutputStream(outputFile);
+
+                byte[] data = new byte[8192];
+                long total = 0;
+                int count;
+                
+                while ((count = input.read(data)) != -1) {
+                    total += count;
+                    if (fileLength > 0) {
+                        int progress = (int) (total * 100 / fileLength);
+                        new Handler(Looper.getMainLooper()).post(() -> progressDialog.setProgress(progress));
+                    }
+                    output.write(data, 0, count);
+                }
+                
+                output.flush();
+                output.close();
+                input.close();
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    progressDialog.setMessage("Flashing Magisk Module...");
+                    progressDialog.setIndeterminate(true);
+                });
+
+                // Flash via Magisk natively using libsu
+                Shell.Result result = Shell.cmd("magisk --install-module " + outputFile.getAbsolutePath()).exec();
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    progressDialog.dismiss();
+                    
+                    if (result.isSuccess()) {
+                        new AlertDialog.Builder(activity)
+                            .setTitle("Update Successful")
+                            .setMessage("The module has been successfully flashed. You must reboot your device to apply the new module and app update.")
+                            .setPositiveButton("Reboot Now", (dialog, which) -> {
+                                Shell.cmd("reboot").exec();
+                            })
+                            .setNegativeButton("Later", null)
+                            .setCancelable(false)
+                            .show();
+                    } else {
+                        StringBuilder err = new StringBuilder("Flash Error:\n");
+                        for (String s : result.getErr()) err.append(s).append("\n");
+                        for (String s : result.getOut()) err.append(s).append("\n");
+                        
+                        new AlertDialog.Builder(activity)
+                            .setTitle("Update Failed")
+                            .setMessage(err.toString())
+                            .setPositiveButton("OK", null)
+                            .show();
+                    }
+                });
+                
+            } catch (Exception e) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(activity, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
             }
         }).start();
     }

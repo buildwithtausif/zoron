@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Zoron" parent="Theme.Material3.Dark.NoActionBar">
-        <!-- Primary brand color. -->
+    <style name="Theme.Zoron" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#00FF7F</item>
         <item name="colorOnPrimary">#000000</item>
-        <!-- Secondary brand color. -->
         <item name="colorSecondary">#03DAC5</item>
         <item name="colorOnSecondary">#000000</item>
-        <!-- Background -->
-        <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#1E1E1E</item>
+        <item name="android:colorBackground">#000000</item>
+        <item name="colorSurface">#121212</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Zoron.Large</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zoron.Medium</item>
+    </style>
+
+    <!-- Expressive fluid shapes (very rounded) -->
+    <style name="ShapeAppearance.Zoron.Large" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.Zoron.Medium" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
     </style>
 </resources>

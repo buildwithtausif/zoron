@@ -15,7 +15,8 @@
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="zoron"
+            app:title="Zoron"
+            app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineMedium"
             app:titleTextColor="?attr/colorPrimary"
             app:titleCentered="true"
             app:menu="@menu/menu_main" />
@@ -30,176 +31,247 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="24dp">
+
+            <!-- System Status Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
 
             <!-- Dashboard Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
+                style="@style/Widget.Material3.CardView.Filled"
                 app:cardBackgroundColor="?attr/colorSurface"
-                android:layout_marginBottom="24dp">
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
+                android:layout_marginBottom="32dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="System Status"
-                        android:textColor="#FFFFFF"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="12dp" />
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/tvCurrentProfile"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Current Profile: Loading..."
-                        android:textColor="#BBBBBB"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="8dp" />
+                        android:text="NONE"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="32sp"
+                        android:fontFamily="sans-serif-black"
+                        android:layout_marginBottom="4dp" />
 
                     <TextView
                         android:id="@+id/tvCpuInfo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="CPU Governor: Loading..."
-                        android:textColor="#BBBBBB"
+                        android:text="CPU Governor: schedutil"
+                        android:textColor="#AAAAAA"
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Battery Graph -->
+            <!-- Profiles Header -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Battery Drain Over Time"
+                android:text="Modes"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Profile Grid -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:layout_marginBottom="16dp">
+
+                <!-- No Tweak Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardNone"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="140dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    style="@style/Widget.Material3.CardView.Elevated"
+                    app:cardBackgroundColor="#263238"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stock"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Battery Saver Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardBattery"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="140dp"
+                    android:layout_marginStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    style="@style/Widget.Material3.CardView.Elevated"
+                    app:cardBackgroundColor="#004D2E"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Battery"
+                            android:textColor="#00FF7F"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:layout_marginBottom="32dp">
+
+                <!-- Balanced Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardBalanced"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="140dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    style="@style/Widget.Material3.CardView.Elevated"
+                    app:cardBackgroundColor="#0D47A1"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Balanced"
+                            android:textColor="#64B5F6"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Performance Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPerformance"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="140dp"
+                    android:layout_marginStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    style="@style/Widget.Material3.CardView.Elevated"
+                    app:cardBackgroundColor="#B71C1C"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Perform"
+                            android:textColor="#EF9A9A"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Graph Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Analytics"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
+                style="@style/Widget.Material3.CardView.Filled"
                 app:cardBackgroundColor="?attr/colorSurface"
-                android:layout_marginBottom="24dp">
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
+                android:layout_marginBottom="32dp">
 
                 <com.github.mikephil.charting.charts.LineChart
                     android:id="@+id/batteryChart"
                     android:layout_width="match_parent"
                     android:layout_height="250dp"
-                    android:layout_margin="8dp" />
+                    android:layout_margin="16dp" />
             </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select Profile"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- No Tweak Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No Tweak (Stock Device)"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#607D8B"
-                style="@style/Widget.Material3.Button" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Restores stock Android frequencies and thermal behavior."
-                android:textColor="#888888"
-                android:textSize="12sp"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Battery Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBattery"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Battery Saver"
-                android:textColor="#000000"
-                app:backgroundTint="#00FF7F"
-                style="@style/Widget.Material3.Button" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Limits CPU to 1.4GHz, strict thermal limits, aggressive cache."
-                android:textColor="#888888"
-                android:textSize="12sp"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Balanced Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBalanced"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Balanced"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#2196F3"
-                style="@style/Widget.Material3.Button" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Normal CPU limits (1.6GHz), default thermals."
-                android:textColor="#888888"
-                android:textSize="12sp"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Performance Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPerformance"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Performance"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#F44336"
-                style="@style/Widget.Material3.Button" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Highest frequencies (1.8GHz), relaxed thermals, max GPU."
-                android:textColor="#888888"
-                android:textSize="12sp"
-                android:layout_marginBottom="24dp" />
 
             <!-- Logs Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Optimization Logs"
+                android:text="Diagnostics"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="?attr/colorSurface">
+                style="@style/Widget.Material3.CardView.Filled"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large">
 
                 <TextView
                     android:id="@+id/tvLogs"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="No logs available."
+                    android:text="Loading diagnostics..."
                     android:textColor="#88FF88"
                     android:fontFamily="monospace"
-                    android:textSize="12sp"
-                    android:padding="12dp"
+                    android:textSize="13sp"
+                    android:padding="24dp"
                     android:minHeight="150dp" />
             </com.google.android.material.card.MaterialCardView>
 
