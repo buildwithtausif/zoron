@@ -1,0 +1,107 @@
+#!/system/bin/sh
+
+PROFILE=$1
+LOG_DIR="/data/local/tmp/zoron_logs"
+LOG_FILE="$LOG_DIR/log.txt"
+CSV_FILE="$LOG_DIR/battery.csv"
+
+mkdir -p $LOG_DIR
+chmod 777 $LOG_DIR
+touch $LOG_FILE
+echo "======================================" >> $LOG_FILE
+echo "[$(date)] Applying Profile: $PROFILE" >> $LOG_FILE
+
+log() {
+    echo "$1" >> $LOG_FILE
+}
+
+optimize_thermals() {
+    local mode=$1
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+        for tz in /sys/class/thermal/thermal_zone*; do
+            if [ "$mode" == "strict" ]; then
+                echo enabled > $tz/mode 2>/dev/null
+                echo 1000 > $tz/passive_delay 2>/dev/null
+            elif [ "$mode" == "stock" ]; then
+                echo 0 > $tz/passive_delay 2>/dev/null
+            else
+                echo enabled > $tz/mode 2>/dev/null
+                echo 2000 > $tz/passive_delay 2>/dev/null
+            fi
+        done
+    fi
+}
+
+case $PROFILE in
+    "none")
+        log "[*] Reverting to Stock Settings"
+        # Restore stock governors and frequencies (assumes max available)
+        echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+        echo 633600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+        echo 1804800 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+        
+        echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+        echo 1113600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+        echo 2208000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 2>/dev/null || echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+
+        echo "msm-adreno-tz" > /sys/class/kgsl/kgsl-3d0/devfreq/governor
+        echo 100 > /proc/sys/vm/swappiness
+        echo 100 > /proc/sys/vm/vfs_cache_pressure
+        
+        optimize_thermals "stock"
+        ;;
+    "battery")
+        log "[*] Applying Battery Profile Settings"
+        echo 633600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+        echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+        echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+        
+        echo 1113600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+        echo 1401600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+        echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+
+        echo "msm-adreno-tz" > /sys/class/kgsl/kgsl-3d0/devfreq/governor
+        echo 430000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk 2>/dev/null
+
+        echo 100 > /proc/sys/vm/swappiness
+        echo 150 > /proc/sys/vm/vfs_cache_pressure
+        optimize_thermals "strict"
+        ;;
+    "balanced")
+        log "[*] Applying Balanced Profile Settings"
+        echo 633600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+        echo 1612800 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+        
+        echo 1113600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+        echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+
+        echo "msm-adreno-tz" > /sys/class/kgsl/kgsl-3d0/devfreq/governor
+        echo 506000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk 2>/dev/null
+
+        echo 60 > /proc/sys/vm/swappiness
+        echo 100 > /proc/sys/vm/vfs_cache_pressure
+        optimize_thermals "normal"
+        ;;
+    "performance")
+        log "[*] Applying Performance Profile Settings"
+        echo 1113600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+        echo 1804800 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+        
+        echo 1401600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+        echo 2208000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 2>/dev/null || echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+
+        echo 720000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk 2>/dev/null
+        echo "performance" > /sys/class/kgsl/kgsl-3d0/devfreq/governor 2>/dev/null || echo "msm-adreno-tz" > /sys/class/kgsl/kgsl-3d0/devfreq/governor
+
+        echo 30 > /proc/sys/vm/swappiness
+        echo 80 > /proc/sys/vm/vfs_cache_pressure
+        optimize_thermals "normal"
+        ;;
+    *)
+        log "Error: Unknown profile $PROFILE"
+        exit 1
+        ;;
+esac
+
+echo $PROFILE > /data/adb/modules/whyred_battery_optimizer/profile.txt
+log "[*] Profile $PROFILE successfully saved."

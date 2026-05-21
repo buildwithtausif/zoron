@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.zoron.whyred'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.zoron.whyred"
+        minSdk 24
+        targetSdk 34
+        versionCode 4
+        versionName "2.7.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Basic dependencies for standard UI
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    
+    // Topjohnwu libsu for persistent root shell
+    implementation 'com.github.topjohnwu.libsu:core:5.2.2'
+}

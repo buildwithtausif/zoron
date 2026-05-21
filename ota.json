@@ -1,0 +1,6 @@
+{
+  "versionCode": 4,
+  "versionName": "v2.7.0",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.7.0/Zoron.apk",
+  "changelog": "- Eliminated root toast spam via libsu integration\n- Fixed 'none' profile persistence bug\n- Introduced robust dual OTA update mechanism"
+}

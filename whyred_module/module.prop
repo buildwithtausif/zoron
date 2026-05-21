@@ -1,0 +1,7 @@
+id=whyred_battery_optimizer
+name=Whyred Battery & Thermal Optimizer
+version=v2.7.0
+versionCode=4
+updateJson=https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json
+author=Antigravity
+description=Kernel & thermal optimizations for whyred (SDM636/660) custom ROMs (Android 14+). Includes a Controller App.

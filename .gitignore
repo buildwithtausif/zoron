@@ -1,0 +1,26 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Exclude large binaries except for what we explicitly need
+*.zip
+*.apk
+!zoron_optimizations_v2.7.0.zip
+!WhyredController/app/build/outputs/apk/debug/app-debug.apk
+
+# Exclude environment folders
+/android-sdk/
+/gradle-dir/
+/jdk-17.0.2/

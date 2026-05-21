@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "com.zoron.whyred.app-merged_res-31:/layout_activity_main.xml.flat",
+        "source": "com.zoron.whyred.app-main-33:/layout/activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-merged_res-31:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\conne\\.gradle\\daemon\\8.7\\com.zoron.whyred.app-main-33:\\mipmap-xhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "com.zoron.whyred.app-merged_res-31:/layout_activity_splash.xml.flat",
+        "source": "com.zoron.whyred.app-main-33:/layout/activity_splash.xml"
+    }
+]
