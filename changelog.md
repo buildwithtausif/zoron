@@ -1,7 +1,7 @@
 # Zoron Changelog
 
-## v2.9.7
-- **Error Dialog & Path Fallbacks**: Added an interactive error dialog with 'Copy to Clipboard' functionality to easily debug script errors. Implemented fallback paths to successfully find the Magisk executable even before device reboot.
+## v2.9.8
+- **Hotfix**: Properly compiled the new error dialog and fallback paths into the APK. The app will now explicitly show a copyable error prompt and properly search for the `whyred_opt` script via the absolute `/data/adb/modules` path if the device hasn't been rebooted yet.
 
 ## v2.9.6
 - **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from `/data/local/tmp` to prevent SELinux and noexec mount denials.

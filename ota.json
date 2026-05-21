@@ -1,6 +1,6 @@
 {
-  "versionCode": 13,
-  "versionName": "v2.9.7",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.7/Zoron.apk",
-  "changelog": "v2.9.7 Update:\n- **Error Dialog & Path Fallbacks**: Added an interactive error dialog with 'Copy to Clipboard' functionality to easily debug script errors. Implemented fallback paths to successfully find the Magisk executable even before device reboot."
+  "versionCode": 14,
+  "versionName": "v2.9.8",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.8/Zoron.apk",
+  "changelog": "v2.9.8 Update:\n- **Hotfix**: Properly compiled the new error dialog and fallback paths into the APK. The app will now explicitly show a copyable error prompt and properly search for the `whyred_opt` script via the absolute `/data/adb/modules` path if the device hasn't been rebooted yet."
 }
