@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.2",
-  "versionCode": 8,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.2/zoron_optimizations_v2.9.2.zip",
-  "changelog": "https://raw.githubusercontent.com/buildwithtausif/zoron/main/changelog.md"
+  "version": "v2.9.3",
+  "versionCode": 9,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.3/zoron_optimizations_v2.9.3.zip",
+  "changelog": "v2.9.3 Update:\n- **App Auto-Update Fixed**: Module upgrades now reliably trigger the APK update on reboot.\n- **Dynamic Changelogs**: OTA update prompts now fetch and display the real release notes instead of a generic placeholder message.\n- Contains all previous Android 16 and SELinux fixes."
 }

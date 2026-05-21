@@ -1,6 +1,6 @@
 {
-  "versionCode": 8,
-  "versionName": "v2.9.2",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.2/Zoron.apk",
-  "changelog": "v2.9.2 Hotfix:\n- **Android 16 Fix**: Fully implemented Material 3 `DynamicColors` to gracefully adapt to system Light/Dark mode instead of being stuck on bright green.\n- **SELinux Bypass**: Moved profile states and logs from Magisk restricted folders directly into `/data/local/tmp/zoron` globally writable space to fix `Permission Denied` silent failures.\n- **Debug Improvements**: Fixed error toasts not showing actual bash stdout/stderr on script failure."
+  "versionCode": 9,
+  "versionName": "v2.9.3",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.3/Zoron.apk",
+  "changelog": "v2.9.3 Update:\n- **App Auto-Update Fixed**: Module upgrades now reliably trigger the APK update on reboot.\n- **Dynamic Changelogs**: OTA update prompts now fetch and display the real release notes instead of a generic placeholder message.\n- Contains all previous Android 16 and SELinux fixes."
 }

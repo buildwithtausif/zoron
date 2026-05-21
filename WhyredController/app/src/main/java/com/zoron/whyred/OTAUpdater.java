@@ -23,7 +23,7 @@ import java.net.URL;
 public class OTAUpdater {
     // Official GitHub Raw URL for the unified module update
     private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json";
-    private static final int CURRENT_VERSION_CODE = 8; // v2.9.2
+    private static final int CURRENT_VERSION_CODE = 9; // v2.9.3
 
     public static void checkUpdates(Activity activity, boolean manualCheck) {
         new Thread(() -> {
@@ -44,22 +44,20 @@ public class OTAUpdater {
                 int latestVersionCode = json.getInt("versionCode");
                 String latestVersionName = json.getString("version");
                 String zipUrl = json.getString("zipUrl");
-                
-                // Fetch changelog from the raw URL if it's a URL, otherwise use the text directly.
-                String changelogText = "New performance and thermal improvements.";
+                String changelogText = json.has("changelog") ? json.getString("changelog") : "New update available.";
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (latestVersionCode > CURRENT_VERSION_CODE) {
                         new AlertDialog.Builder(activity)
                             .setTitle("Update Available: " + latestVersionName)
-                            .setMessage("A new Magisk Module update is available!\n\nThis will automatically download and flash the module, including the latest app update.")
+                            .setMessage("A new Magisk Module update is available!\n\n" + changelogText + "\n\nThis will automatically download and flash the module, including the latest app update.")
                             .setPositiveButton("Download & Install", (dialog, which) -> {
                                 downloadAndFlashUpdate(activity, zipUrl);
                             })
                             .setNegativeButton("Later", null)
                             .show();
                     } else if (manualCheck) {
-                        Toast.makeText(activity, "Zoron is up to date! (v2.9.0)", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity, "Zoron is up to date! (" + latestVersionName + ")", Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception e) {

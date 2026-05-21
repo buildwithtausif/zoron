@@ -11,9 +11,12 @@ while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 5
 done
 
-# Install the Controller APK if it's not installed
-if ! pm list packages | grep -q "com.zoron.whyred"; then
+# Install or upgrade the Controller APK
+MOD_VER=$(grep versionCode $MODDIR/module.prop | cut -d= -f2)
+MARKER_APK="/data/local/tmp/zoron/apk_version"
+if [ ! -f "$MARKER_APK" ] || [ "$(cat $MARKER_APK)" != "$MOD_VER" ]; then
     pm install -g -r $MODDIR/Zoron.apk
+    echo "$MOD_VER" > "$MARKER_APK"
 fi
 
 # Bootloop Security Check
