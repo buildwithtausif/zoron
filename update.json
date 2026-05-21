@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.9",
-  "versionCode": 15,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.9/zoron_optimizations_v2.9.9.zip",
-  "changelog": "v2.9.9 Update:\n- **Root cause fix**: Windows CRLF line endings were corrupting shell scripts inside the zip. Scripts are now stripped of \\r during Magisk installation AND at runtime.\n- **Robust script discovery**: App searches multiple paths and reports diagnostics if whyred_opt is not found.\n- **POSIX shell fixes**: Replaced bash-only == with POSIX = for mksh compatibility."
+  "version": "v3.0.0",
+  "versionCode": 16,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.0.0/zoron_optimizations_v3.0.0.zip",
+  "changelog": "v3.0.0 Update:\n- **FIXED: Module zip structure** — PowerShell's Compress-Archive was creating backslash paths (system\\bin\\whyred_opt) inside the zip, which Android/Linux cannot extract as directories. Zips are now built with proper forward-slash paths.\n- **Added META-INF** — Proper Magisk module installer bootstrap files.\n- **Robust service.sh** — Scripts are copied to /data/local/tmp/zoron/ with CRLF stripping on every boot, ensuring they always work regardless of zip structure.\n- **Error dialog** — Full diagnostic output with Copy to Clipboard."
 }

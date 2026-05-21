@@ -220,19 +220,29 @@ public class MainActivity extends AppCompatActivity {
 
     private void applyProfile(String profile) {
         new Thread(() -> {
-            // Build a robust command that:
-            // 1. Finds whyred_opt from multiple known locations
-            // 2. Strips any \r (CRLF artifacts from Windows) before execution
-            // 3. Passes the profile argument correctly
+            // Search paths in priority order:
+            // 1. /data/local/tmp/zoron/whyred_opt — service.sh copies & CRLF-strips here on boot
+            // 2. /system/bin/whyred_opt — Magisk magic mount (if zip paths are correct)
+            // 3. /data/adb/modules/.../system/bin/whyred_opt — physical module path
             String scriptCmd = String.join("; ",
                 "SCRIPT_PATH=\"\"",
-                "for p in /system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
+                "for p in /data/local/tmp/zoron/whyred_opt /system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
                     "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
                 "if [ -z \"$SCRIPT_PATH\" ]; then " +
-                    "echo 'ERROR: whyred_opt not found at any known path.'; " +
-                    "echo 'Searched: /system/bin/whyred_opt, /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt'; " +
-                    "echo 'Module ID: '$(ls /data/adb/modules/ 2>/dev/null); " +
-                    "echo 'Please reflash the Zoron module and reboot.'; " +
+                    "echo 'ERROR: whyred_opt not found.'; " +
+                    "echo ''; " +
+                    "echo 'Searched paths:'; " +
+                    "echo '  /data/local/tmp/zoron/whyred_opt'; " +
+                    "echo '  /system/bin/whyred_opt'; " +
+                    "echo '  /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt'; " +
+                    "echo ''; " +
+                    "echo '--- Module directory listing ---'; " +
+                    "ls -la /data/adb/modules/whyred_battery_optimizer/ 2>&1; " +
+                    "echo ''; " +
+                    "echo '--- /data/local/tmp/zoron/ listing ---'; " +
+                    "ls -la /data/local/tmp/zoron/ 2>&1; " +
+                    "echo ''; " +
+                    "echo 'Please reflash the Zoron module ZIP (not just the APK) and reboot.'; " +
                     "exit 1; fi",
                 "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + profile
             );

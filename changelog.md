@@ -1,12 +1,11 @@
 # Zoron Changelog
 
-## v2.9.9
-- **Root cause fix**: Windows CRLF (`\r\n`) line endings were corrupting shell scripts inside the Magisk module zip. Git's `core.autocrlf=true` was silently converting LF to CRLF in the working tree. This caused the Android shell (`mksh`) to fail parsing the `whyred_opt` script with `<stdin>[14]` errors.
-- Scripts are now stripped of `\r` during Magisk installation (`customize.sh`) AND at runtime (`sed 's/\r$//'` before execution).
-- Added `.gitattributes` to force LF line endings for all shell scripts.
-- **Robust script discovery**: The app now searches multiple paths (`/system/bin/`, `/data/adb/modules/`) and reports full diagnostic info if the script is not found.
-- **POSIX shell fixes**: Replaced bash-only `==` with POSIX `=` for `mksh` compatibility.
-- Fixed `zoron_tracker.sh` reading profile from wrong path.
+## v3.0.0
+- **FIXED: Module zip structure** — PowerShell's `Compress-Archive` was creating backslash paths (`system\bin\whyred_opt`) inside the zip, which Android/Linux cannot extract as proper directories. The `system/bin/whyred_opt` file was never actually deployed to the filesystem. Zips are now built with proper forward-slash paths using .NET `ZipFile`.
+- **Added META-INF** — Proper Magisk module installer bootstrap (`update-binary` + `updater-script`).
+- **Robust service.sh** — Scripts are now copied from `$MODDIR/system/bin/` to `/data/local/tmp/zoron/` with CRLF stripping on every boot, ensuring they always work regardless of zip path structure.
+- **App searches 3 paths** — `/data/local/tmp/zoron/`, `/system/bin/`, and `/data/adb/modules/.../system/bin/` with full filesystem diagnostics on failure.
+- **Error dialog** — Full stdout/stderr/exit code with Copy to Clipboard button.
 
 ## v2.9.6
 - **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from `/data/local/tmp` to prevent SELinux and noexec mount denials.
