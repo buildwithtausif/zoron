@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v2.9.6
+- **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from `/data/local/tmp` to prevent SELinux and noexec mount denials.
+
 ## v2.9.5
 - **Adaptive App Icons**: Added full support for modern Android 8.0+ adaptive icons. The app icon will now shape-shift to match your launcher (circles, squarcles, teardrops) and supports Android 13+ monochrome Material You themed icons!
 

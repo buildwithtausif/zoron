@@ -1,6 +1,6 @@
 {
-  "version": "v2.9.5",
-  "versionCode": 11,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.5/zoron_optimizations_v2.9.5.zip",
-  "changelog": "v2.9.5 Update:\n- **Adaptive App Icons**: Added full support for modern Android 8.0+ adaptive icons. The app icon will now shape-shift to match your launcher (circles, squarcles, teardrops) and supports Android 13+ monochrome Material You themed icons!"
+  "version": "v2.9.6",
+  "versionCode": 12,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v2.9.6/zoron_optimizations_v2.9.6.zip",
+  "changelog": "v2.9.6 Update:\n- **Fixed script execution**: Magisk scripts are now executed directly from PATH instead of from /data/local/tmp to prevent SELinux and noexec mount denials."
 }

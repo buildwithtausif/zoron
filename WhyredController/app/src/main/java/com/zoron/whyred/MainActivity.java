@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void applyProfile(String profile) {
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("sh /data/local/tmp/zoron/whyred_opt " + profile).exec();
+            Shell.Result result = Shell.cmd("whyred_opt " + profile).exec();
             new Handler(Looper.getMainLooper()).post(() -> {
                 if (result.isSuccess()) {
                     Toast.makeText(MainActivity.this, profile.toUpperCase() + " profile applied!", Toast.LENGTH_SHORT).show();
