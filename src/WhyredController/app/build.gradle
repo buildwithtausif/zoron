@@ -26,8 +26,8 @@ android {
         applicationId "com.zoron.whyred"
         minSdk 24
         targetSdk 34
-        versionCode 22
-        versionName "v3.9.1"
+        versionCode 23
+        versionName "v3.9.2"
     }
 
     buildTypes {

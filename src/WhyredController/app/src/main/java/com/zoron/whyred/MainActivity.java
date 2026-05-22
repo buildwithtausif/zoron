@@ -228,13 +228,13 @@ public class MainActivity extends AppCompatActivity {
                     "echo '---SEP---'",
                     "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo ''",
                     "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
+                    "tail -n 50 /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
                     "echo '---SEP---'",
                     "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''",
                     "echo '---SEP---'",
                     "cat /data/local/tmp/zoron/power_state.txt 2>/dev/null || echo 'UNKNOWN'",
                     "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron/process_report.txt 2>/dev/null || echo 'No process data yet.'"
+                    "tail -n 40 /data/local/tmp/zoron/process_report.txt 2>/dev/null || echo 'No process data yet.'"
             ).exec();
 
             if (!result.isSuccess()) {
