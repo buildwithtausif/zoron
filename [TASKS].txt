@@ -1,0 +1,8 @@
+[TASKS]
+1. v3.0.1 (APP BUG FIXES)
+=> Show update available dialogue only when the installed version differs from the released version
+=> Add export to csv option in analytics
+=> add export logs option in diagnostics, and set overflow-y to scroll after certain height
+
+2. v3.5.0 (Module + App Advancements)
+READ THE ATTACHED ALGORITHM TXT

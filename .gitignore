@@ -10,15 +10,19 @@
 .DS_Store
 /build
 /captures
+WhyredController/.gradle/
+WhyredController/app/build/
 .externalNativeBuild
 .cxx
 local.properties
 
-# Exclude large binaries except for what we explicitly need
+# Release keystore (NEVER commit)
+*.jks
+*.keystore
+
+# Exclude large binaries
 *.zip
 *.apk
-!zoron_optimizations_v2.7.0.zip
-!WhyredController/app/build/outputs/apk/debug/app-debug.apk
 
 # Exclude environment folders
 /android-sdk/

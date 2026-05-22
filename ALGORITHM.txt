@@ -1,0 +1,494 @@
+===========================================
+ZORON-X POWER ARCHITECTURE
+Ultra Intelligent Power Conservation Engine
+For Android Linux Kernel + Magisk Module
+Version Target: ZORON-X
+===========================================
+
+AUTHOR OBJECTIVE
+----------------
+Design a next-generation Android power optimization architecture
+focused on:
+- extreme battery conservation
+- ultra-low thermal generation
+- buttery smooth perceived performance
+- intelligent process scheduling
+- aggressive idle optimization
+- adaptive user-aware performance scaling
+- deep sleep maximization
+- radio wakeup minimization
+
+This system must intelligently decide:
+- what should run
+- when it should run
+- how long it should run
+- which CPU/GPU resources should be used
+- what should be delayed/frozen/batched/killed
+
+while maintaining:
+- smooth UI response
+- instant touch responsiveness
+- notification reliability for important apps
+- acceptable app launch times
+
+===========================================
+CORE PHILOSOPHY
+===========================================
+
+DO NOT:
+- continuously run tasks slowly
+- keep CPUs awake unnecessarily
+- allow uncontrolled app wakeups
+- permit excessive background alarms
+- permit aggressive sync spam
+
+INSTEAD:
+- execute workloads rapidly in bursts
+- complete tasks ASAP
+- immediately return system to deep idle
+- batch all possible wakeups together
+- aggressively freeze non-essential tasks
+- intelligently prioritize foreground usability
+
+TARGET:
+Maximum Deep Sleep Time Ratio.
+
+===========================================
+POWER STATES
+===========================================
+
+STATE 0 : HYPER ACTIVE
+----------------------
+Triggered by:
+- gaming
+- rapid touch input
+- camera usage
+- benchmark detection
+- sustained scrolling
+
+Behavior:
+- allow big cores
+- normal touchboost
+- scheduler latency minimized
+- moderate thermal control
+- sync batching reduced
+
+STATE 1 : INTERACTIVE
+---------------------
+Triggered by:
+- normal app usage
+- browsing
+- messaging
+- YouTube
+- social media
+
+Behavior:
+- race-to-idle scheduling
+- short touch boost
+- limited background sync
+- GPU adaptive scaling
+- moderate batching
+
+STATE 2 : LIGHT IDLE
+--------------------
+Triggered by:
+- screen static
+- reading content
+- low interaction frequency
+
+Behavior:
+- reduce timer frequency
+- freeze cached apps
+- limit wakelocks
+- batch network tasks
+- reduce GPU activity
+- park unnecessary cores
+
+STATE 3 : DEEP IDLE
+-------------------
+Triggered by:
+- screen off
+- device stationary
+- low notification activity
+
+Behavior:
+- aggressive doze
+- disable unnecessary sensors
+- suspend non-whitelisted apps
+- network maintenance windows only
+- maximum CPU parking
+- background execution denial
+
+STATE 4 : SLEEP IDLE
+--------------------
+Triggered by:
+- long stationary night usage pattern
+- charging disconnected
+- no user interaction for long duration
+
+Behavior:
+- maintenance window every 30-60 minutes
+- freeze nearly all background apps
+- modem batching only
+- alarm consolidation
+- thermal leakage minimization
+
+===========================================
+USER INTENT PREDICTION ENGINE
+===========================================
+
+Collect:
+- touch intervals
+- unlock frequency
+- motion sensor data
+- foreground app category
+- brightness changes
+- charging state
+- notification interaction frequency
+
+Predict:
+- active interaction
+- passive reading
+- sleep state
+- gaming state
+- travel movement
+- pocket idle
+
+Adjust scheduler + power profile dynamically.
+
+===========================================
+PROCESS PRIORITY ENGINE
+===========================================
+
+Every process receives dynamic priority score.
+
+Formula:
+score =
+(user_visibility * 50)
++ recent_interaction
++ notification_importance
++ foreground_duration
+- wakeup_frequency
+- battery_abuse_score
+- thermal_impact
+- unnecessary_background_behavior
+
+===========================================
+PROCESS TIERS
+===========================================
+
+TIER S:
+- foreground app
+- launcher
+- systemui
+- input dispatcher
+- audio services
+
+Behavior:
+- unrestricted
+
+TIER A:
+- messaging apps
+- notification providers
+- alarm apps
+
+Behavior:
+- restricted batching allowed
+
+TIER B:
+- occasional services
+- widgets
+- sync adapters
+
+Behavior:
+- grouped execution only
+
+TIER C:
+- cached apps
+- analytics
+- idle services
+
+Behavior:
+- freeze aggressively
+
+TIER D:
+- dormant apps
+- unused apps
+
+Behavior:
+- deny wakelocks
+- deny jobs
+- deny alarms
+- freeze
+
+===========================================
+WAKEUP BATCHING ENGINE
+===========================================
+
+CRITICAL OBJECTIVE:
+Minimize total system wakeups.
+
+BAD:
+random app wakeups throughout timeline.
+
+GOOD:
+single combined wakeup executing all maintenance tasks.
+
+RULES:
+- combine alarms
+- combine syncs
+- combine network requests
+- combine job scheduler events
+- combine maintenance tasks
+
+ACTIVE MODE:
+batch every 15-30 seconds
+
+LIGHT IDLE:
+batch every 2-5 minutes
+
+DEEP IDLE:
+batch every 15 minutes
+
+SLEEP IDLE:
+batch every 30-60 minutes
+
+===========================================
+MODEM/RADIO OPTIMIZATION
+===========================================
+
+OBJECTIVE:
+Reduce radio power spikes.
+
+RULES:
+- avoid frequent modem wakeups
+- coalesce network transfers
+- avoid parallel sync storms
+- defer analytics uploads
+- suspend telemetry until maintenance window
+
+ALLOW:
+- high priority messaging
+- emergency notifications
+- VoIP critical channels
+
+===========================================
+CPU STRATEGY
+===========================================
+
+CORE PRINCIPLE:
+Race-To-Idle.
+
+DO NOT:
+run low clocks continuously.
+
+INSTEAD:
+boost briefly,
+complete task quickly,
+sleep immediately.
+
+LIGHT LOAD:
+- little cores only
+- lowest stable frequencies
+
+STATIC SCREEN:
+- park big cores
+
+BACKGROUND ONLY:
+- minimum scheduler activity
+
+TOUCH DETECTED:
+- short boost duration
+- rapid frequency ramp
+- immediate downscale after frame completion
+
+===========================================
+GPU STRATEGY
+===========================================
+
+STATIC CONTENT:
+- minimum GPU frequency
+- reduced rendering pipeline activity
+
+SCROLLING:
+- temporary boost
+
+VIDEO PLAYBACK:
+- prioritize hardware decoder efficiency
+
+IDLE:
+- suspend unnecessary composition
+
+===========================================
+MEMORY MANAGEMENT
+===========================================
+
+PREFER:
+freezing over killing.
+
+IMPLEMENT:
+- freezer cgroups
+- compressed cached memory
+- zram optimization
+- app hibernation
+
+GOAL:
+instant resume with near-zero idle CPU usage.
+
+===========================================
+THERMAL STRATEGY
+===========================================
+
+OBJECTIVE:
+prevent heat accumulation.
+
+RULES:
+- avoid sustained high voltage
+- prefer efficient cores
+- reduce scheduler oscillation
+- avoid thermal spikes
+- lower leakage current
+
+COOLER CHIP = LOWER POWER DRAIN.
+
+===========================================
+SENSOR STRATEGY
+===========================================
+
+SCREEN OFF:
+- disable high-rate sensor polling
+- use sensor hub only
+- suspend non-essential listeners
+
+WAKE CONDITIONS:
+- pickup gesture
+- double tap
+- significant motion
+- power button
+
+===========================================
+NOTIFICATION POLICY
+===========================================
+
+HIGH PRIORITY:
+- messaging
+- calls
+- alarms
+
+ALLOW immediate delivery.
+
+LOW PRIORITY:
+- analytics
+- recommendations
+- promotions
+
+DEFER to maintenance window.
+
+===========================================
+APP BEHAVIOR MONITOR
+===========================================
+
+Track:
+- excessive wakelocks
+- sync abuse
+- alarm spam
+- CPU abuse
+- thermal abuse
+
+Punishments:
+- reduce background privileges
+- increase batching delay
+- freeze more aggressively
+- deny network during idle
+
+===========================================
+ZORON-X MODES
+===========================================
+
+MODE: ZORON-X BALANCED
+----------------------
+Balanced smart optimization.
+For daily users.
+
+MODE: ZORON-X DEEP
+------------------
+Aggressive battery conservation.
+Maximum freezing and batching.
+
+MODE: ZORON-X HIBERNATION
+-------------------------
+Extreme standby optimization.
+Only essential communication survives.
+
+MODE: ZORON-X BURST
+-------------------
+Race-to-idle aggressive burst scheduling.
+Optimized for responsiveness.
+
+MODE: ZORON-X NIGHTWATCH
+------------------------
+Ultra deep overnight preservation mode.
+
+===========================================
+MAGISK MODULE IMPLEMENTATION OBJECTIVES
+===========================================
+
+TARGET COMPONENTS:
+- init.d/service scripts
+- cpuset tuning
+- stune tuning
+- vm tuning
+- wakelock control
+- doze parameter tuning
+- alarm batching
+- app freezer integration
+- thermal engine tuning
+- scheduler optimization
+- zram optimization
+- GPU governor tuning
+
+POSSIBLE INTERFACES:
+- /sys/devices/system/cpu/
+- /proc/sys/vm/
+- device idle controller
+- cmd deviceidle
+- dumpsys battery
+- appops
+- job scheduler APIs
+- cpufreq governors
+- schedutil tuning
+
+===========================================
+AGENT TASKING DIRECTIVE
+===========================================
+
+The agent implementing ZORON-X must:
+
+1. Analyze current device kernel capabilities.
+2. Detect available governors/features dynamically.
+3. Apply only compatible optimizations.
+4. Prevent bootloops.
+5. Implement rollback protection.
+6. Benchmark idle drain continuously.
+7. Monitor thermal impact.
+8. Monitor UI latency.
+9. Adapt dynamically based on usage.
+10. Prefer user experience over synthetic benchmarks.
+
+===========================================
+SUCCESS METRICS
+===========================================
+
+TARGETS:
+- maximum deep sleep percentage
+- reduced thermal generation
+- reduced idle wakelocks
+- reduced modem wakeups
+- reduced overnight drain
+- smooth frame pacing
+- instant touch responsiveness
+- low scheduler latency
+
+===========================================
+END OF ZORON-X SPECIFICATION
+===========================================

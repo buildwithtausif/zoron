@@ -1,6 +1,25 @@
 #!/system/bin/sh
+# ============================================================================
+# whyred_opt — LEGACY optimization script (whyred/tulip only)
+# NOTE: This script is DEPRECATED for new ZORON-X modes.
+#       Use 'zoron_engine' directly for: balanced, deep, hibernation, burst, nightwatch
+#       This script still handles legacy modes: none, battery, balanced, performance
+# ============================================================================
 
 PROFILE=$1
+
+# ---------------------------------------------------------------------------
+# Redirect ZORON-X mode names to zoron_engine
+# 'balanced' is ambiguous — when called via whyred_opt, use legacy behavior;
+# when called via zoron_engine, use the new ZORON-X balanced mode.
+# ---------------------------------------------------------------------------
+case "$PROFILE" in
+    deep|hibernation|burst|nightwatch)
+        echo "[whyred_opt] Redirecting '$PROFILE' to zoron_engine"
+        echo "[$(date)] [whyred_opt] Redirecting $PROFILE -> zoron_engine" >> /data/local/tmp/zoron/log.txt
+        exec zoron_engine "$PROFILE"
+        ;;
+esac
 LOG_DIR="/data/local/tmp/zoron"
 LOG_FILE="$LOG_DIR/log.txt"
 CSV_FILE="$LOG_DIR/battery.csv"

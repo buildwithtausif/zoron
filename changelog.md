@@ -1,5 +1,25 @@
 # Zoron Changelog
 
+## v3.5.0 — ZORON-X Power Architecture
+- **ZORON-X Engine**: Complete next-generation power optimization engine replacing the legacy profile system. Implements 5 intelligent power modes (Balanced, Deep, Hibernation, Burst, Nightwatch) with dynamic device capability detection.
+- **Universal Device Support**: ZORON-X now works on ALL Android devices by dynamically probing sysfs paths and applying only compatible optimizations. Whyred/Tulip (SDM636/660) devices receive hardcoded optimal frequency tuning.
+- **User Intent Prediction Engine**: Background daemon that monitors screen state, touch activity, foreground app, and charging state to dynamically transition between 5 power states (Hyper Active → Interactive → Light Idle → Deep Idle → Sleep Idle).
+- **Process Monitor**: App behavior tracking daemon that detects wakelock abuse, sync spam, and alarm spam. Assigns dynamic priority scores and applies per-tier restrictions (Tier S unrestricted → Tier D frozen/denied).
+- **Enhanced Battery Tracker**: CSV now includes power state, CPU frequency, and temperature alongside battery level and profile.
+- **Material Expressive Chart**: Redesigned analytics chart with cubic bezier curves, gradient fills, vibrant color palette, and smooth animations.
+- **Power State Indicator**: Real-time power state display with animated pulse dot and state-specific colors/emojis.
+- **ZORON-X Mode Cards**: 5 new mode cards with icons (⚡ Balanced, 🔋 Deep, ❄️ Hibernate, 🚀 Burst, 🌙 Nightwatch).
+- **Collapsible Legacy Profiles**: Old Stock/Battery/Balanced/Performance profiles preserved in a collapsible section.
+- **Process Monitor UI**: Real-time scrollable view of process tier classifications and wakelock abuse reports.
+- **Transitional Module Upgrade**: Flashing v3.5.0 automatically detects and removes the old `whyred_battery_optimizer` module, migrating settings to the new `zoron_x_optimizer` module ID.
+- **CPU/GPU/VM/Scheduler/IO/Thermal/Doze/zRAM tuning**: Each mode configures the full stack — CPU frequencies & governors, GPU clocks, VM parameters, kernel scheduler, I/O scheduler, thermal zones, doze timers, wakelock blocking, and zRAM.
+
+## v3.0.1
+- **Fixed OTA Update Dialogue**: Update notification now only appears when the installed app version differs from the released version. Previously used a stale hardcoded version code (v2.9.5) causing false update prompts.
+- **CSV Export**: Added "Export" button in Analytics section to share battery drain CSV data via Android ShareSheet.
+- **Log Export**: Added "Export" button in Diagnostics section to share diagnostic logs via Android ShareSheet.
+- **Scrollable Diagnostics**: Diagnostics section now has a fixed max height (300dp) with vertical scrolling to prevent unbounded growth.
+
 ## v3.0.0
 - **FIXED: Module zip structure** — PowerShell's `Compress-Archive` was creating backslash paths (`system\bin\whyred_opt`) inside the zip, which Android/Linux cannot extract as proper directories. The `system/bin/whyred_opt` file was never actually deployed to the filesystem. Zips are now built with proper forward-slash paths using .NET `ZipFile`.
 - **Added META-INF** — Proper Magisk module installer bootstrap (`update-binary` + `updater-script`).

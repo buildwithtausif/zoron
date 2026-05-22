@@ -1,0 +1,456 @@
+#!/system/bin/sh
+# ============================================================================
+# ZORON-X Intent Engine — Background daemon for user intent prediction
+# Monitors device state and dynamically adjusts power within mode bounds.
+# Usage: zoron_intent_engine [start|stop|status]
+# ============================================================================
+
+LOG_DIR="/data/local/tmp/zoron"
+LOG_FILE="$LOG_DIR/log.txt"
+PID_FILE="$LOG_DIR/intent_engine.pid"
+STATE_FILE="$LOG_DIR/power_state.txt"
+PROFILE_FILE="$LOG_DIR/profile.txt"
+
+mkdir -p "$LOG_DIR"
+chmod 777 "$LOG_DIR"
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+log() {
+    echo "[$(date)] [intent_engine] $1" >> "$LOG_FILE"
+}
+
+# ---------------------------------------------------------------------------
+# sysfs helper
+# ---------------------------------------------------------------------------
+sysfs_write() {
+    if [ -e "$1" ]; then
+        echo "$2" > "$1" 2>/dev/null
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# PID management and signal handling
+# ---------------------------------------------------------------------------
+cleanup() {
+    log "Shutting down (PID $$)"
+    rm -f "$PID_FILE" 2>/dev/null
+    exit 0
+}
+
+trap cleanup INT TERM HUP QUIT
+
+check_running() {
+    if [ -f "$PID_FILE" ]; then
+        local old_pid
+        old_pid=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+            return 0  # Already running
+        fi
+        # Stale PID file
+        rm -f "$PID_FILE" 2>/dev/null
+    fi
+    return 1  # Not running
+}
+
+# ---------------------------------------------------------------------------
+# Handle start/stop/status commands
+# ---------------------------------------------------------------------------
+case "$1" in
+    stop)
+        if [ -f "$PID_FILE" ]; then
+            local old_pid
+            old_pid=$(cat "$PID_FILE" 2>/dev/null)
+            if [ -n "$old_pid" ]; then
+                kill "$old_pid" 2>/dev/null
+                echo "Intent engine stopped (PID $old_pid)"
+                log "Stopped by user (PID $old_pid)"
+            fi
+        else
+            echo "Intent engine is not running"
+        fi
+        exit 0
+        ;;
+    status)
+        if check_running; then
+            local pid
+            pid=$(cat "$PID_FILE" 2>/dev/null)
+            local state
+            state=$(cat "$STATE_FILE" 2>/dev/null || echo "unknown")
+            echo "Intent engine is running (PID $pid)"
+            echo "Current state: $state"
+        else
+            echo "Intent engine is not running"
+        fi
+        exit 0
+        ;;
+    start|"")
+        # Continue to main loop below
+        ;;
+    *)
+        echo "Usage: zoron_intent_engine [start|stop|status]"
+        exit 1
+        ;;
+esac
+
+# Check if already running
+if check_running; then
+    echo "Intent engine already running (PID $(cat "$PID_FILE" 2>/dev/null))"
+    exit 0
+fi
+
+# Write PID file
+echo $$ > "$PID_FILE"
+chmod 644 "$PID_FILE" 2>/dev/null
+log "Started (PID $$)"
+
+# ---------------------------------------------------------------------------
+# State constants
+# ---------------------------------------------------------------------------
+STATE_HYPER_ACTIVE=0
+STATE_INTERACTIVE=1
+STATE_LIGHT_IDLE=2
+STATE_DEEP_IDLE=3
+STATE_SLEEP_IDLE=4
+
+# State names for logging
+state_name() {
+    case "$1" in
+        0) echo "HYPER_ACTIVE" ;;
+        1) echo "INTERACTIVE" ;;
+        2) echo "LIGHT_IDLE" ;;
+        3) echo "DEEP_IDLE" ;;
+        4) echo "SLEEP_IDLE" ;;
+        *) echo "UNKNOWN" ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Detection functions
+# ---------------------------------------------------------------------------
+
+# Returns 1 if screen is ON, 0 if OFF
+get_screen_state() {
+    # Method 1: dumpsys display
+    local dstate
+    dstate=$(dumpsys display 2>/dev/null | grep 'mScreenState' | head -n 1)
+    if [ -n "$dstate" ]; then
+        case "$dstate" in
+            *ON*) echo 1; return ;;
+            *OFF*) echo 0; return ;;
+        esac
+    fi
+
+    # Method 2: dumpsys power
+    local pstate
+    pstate=$(dumpsys power 2>/dev/null | grep 'Display Power' | head -n 1)
+    if [ -n "$pstate" ]; then
+        case "$pstate" in
+            *ON*) echo 1; return ;;
+            *OFF*) echo 0; return ;;
+        esac
+    fi
+
+    # Method 3: backlight brightness
+    for bl in /sys/class/backlight/*/brightness; do
+        if [ -f "$bl" ]; then
+            local val
+            val=$(cat "$bl" 2>/dev/null)
+            if [ -n "$val" ] && [ "$val" -gt 0 ] 2>/dev/null; then
+                echo 1; return
+            else
+                echo 0; return
+            fi
+        fi
+    done
+
+    # Method 4: check LCD backlight
+    if [ -f /sys/class/leds/lcd-backlight/brightness ]; then
+        local val
+        val=$(cat /sys/class/leds/lcd-backlight/brightness 2>/dev/null)
+        if [ -n "$val" ] && [ "$val" -gt 0 ] 2>/dev/null; then
+            echo 1; return
+        else
+            echo 0; return
+        fi
+    fi
+
+    # Default: assume on
+    echo 1
+}
+
+# Get foreground app package name
+get_foreground_app() {
+    local fg
+    fg=$(dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -n 1 | sed 's/.*u0 \([^ /]*\).*/\1/' 2>/dev/null)
+    echo "$fg"
+}
+
+# Returns 1 if any touch input happened recently (within $1 seconds)
+# Uses /dev/input/event* file modification times as a proxy
+get_touch_recent() {
+    local threshold="$1"
+    local now
+    now=$(date +%s)
+    for ev in /dev/input/event*; do
+        [ -e "$ev" ] || continue
+        # Check if the event device was accessed recently
+        # Use stat to get mtime (Android toolbox may not support all stat flags)
+        local mtime
+        mtime=$(stat -c %Y "$ev" 2>/dev/null || stat -f %m "$ev" 2>/dev/null)
+        if [ -n "$mtime" ]; then
+            local diff=$((now - mtime))
+            if [ "$diff" -le "$threshold" ] 2>/dev/null; then
+                echo 1; return
+            fi
+        fi
+    done
+    echo 0
+}
+
+# Returns 1 if device is charging
+get_charging_state() {
+    local batt
+    batt=$(dumpsys battery 2>/dev/null)
+    if echo "$batt" | grep -q 'AC powered: true' 2>/dev/null; then
+        echo 1; return
+    fi
+    if echo "$batt" | grep -q 'USB powered: true' 2>/dev/null; then
+        echo 1; return
+    fi
+    if echo "$batt" | grep -q 'Wireless powered: true' 2>/dev/null; then
+        echo 1; return
+    fi
+    echo 0
+}
+
+# Check if a gaming/camera app is in foreground
+is_intensive_app() {
+    local pkg="$1"
+    case "$pkg" in
+        # Gaming
+        com.supercell.*|com.king.*|com.ea.*|com.gameloft.*) echo 1; return ;;
+        com.activision.*|com.tencent.*|com.garena.*) echo 1; return ;;
+        com.innersloth.*|com.dts.freefireth|com.mobile.legends) echo 1; return ;;
+        com.mojang.*|com.riotgames.*|com.miHoYo.*|com.HoYoverse.*) echo 1; return ;;
+        com.pubg.*|com.epicgames.*|com.netease.*) echo 1; return ;;
+        # Camera
+        com.android.camera*|com.google.android.GoogleCamera*) echo 1; return ;;
+        org.codeaurora.snapcam|com.sec.android.app.camera) echo 1; return ;;
+        com.instagram.android) echo 1; return ;; # often uses camera
+        # Benchmarks
+        com.antutu.*|com.futuremark.*|com.primatelabs.*) echo 1; return ;;
+    esac
+    echo 0
+}
+
+# ---------------------------------------------------------------------------
+# State adjustment functions — tweak within current mode bounds
+# ---------------------------------------------------------------------------
+
+adjust_hyper_active() {
+    log "  Adjusting for HYPER_ACTIVE state"
+    # Allow all cores online, enable touch boost if available
+    for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        [ -d "$cpu" ] || continue
+        sysfs_write "$cpu/online" 1
+    done
+    # Enable touch boost
+    sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 1
+    sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 15
+    sysfs_write "/sys/kernel/cpu_input_boost/enabled" 1
+    # Reduce I/O latency
+    for bdev in /sys/block/sd*/queue /sys/block/mmcblk*/queue; do
+        [ -d "$bdev" ] || continue
+        sysfs_write "$bdev/nr_requests" 256
+    done
+}
+
+adjust_interactive() {
+    log "  Adjusting for INTERACTIVE state"
+    # Normal configuration — keep as mode set it
+    sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 1
+    sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 5
+}
+
+adjust_light_idle() {
+    log "  Adjusting for LIGHT_IDLE state (reading/passive)"
+    # Reduce big core clocks slightly, keep cores online
+    sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
+    sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
+    # Reduce timer frequency for power saving
+    sysfs_write "/proc/sys/kernel/timer_migration" 1
+}
+
+adjust_deep_idle() {
+    log "  Adjusting for DEEP_IDLE state (screen off)"
+    local mode
+    mode=$(cat "$PROFILE_FILE" 2>/dev/null || echo "balanced")
+    # Disable touch boost
+    sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
+    sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
+    sysfs_write "/sys/kernel/cpu_input_boost/enabled" 0
+    # Park some big cores if mode allows
+    case "$mode" in
+        balanced|deep|hibernation|nightwatch)
+            # Offline half of big cores
+            local cpu_count=0
+            for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+                [ -d "$cpu" ] || continue
+                cpu_count=$((cpu_count + 1))
+            done
+            local park_from=$((cpu_count * 3 / 4))
+            local idx=0
+            for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+                [ -d "$cpu" ] || continue
+                if [ "$idx" -ge "$park_from" ]; then
+                    sysfs_write "$cpu/online" 0
+                fi
+                idx=$((idx + 1))
+            done
+            ;;
+    esac
+    # Batch network I/O
+    sysfs_write "/proc/sys/net/ipv4/tcp_slow_start_after_idle" 1
+}
+
+adjust_sleep_idle() {
+    log "  Adjusting for SLEEP_IDLE state (extended screen off)"
+    local mode
+    mode=$(cat "$PROFILE_FILE" 2>/dev/null || echo "balanced")
+    # Disable all boost
+    sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
+    sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
+    sysfs_write "/sys/kernel/cpu_input_boost/enabled" 0
+    # Maximum core parking
+    local cpu_count=0
+    for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        [ -d "$cpu" ] || continue
+        cpu_count=$((cpu_count + 1))
+    done
+    # Keep only first 2 cores (or 1 for nightwatch)
+    local keep=2
+    case "$mode" in
+        nightwatch) keep=1 ;;
+        hibernation) keep=1 ;;
+        deep) keep=2 ;;
+    esac
+    local idx=0
+    for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        [ -d "$cpu" ] || continue
+        if [ "$idx" -ge "$keep" ]; then
+            sysfs_write "$cpu/online" 0
+        fi
+        idx=$((idx + 1))
+    done
+    # Freeze maintenance windows
+    sysfs_write "/proc/sys/net/ipv4/tcp_slow_start_after_idle" 1
+    log "  Parked cores, keeping $keep online"
+}
+
+# ===========================================================================
+# MAIN LOOP — Intent prediction engine
+# ===========================================================================
+CURRENT_STATE=$STATE_INTERACTIVE
+LAST_TOUCH_TIME=$(date +%s)
+SCREEN_OFF_TIME=0
+LAST_STATE_CHANGE=$(date +%s)
+CHECK_INTERVAL=5
+
+log "Main loop starting (interval=${CHECK_INTERVAL}s)"
+
+while true; do
+    NOW=$(date +%s)
+
+    # Read current screen state
+    SCREEN_ON=$(get_screen_state)
+
+    # Check for recent touch (within 30s)
+    TOUCH_RECENT=$(get_touch_recent 30)
+    TOUCH_60=$(get_touch_recent 60)
+
+    # Get foreground app
+    FG_APP=$(get_foreground_app)
+
+    # Get charging state
+    CHARGING=$(get_charging_state)
+
+    # -----------------------------------------------------------------------
+    # Determine target state
+    # -----------------------------------------------------------------------
+    TARGET_STATE=$STATE_INTERACTIVE  # default
+
+    if [ "$SCREEN_ON" -eq 1 ]; then
+        SCREEN_OFF_TIME=0
+        # Check for intensive app
+        INTENSIVE=$(is_intensive_app "$FG_APP")
+        if [ "$INTENSIVE" -eq 1 ] || [ "$TOUCH_RECENT" -eq 1 ]; then
+            # Rapid touch or gaming/camera => HYPER_ACTIVE
+            if [ "$INTENSIVE" -eq 1 ]; then
+                TARGET_STATE=$STATE_HYPER_ACTIVE
+            else
+                TARGET_STATE=$STATE_INTERACTIVE
+            fi
+            LAST_TOUCH_TIME=$NOW
+        elif [ "$TOUCH_60" -eq 0 ]; then
+            # No touch for 60s+ => reading/passive usage
+            TARGET_STATE=$STATE_LIGHT_IDLE
+        else
+            TARGET_STATE=$STATE_INTERACTIVE
+        fi
+    else
+        # Screen off
+        if [ "$SCREEN_OFF_TIME" -eq 0 ]; then
+            SCREEN_OFF_TIME=$NOW
+        fi
+        local off_duration=$((NOW - SCREEN_OFF_TIME))
+
+        if [ "$off_duration" -ge 1800 ] && [ "$CHARGING" -eq 0 ]; then
+            # Screen off for 30+ min and not charging
+            TARGET_STATE=$STATE_SLEEP_IDLE
+        else
+            TARGET_STATE=$STATE_DEEP_IDLE
+        fi
+    fi
+
+    # -----------------------------------------------------------------------
+    # Apply state transition if changed
+    # -----------------------------------------------------------------------
+    if [ "$TARGET_STATE" -ne "$CURRENT_STATE" ]; then
+        local old_name
+        old_name=$(state_name "$CURRENT_STATE")
+        local new_name
+        new_name=$(state_name "$TARGET_STATE")
+        log "State transition: $old_name -> $new_name (screen=$SCREEN_ON touch_30s=$TOUCH_RECENT fg=$FG_APP)"
+
+        CURRENT_STATE=$TARGET_STATE
+        LAST_STATE_CHANGE=$NOW
+
+        # Apply adjustments for new state
+        case "$CURRENT_STATE" in
+            $STATE_HYPER_ACTIVE)  adjust_hyper_active ;;
+            $STATE_INTERACTIVE)   adjust_interactive ;;
+            $STATE_LIGHT_IDLE)    adjust_light_idle ;;
+            $STATE_DEEP_IDLE)     adjust_deep_idle ;;
+            $STATE_SLEEP_IDLE)    adjust_sleep_idle ;;
+        esac
+
+        # Write state file
+        echo "$(state_name "$CURRENT_STATE") $NOW" > "$STATE_FILE"
+        chmod 644 "$STATE_FILE" 2>/dev/null
+    fi
+
+    # -----------------------------------------------------------------------
+    # Adaptive sleep — check less frequently when idle
+    # -----------------------------------------------------------------------
+    case "$CURRENT_STATE" in
+        $STATE_HYPER_ACTIVE)  CHECK_INTERVAL=3 ;;
+        $STATE_INTERACTIVE)   CHECK_INTERVAL=5 ;;
+        $STATE_LIGHT_IDLE)    CHECK_INTERVAL=15 ;;
+        $STATE_DEEP_IDLE)     CHECK_INTERVAL=30 ;;
+        $STATE_SLEEP_IDLE)    CHECK_INTERVAL=60 ;;
+    esac
+
+    sleep "$CHECK_INTERVAL"
+done

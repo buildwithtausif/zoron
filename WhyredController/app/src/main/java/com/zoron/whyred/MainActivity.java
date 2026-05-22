@@ -3,36 +3,56 @@ package com.zoron.whyred;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.topjohnwu.superuser.Shell;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView tvLogs, tvCurrentProfile, tvCpuInfo;
+    private TextView tvLogs, tvCurrentProfile, tvCpuInfo, tvPowerState, tvProcessReport;
+    private View powerStateDot;
     private LineChart batteryChart;
+    private LinearLayout legacyContainer;
+    private TextView tvLegacyToggle;
+    private boolean legacyExpanded = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable updateRunnable;
+
+    // Cached data for export
+    private String lastCsvData = "";
+    private String lastLogData = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,29 +62,54 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.topAppBar);
         setSupportActionBar(toolbar);
 
+        // Core views
         tvLogs = findViewById(R.id.tvLogs);
         tvCurrentProfile = findViewById(R.id.tvCurrentProfile);
         tvCpuInfo = findViewById(R.id.tvCpuInfo);
+        tvPowerState = findViewById(R.id.tvPowerState);
+        tvProcessReport = findViewById(R.id.tvProcessReport);
+        powerStateDot = findViewById(R.id.powerStateDot);
         batteryChart = findViewById(R.id.batteryChart);
+
+        // Legacy section toggle
+        legacyContainer = findViewById(R.id.legacyContainer);
+        tvLegacyToggle = findViewById(R.id.tvLegacyToggle);
+        findViewById(R.id.legacyHeader).setOnClickListener(v -> toggleLegacy());
 
         setupChart();
 
-        findViewById(R.id.cardNone).setOnClickListener(v -> applyProfile("none"));
-        findViewById(R.id.cardBattery).setOnClickListener(v -> applyProfile("battery"));
-        findViewById(R.id.cardBalanced).setOnClickListener(v -> applyProfile("balanced"));
-        findViewById(R.id.cardPerformance).setOnClickListener(v -> applyProfile("performance"));
+        // ZORON-X Mode Cards
+        findViewById(R.id.cardZoronBalanced).setOnClickListener(v -> applyZoronMode("balanced"));
+        findViewById(R.id.cardZoronDeep).setOnClickListener(v -> applyZoronMode("deep"));
+        findViewById(R.id.cardZoronHibernation).setOnClickListener(v -> applyZoronMode("hibernation"));
+        findViewById(R.id.cardZoronBurst).setOnClickListener(v -> applyZoronMode("burst"));
+        findViewById(R.id.cardZoronNightwatch).setOnClickListener(v -> applyZoronMode("nightwatch"));
+
+        // Legacy Profile Cards
+        findViewById(R.id.cardNone).setOnClickListener(v -> applyLegacyProfile("none"));
+        findViewById(R.id.cardBattery).setOnClickListener(v -> applyLegacyProfile("battery"));
+        findViewById(R.id.cardBalanced).setOnClickListener(v -> applyLegacyProfile("balanced"));
+        findViewById(R.id.cardPerformance).setOnClickListener(v -> applyLegacyProfile("performance"));
+
+        // Export buttons
+        findViewById(R.id.btnExportCsv).setOnClickListener(v -> exportCsv());
+        findViewById(R.id.btnExportLogs).setOnClickListener(v -> exportLogs());
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
 
+        // Start dashboard auto-refresh
         updateRunnable = new Runnable() {
             @Override
             public void run() {
                 refreshDashboard();
-                handler.postDelayed(this, 10000); // 10 seconds refresh
+                handler.postDelayed(this, 10000);
             }
         };
         handler.post(updateRunnable);
+
+        // Start pulse animation on power state dot
+        startPulseAnimation();
     }
 
     @Override
@@ -88,29 +133,71 @@ public class MainActivity extends AppCompatActivity {
         handler.removeCallbacks(updateRunnable);
     }
 
+    // ==================== CHART SETUP (Material Expressive) ====================
+
     private void setupChart() {
         batteryChart.getDescription().setEnabled(false);
         batteryChart.setTouchEnabled(true);
         batteryChart.setDragEnabled(true);
         batteryChart.setScaleEnabled(true);
         batteryChart.setPinchZoom(true);
-        batteryChart.setBackgroundColor(Color.parseColor("#1E1E1E"));
+        batteryChart.setDrawGridBackground(false);
+        batteryChart.setBackgroundColor(Color.TRANSPARENT);
+        batteryChart.setExtraOffsets(8, 8, 8, 12);
 
+        // Material Expressive X-Axis
         XAxis xAxis = batteryChart.getXAxis();
-        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextColor(Color.parseColor("#B0B0B0"));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setTextSize(10f);
+        xAxis.setGranularity(1f);
+        xAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int mins = (int) value;
+                if (mins < 60) return mins + "m";
+                return (mins / 60) + "h" + (mins % 60 > 0 ? (mins % 60) + "m" : "");
+            }
+        });
 
+        // Material Expressive Y-Axis
         YAxis leftAxis = batteryChart.getAxisLeft();
-        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setTextColor(Color.parseColor("#B0B0B0"));
         leftAxis.setAxisMaximum(100f);
         leftAxis.setAxisMinimum(0f);
         leftAxis.setDrawGridLines(true);
-        leftAxis.setGridColor(Color.parseColor("#333333"));
+        leftAxis.setGridColor(Color.parseColor("#1A1A1A"));
+        leftAxis.setGridLineWidth(0.5f);
+        leftAxis.enableGridDashedLine(8f, 4f, 0f);
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setTextSize(10f);
+        leftAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return (int) value + "%";
+            }
+        });
 
         batteryChart.getAxisRight().setEnabled(false);
-        batteryChart.getLegend().setTextColor(Color.WHITE);
+
+        // Material Expressive Legend
+        Legend legend = batteryChart.getLegend();
+        legend.setTextColor(Color.parseColor("#D0D0D0"));
+        legend.setTextSize(11f);
+        legend.setForm(Legend.LegendForm.CIRCLE);
+        legend.setFormSize(8f);
+        legend.setXEntrySpace(16f);
+        legend.setYOffset(8f);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+
+        // Smooth animations
+        batteryChart.animateX(800);
     }
+
+    // ==================== DASHBOARD REFRESH ====================
 
     private void refreshDashboard() {
         new Thread(() -> {
@@ -121,12 +208,16 @@ public class MainActivity extends AppCompatActivity {
                     "echo '---SEP---'",
                     "cat /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
                     "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''"
+                    "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''",
+                    "echo '---SEP---'",
+                    "cat /data/local/tmp/zoron/power_state.txt 2>/dev/null || echo 'UNKNOWN'",
+                    "echo '---SEP---'",
+                    "cat /data/local/tmp/zoron/process_report.txt 2>/dev/null || echo 'No process data yet.'"
             ).exec();
 
             if (!result.isSuccess()) {
                 runOnUiThread(() -> {
-                    tvCurrentProfile.setText("Current Profile: ERROR (Magisk Access Denied)");
+                    tvCurrentProfile.setText("Mode: ERROR (Magisk Access Denied)");
                     tvLogs.setText("Error reading data. Make sure module is flashed and active.");
                 });
                 return;
@@ -139,41 +230,102 @@ public class MainActivity extends AppCompatActivity {
             String outputStr = out.toString();
 
             String[] parts = outputStr.split("---SEP---\n");
-            if (parts.length < 4) return;
+            if (parts.length < 6) return;
 
             String profile = parts[0].trim();
             String gov = parts[1].trim();
             String logs = parts[2].trim();
             String csvData = parts[3].trim();
+            String powerState = parts[4].trim();
+            String processReport = parts[5].trim();
+
+            // Cache for export
+            lastCsvData = csvData;
+            lastLogData = logs;
 
             runOnUiThread(() -> {
-                tvCurrentProfile.setText("Current Profile: " + (profile.isEmpty() ? "Unknown" : profile.toUpperCase()));
+                // Update profile display
+                String displayProfile = profile.isEmpty() ? "Unknown" : profile.toUpperCase();
+                tvCurrentProfile.setText("Mode: " + displayProfile);
                 tvCpuInfo.setText("CPU Governor: " + (gov.isEmpty() ? "Unknown" : gov));
+
+                // Update power state with color
+                updatePowerState(powerState);
+
+                // Update logs
                 tvLogs.setText(logs);
+
+                // Update process report
+                tvProcessReport.setText(processReport);
+
+                // Update chart
                 plotChart(csvData);
             });
         }).start();
     }
+
+    // ==================== POWER STATE DISPLAY ====================
+
+    private void updatePowerState(String state) {
+        String displayState;
+        int dotColor;
+
+        if (state.startsWith("HYPER_ACTIVE")) {
+            displayState = "⚡ HYPER ACTIVE";
+            dotColor = Color.parseColor("#FF4444");
+        } else if (state.startsWith("INTERACTIVE")) {
+            displayState = "✋ INTERACTIVE";
+            dotColor = Color.parseColor("#00FF7F");
+        } else if (state.startsWith("LIGHT_IDLE")) {
+            displayState = "💤 LIGHT IDLE";
+            dotColor = Color.parseColor("#FFD700");
+        } else if (state.startsWith("DEEP_IDLE")) {
+            displayState = "🔒 DEEP IDLE";
+            dotColor = Color.parseColor("#2196F3");
+        } else if (state.startsWith("SLEEP_IDLE")) {
+            displayState = "🌙 SLEEP IDLE";
+            dotColor = Color.parseColor("#7B68EE");
+        } else {
+            displayState = "📡 DETECTING...";
+            dotColor = Color.parseColor("#808080");
+        }
+
+        tvPowerState.setText(displayState);
+
+        // Update dot color
+        GradientDrawable dot = (GradientDrawable) powerStateDot.getBackground();
+        dot.setColor(dotColor);
+    }
+
+    private void startPulseAnimation() {
+        AlphaAnimation pulse = new AlphaAnimation(1.0f, 0.3f);
+        pulse.setDuration(1000);
+        pulse.setRepeatMode(Animation.REVERSE);
+        pulse.setRepeatCount(Animation.INFINITE);
+        powerStateDot.startAnimation(pulse);
+    }
+
+    // ==================== CHART PLOTTING (Material Expressive) ====================
 
     private void plotChart(String csvData) {
         if (csvData == null || csvData.isEmpty()) return;
 
         Map<String, List<Entry>> profileData = new HashMap<>();
         String[] lines = csvData.split("\n");
-        
+
         long firstTimestamp = -1;
 
         for (String line : lines) {
             String[] tokens = line.trim().split(",");
-            if (tokens.length == 3) {
+            if (tokens.length >= 3) {
                 try {
                     long ts = Long.parseLong(tokens[0]);
                     float level = Float.parseFloat(tokens[1]);
                     String profile = tokens[2];
 
                     if (firstTimestamp == -1) firstTimestamp = ts;
-                    
-                    float xValue = (ts - firstTimestamp) / 60f; // Minutes elapsed
+
+                    float xValue = (ts - firstTimestamp) / 60f;
 
                     if (!profileData.containsKey(profile)) {
                         profileData.put(profile, new ArrayList<>());
@@ -184,23 +336,127 @@ public class MainActivity extends AppCompatActivity {
         }
 
         LineData lineData = new LineData();
-        int[] colors = {Color.parseColor("#00FF7F"), Color.parseColor("#2196F3"), Color.parseColor("#F44336"), Color.parseColor("#607D8B")};
+
+        // Material Expressive color palette — vibrant, harmonious, modern
+        int[][] colorPalettes = {
+            {Color.parseColor("#00E676"), Color.parseColor("#1B5E20")}, // Green gradient
+            {Color.parseColor("#448AFF"), Color.parseColor("#1A237E")}, // Blue gradient
+            {Color.parseColor("#FF5252"), Color.parseColor("#B71C1C")}, // Red gradient
+            {Color.parseColor("#FFD740"), Color.parseColor("#F57F17")}, // Amber gradient
+            {Color.parseColor("#E040FB"), Color.parseColor("#7B1FA2")}, // Purple gradient
+            {Color.parseColor("#18FFFF"), Color.parseColor("#006064")}, // Cyan gradient
+        };
         int colorIdx = 0;
 
         for (Map.Entry<String, List<Entry>> entry : profileData.entrySet()) {
             LineDataSet set = new LineDataSet(entry.getValue(), entry.getKey().toUpperCase());
-            set.setColor(colors[colorIdx % colors.length]);
-            set.setCircleColor(colors[colorIdx % colors.length]);
-            set.setLineWidth(2f);
-            set.setCircleRadius(3f);
+
+            int mainColor = colorPalettes[colorIdx % colorPalettes.length][0];
+            int fillColor = colorPalettes[colorIdx % colorPalettes.length][1];
+
+            // Material Expressive line styling
+            set.setColor(mainColor);
+            set.setLineWidth(2.5f);
+            set.setDrawCircles(false);
             set.setDrawValues(false);
+            set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            set.setCubicIntensity(0.15f);
+
+            // Gradient fill under the curve
+            set.setDrawFilled(true);
+            set.setFillColor(fillColor);
+            set.setFillAlpha(40);
+
+            // Highlight styling
+            set.setHighLightColor(mainColor);
+            set.setHighlightLineWidth(1f);
+            set.setDrawHorizontalHighlightIndicator(false);
+
             lineData.addDataSet(set);
             colorIdx++;
         }
 
         batteryChart.setData(lineData);
+        batteryChart.animateX(600);
         batteryChart.invalidate();
     }
+
+    // ==================== LEGACY SECTION TOGGLE ====================
+
+    private void toggleLegacy() {
+        legacyExpanded = !legacyExpanded;
+        legacyContainer.setVisibility(legacyExpanded ? View.VISIBLE : View.GONE);
+        tvLegacyToggle.setText(legacyExpanded ? "▼" : "▶");
+    }
+
+    // ==================== EXPORT FUNCTIONS ====================
+
+    private void exportCsv() {
+        new Thread(() -> {
+            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/battery.csv 2>/dev/null").exec();
+            if (!result.isSuccess() || result.getOut().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "No CSV data to export", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            StringBuilder csvContent = new StringBuilder();
+            csvContent.append("Timestamp,Battery Level,Profile,Power State,CPU Freq,Temperature\n");
+            for (String line : result.getOut()) {
+                csvContent.append(line).append("\n");
+            }
+
+            try {
+                File exportFile = new File(getExternalCacheDir(), "zoron_battery_export.csv");
+                FileWriter writer = new FileWriter(exportFile);
+                writer.write(csvContent.toString());
+                writer.close();
+
+                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/csv");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Battery Analytics Export");
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Battery Data")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    private void exportLogs() {
+        new Thread(() -> {
+            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/log.txt 2>/dev/null").exec();
+            if (!result.isSuccess() || result.getOut().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "No logs to export", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            StringBuilder logContent = new StringBuilder();
+            for (String line : result.getOut()) {
+                logContent.append(line).append("\n");
+            }
+
+            try {
+                File exportFile = new File(getExternalCacheDir(), "zoron_diagnostics.txt");
+                FileWriter writer = new FileWriter(exportFile);
+                writer.write(logContent.toString());
+                writer.close();
+
+                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Diagnostics Export");
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Diagnostics")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    // ==================== ERROR DIALOG ====================
 
     private void showErrorDialog(String errorMsg) {
         new AlertDialog.Builder(this)
@@ -218,15 +474,54 @@ public class MainActivity extends AppCompatActivity {
             .show();
     }
 
-    private void applyProfile(String profile) {
+    // ==================== ZORON-X MODE APPLICATION ====================
+
+    private void applyZoronMode(String mode) {
         new Thread(() -> {
-            // Search paths in priority order:
-            // 1. /data/local/tmp/zoron/whyred_opt — service.sh copies & CRLF-strips here on boot
-            // 2. /system/bin/whyred_opt — Magisk magic mount (if zip paths are correct)
-            // 3. /data/adb/modules/.../system/bin/whyred_opt — physical module path
             String scriptCmd = String.join("; ",
                 "SCRIPT_PATH=\"\"",
-                "for p in /data/local/tmp/zoron/whyred_opt /system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
+                "for p in /data/local/tmp/zoron/zoron_engine /system/bin/zoron_engine /data/adb/modules/zoron_x_optimizer/system/bin/zoron_engine; do " +
+                    "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
+                "if [ -z \"$SCRIPT_PATH\" ]; then " +
+                    "echo 'ERROR: zoron_engine not found.'; " +
+                    "echo ''; " +
+                    "echo 'ZORON-X engine is not installed.'; " +
+                    "echo 'Please flash the latest Zoron module ZIP (v3.5.0+) and reboot.'; " +
+                    "echo ''; " +
+                    "echo '--- Module directory listing ---'; " +
+                    "ls -la /data/adb/modules/zoron_x_optimizer/ 2>&1; " +
+                    "echo ''; " +
+                    "echo '--- /data/local/tmp/zoron/ listing ---'; " +
+                    "ls -la /data/local/tmp/zoron/ 2>&1; " +
+                    "exit 1; fi",
+                "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + mode
+            );
+            Shell.Result result = Shell.cmd(scriptCmd).exec();
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (result.isSuccess()) {
+                    Toast.makeText(MainActivity.this, "ZORON-X " + mode.toUpperCase() + " activated!", Toast.LENGTH_SHORT).show();
+                    refreshDashboard();
+                } else {
+                    StringBuilder err = new StringBuilder("Error applying ZORON-X " + mode + " mode:\n");
+                    err.append("Exit Code: ").append(result.getCode()).append("\n\n");
+                    err.append("--- stdout ---\n");
+                    for (String e : result.getOut()) err.append(e).append("\n");
+                    err.append("\n--- stderr ---\n");
+                    for (String e : result.getErr()) err.append(e).append("\n");
+                    showErrorDialog(err.toString());
+                }
+            });
+        }).start();
+    }
+
+    // ==================== LEGACY PROFILE APPLICATION ====================
+
+    private void applyLegacyProfile(String profile) {
+        new Thread(() -> {
+            // Search paths in priority order
+            String scriptCmd = String.join("; ",
+                "SCRIPT_PATH=\"\"",
+                "for p in /data/local/tmp/zoron/whyred_opt /system/bin/whyred_opt /data/adb/modules/zoron_x_optimizer/system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
                     "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
                 "if [ -z \"$SCRIPT_PATH\" ]; then " +
                     "echo 'ERROR: whyred_opt not found.'; " +
@@ -234,15 +529,10 @@ public class MainActivity extends AppCompatActivity {
                     "echo 'Searched paths:'; " +
                     "echo '  /data/local/tmp/zoron/whyred_opt'; " +
                     "echo '  /system/bin/whyred_opt'; " +
+                    "echo '  /data/adb/modules/zoron_x_optimizer/system/bin/whyred_opt'; " +
                     "echo '  /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt'; " +
                     "echo ''; " +
-                    "echo '--- Module directory listing ---'; " +
-                    "ls -la /data/adb/modules/whyred_battery_optimizer/ 2>&1; " +
-                    "echo ''; " +
-                    "echo '--- /data/local/tmp/zoron/ listing ---'; " +
-                    "ls -la /data/local/tmp/zoron/ 2>&1; " +
-                    "echo ''; " +
-                    "echo 'Please reflash the Zoron module ZIP (not just the APK) and reboot.'; " +
+                    "echo 'Please reflash the Zoron module ZIP and reboot.'; " +
                     "exit 1; fi",
                 "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + profile
             );

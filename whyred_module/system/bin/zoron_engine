@@ -1,0 +1,1019 @@
+#!/system/bin/sh
+# ============================================================================
+# ZORON-X Engine — Main Optimization Controller
+# Applies system-wide power/performance profiles to any Android device.
+# Usage: zoron_engine <balanced|deep|hibernation|burst|nightwatch|status>
+# ============================================================================
+
+MODE="$1"
+LOG_DIR="/data/local/tmp/zoron"
+LOG_FILE="$LOG_DIR/log.txt"
+PROFILE_FILE="$LOG_DIR/profile.txt"
+
+mkdir -p "$LOG_DIR"
+chmod 777 "$LOG_DIR"
+touch "$LOG_FILE"
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+log() {
+    echo "[$(date)] [zoron_engine] $1" >> "$LOG_FILE"
+}
+
+log_section() {
+    log "--- $1 ---"
+}
+
+# ---------------------------------------------------------------------------
+# sysfs helpers — safe write with existence check
+# ---------------------------------------------------------------------------
+sysfs_write() {
+    # Usage: sysfs_write <path> <value>
+    if [ -e "$1" ]; then
+        echo "$2" > "$1" 2>/dev/null
+        if [ $? -eq 0 ]; then
+            log "  SET $1 = $2"
+        else
+            log "  FAIL $1 = $2"
+        fi
+    fi
+}
+
+proc_write() {
+    # Same as sysfs_write but for /proc paths
+    if [ -e "$1" ]; then
+        echo "$2" > "$1" 2>/dev/null
+        log "  SET $1 = $2"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Device detection
+# ---------------------------------------------------------------------------
+IS_WHYRED=0
+DEVICE_NAME="generic"
+NUM_CPUS=0
+LITTLE_POLICY=""
+BIG_POLICY=""
+PRIME_POLICY=""
+
+detect_device() {
+    local dev
+    dev=$(getprop ro.product.device 2>/dev/null)
+    local hw
+    hw=$(getprop ro.hardware 2>/dev/null)
+
+    case "$dev" in
+        whyred|tulip) IS_WHYRED=1 ;;
+    esac
+    case "$hw" in
+        qcom) : ;; # Qualcomm but not necessarily whyred
+    esac
+
+    if [ "$IS_WHYRED" -eq 1 ]; then
+        DEVICE_NAME="$dev"
+        LITTLE_POLICY="/sys/devices/system/cpu/cpu0/cpufreq"
+        BIG_POLICY="/sys/devices/system/cpu/cpu4/cpufreq"
+    else
+        DEVICE_NAME="${dev:-$hw}"
+        DEVICE_NAME="${DEVICE_NAME:-generic}"
+        # Auto-detect CPU cluster policies
+        LITTLE_POLICY=""
+        BIG_POLICY=""
+        PRIME_POLICY=""
+        local count=0
+        for p in /sys/devices/system/cpu/cpufreq/policy*; do
+            if [ -d "$p" ]; then
+                count=$((count + 1))
+                case $count in
+                    1) LITTLE_POLICY="$p" ;;
+                    2) BIG_POLICY="$p" ;;
+                    3) PRIME_POLICY="$p" ;;
+                esac
+            fi
+        done
+        # Fallback: if no policy dirs, use cpu0
+        if [ -z "$LITTLE_POLICY" ] && [ -d /sys/devices/system/cpu/cpu0/cpufreq ]; then
+            LITTLE_POLICY="/sys/devices/system/cpu/cpu0/cpufreq"
+        fi
+    fi
+
+    # Count online CPUs
+    NUM_CPUS=0
+    for c in /sys/devices/system/cpu/cpu[0-9]*; do
+        if [ -d "$c" ]; then
+            NUM_CPUS=$((NUM_CPUS + 1))
+        fi
+    done
+
+    log "Device: $DEVICE_NAME | IS_WHYRED=$IS_WHYRED | CPUs=$NUM_CPUS"
+    log "Policies: little=$LITTLE_POLICY big=$BIG_POLICY prime=$PRIME_POLICY"
+}
+
+# ---------------------------------------------------------------------------
+# Frequency helpers
+# ---------------------------------------------------------------------------
+get_available_freqs() {
+    # Usage: get_available_freqs <policy_path>
+    # Prints space-separated sorted frequencies
+    local path="$1/scaling_available_frequencies"
+    if [ -f "$path" ]; then
+        cat "$path" 2>/dev/null | tr ' ' '\n' | sort -n | tr '\n' ' '
+    fi
+}
+
+get_max_freq() {
+    # Usage: get_max_freq <policy_path>
+    local path="$1/cpuinfo_max_freq"
+    if [ -f "$path" ]; then
+        cat "$path" 2>/dev/null
+    else
+        get_available_freqs "$1" | tr ' ' '\n' | tail -n 1
+    fi
+}
+
+get_min_freq() {
+    # Usage: get_min_freq <policy_path>
+    local path="$1/cpuinfo_min_freq"
+    if [ -f "$path" ]; then
+        cat "$path" 2>/dev/null
+    else
+        get_available_freqs "$1" | tr ' ' '\n' | head -n 1
+    fi
+}
+
+calc_freq_percent() {
+    # Usage: calc_freq_percent <policy_path> <percent>
+    # Returns the available frequency closest to <percent>% of max.
+    # Uses integer arithmetic only.
+    local policy="$1"
+    local pct="$2"
+    local max_f
+    max_f=$(get_max_freq "$policy")
+    if [ -z "$max_f" ] || [ "$max_f" -eq 0 ] 2>/dev/null; then
+        return
+    fi
+
+    local target=$(( max_f * pct / 100 ))
+    local avail
+    avail=$(get_available_freqs "$policy")
+
+    if [ -z "$avail" ]; then
+        # No table available; return raw calculated value
+        echo "$target"
+        return
+    fi
+
+    # Find the closest available frequency >= target (round up)
+    local best=""
+    local best_diff=999999999
+    for f in $avail; do
+        [ -z "$f" ] && continue
+        local diff
+        if [ "$f" -ge "$target" ]; then
+            diff=$((f - target))
+        else
+            diff=$((target - f))
+        fi
+        if [ -z "$best" ] || [ "$diff" -lt "$best_diff" ]; then
+            best="$f"
+            best_diff="$diff"
+        fi
+    done
+    echo "$best"
+}
+
+# ---------------------------------------------------------------------------
+# Governor helper — pick the best available governor
+# ---------------------------------------------------------------------------
+set_governor() {
+    # Usage: set_governor <policy_path> <preferred> [fallback1] [fallback2]
+    local policy="$1"
+    shift
+    local avail_path="$policy/scaling_available_governors"
+    local avail=""
+    if [ -f "$avail_path" ]; then
+        avail=$(cat "$avail_path" 2>/dev/null)
+    fi
+
+    for gov in "$@"; do
+        if echo "$avail" | grep -qw "$gov" 2>/dev/null; then
+            sysfs_write "$policy/scaling_governor" "$gov"
+            return 0
+        fi
+    done
+    # Last resort: try writing the first preference anyway
+    sysfs_write "$policy/scaling_governor" "$1"
+}
+
+# ---------------------------------------------------------------------------
+# CPU frequency configuration
+# ---------------------------------------------------------------------------
+apply_cpu() {
+    # Usage: apply_cpu <little_min%> <little_max%> <big_min%> <big_max%> <governor_pref> <offline_big>
+    local l_min_pct="$1"
+    local l_max_pct="$2"
+    local b_min_pct="$3"
+    local b_max_pct="$4"
+    local gov="$5"
+    local offline_big="$6"
+
+    log_section "CPU Configuration"
+
+    if [ "$IS_WHYRED" -eq 1 ]; then
+        # ---- Whyred / Tulip hardcoded optimal frequencies ----
+        local l_freqs="633600 902400 1113600 1401600 1536000 1612800 1804800"
+        local b_freqs="1113600 1401600 1536000 1612800 1804800 2016000 2208000"
+        local l_max=1804800
+        local b_max=2208000
+        local l_min=633600
+        local b_min=1113600
+
+        # Calculate target little core freqs
+        local l_min_f
+        local l_max_f
+        if [ "$l_min_pct" -eq 0 ]; then
+            l_min_f=$l_min
+        else
+            l_min_f=$(( l_max * l_min_pct / 100 ))
+            l_min_f=$(closest_freq "$l_min_f" "$l_freqs")
+        fi
+        l_max_f=$(( l_max * l_max_pct / 100 ))
+        l_max_f=$(closest_freq "$l_max_f" "$l_freqs")
+
+        # Calculate target big core freqs
+        local b_min_f
+        local b_max_f
+        if [ "$b_min_pct" -eq 0 ]; then
+            b_min_f=$b_min
+        else
+            b_min_f=$(( b_max * b_min_pct / 100 ))
+            b_min_f=$(closest_freq "$b_min_f" "$b_freqs")
+        fi
+        b_max_f=$(( b_max * b_max_pct / 100 ))
+        b_max_f=$(closest_freq "$b_max_f" "$b_freqs")
+
+        # Online big cores first (in case they were offlined)
+        if [ "$offline_big" != "1" ]; then
+            for cpu in 4 5 6 7; do
+                sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 1
+            done
+        fi
+
+        # Set min first, then max (order matters to avoid min > max errors)
+        sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq" "$l_min_f"
+        sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" "$l_max_f"
+        set_governor "/sys/devices/system/cpu/cpu0/cpufreq" "$gov" schedutil interactive ondemand
+
+        if [ "$offline_big" = "1" ]; then
+            log "  Offlining big cores (cpu4-7)"
+            for cpu in 4 5 6 7; do
+                sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 0
+            done
+        else
+            sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq" "$b_min_f"
+            sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq" "$b_max_f"
+            set_governor "/sys/devices/system/cpu/cpu4/cpufreq" "$gov" schedutil interactive ondemand
+        fi
+
+        log "  Little: min=$l_min_f max=$l_max_f | Big: min=$b_min_f max=$b_max_f offline=$offline_big"
+    else
+        # ---- Generic device — dynamic detection ----
+        # Little cluster
+        if [ -n "$LITTLE_POLICY" ] && [ -d "$LITTLE_POLICY" ]; then
+            local l_min_f
+            local l_max_f
+            if [ "$l_min_pct" -eq 0 ]; then
+                l_min_f=$(get_min_freq "$LITTLE_POLICY")
+            else
+                l_min_f=$(calc_freq_percent "$LITTLE_POLICY" "$l_min_pct")
+            fi
+            l_max_f=$(calc_freq_percent "$LITTLE_POLICY" "$l_max_pct")
+            [ -n "$l_min_f" ] && sysfs_write "$LITTLE_POLICY/scaling_min_freq" "$l_min_f"
+            [ -n "$l_max_f" ] && sysfs_write "$LITTLE_POLICY/scaling_max_freq" "$l_max_f"
+            set_governor "$LITTLE_POLICY" "$gov" schedutil interactive ondemand
+            log "  Little($LITTLE_POLICY): min=$l_min_f max=$l_max_f"
+        fi
+
+        # Big cluster
+        if [ -n "$BIG_POLICY" ] && [ -d "$BIG_POLICY" ]; then
+            if [ "$offline_big" = "1" ]; then
+                # Try to offline big cores
+                local related
+                related=$(cat "$BIG_POLICY/related_cpus" 2>/dev/null)
+                if [ -n "$related" ]; then
+                    for cpu in $related; do
+                        sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 0
+                    done
+                    log "  Big cores offlined: $related"
+                fi
+            else
+                # Online big cores first
+                local related
+                related=$(cat "$BIG_POLICY/related_cpus" 2>/dev/null)
+                if [ -n "$related" ]; then
+                    for cpu in $related; do
+                        sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 1
+                    done
+                fi
+                local b_min_f
+                local b_max_f
+                if [ "$b_min_pct" -eq 0 ]; then
+                    b_min_f=$(get_min_freq "$BIG_POLICY")
+                else
+                    b_min_f=$(calc_freq_percent "$BIG_POLICY" "$b_min_pct")
+                fi
+                b_max_f=$(calc_freq_percent "$BIG_POLICY" "$b_max_pct")
+                [ -n "$b_min_f" ] && sysfs_write "$BIG_POLICY/scaling_min_freq" "$b_min_f"
+                [ -n "$b_max_f" ] && sysfs_write "$BIG_POLICY/scaling_max_freq" "$b_max_f"
+                set_governor "$BIG_POLICY" "$gov" schedutil interactive ondemand
+                log "  Big($BIG_POLICY): min=$b_min_f max=$b_max_f"
+            fi
+        fi
+
+        # Prime cluster (if exists)
+        if [ -n "$PRIME_POLICY" ] && [ -d "$PRIME_POLICY" ]; then
+            if [ "$offline_big" = "1" ]; then
+                local related
+                related=$(cat "$PRIME_POLICY/related_cpus" 2>/dev/null)
+                if [ -n "$related" ]; then
+                    for cpu in $related; do
+                        sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 0
+                    done
+                    log "  Prime cores offlined: $related"
+                fi
+            else
+                local related
+                related=$(cat "$PRIME_POLICY/related_cpus" 2>/dev/null)
+                if [ -n "$related" ]; then
+                    for cpu in $related; do
+                        sysfs_write "/sys/devices/system/cpu/cpu${cpu}/online" 1
+                    done
+                fi
+                local p_min_f
+                local p_max_f
+                if [ "$b_min_pct" -eq 0 ]; then
+                    p_min_f=$(get_min_freq "$PRIME_POLICY")
+                else
+                    p_min_f=$(calc_freq_percent "$PRIME_POLICY" "$b_min_pct")
+                fi
+                p_max_f=$(calc_freq_percent "$PRIME_POLICY" "$b_max_pct")
+                [ -n "$p_min_f" ] && sysfs_write "$PRIME_POLICY/scaling_min_freq" "$p_min_f"
+                [ -n "$p_max_f" ] && sysfs_write "$PRIME_POLICY/scaling_max_freq" "$p_max_f"
+                set_governor "$PRIME_POLICY" "$gov" schedutil interactive ondemand
+                log "  Prime($PRIME_POLICY): min=$p_min_f max=$p_max_f"
+            fi
+        fi
+    fi
+}
+
+# Closest-frequency lookup for whyred's hardcoded tables
+closest_freq() {
+    local target="$1"
+    shift
+    local best=""
+    local best_diff=999999999
+    for f in $@; do
+        local diff
+        if [ "$f" -ge "$target" ]; then
+            diff=$((f - target))
+        else
+            diff=$((target - f))
+        fi
+        if [ -z "$best" ] || [ "$diff" -lt "$best_diff" ]; then
+            best="$f"
+            best_diff="$diff"
+        fi
+    done
+    echo "$best"
+}
+
+# ---------------------------------------------------------------------------
+# CPU scheduler tuning
+# ---------------------------------------------------------------------------
+apply_scheduler() {
+    # Usage: apply_scheduler <latency_ns> <min_gran_ns> <wakeup_gran_ns> <migration_cost_ns> <nr_migrate>
+    log_section "CPU Scheduler Tuning"
+    proc_write "/proc/sys/kernel/sched_latency_ns" "$1"
+    proc_write "/proc/sys/kernel/sched_min_granularity_ns" "$2"
+    proc_write "/proc/sys/kernel/sched_wakeup_granularity_ns" "$3"
+    proc_write "/proc/sys/kernel/sched_migration_cost_ns" "$4"
+    proc_write "/proc/sys/kernel/sched_nr_migrate" "$5"
+}
+
+# ---------------------------------------------------------------------------
+# cpuset partitioning
+# ---------------------------------------------------------------------------
+apply_cpuset() {
+    # Usage: apply_cpuset <foreground> <background> <sys_background> <top_app>
+    log_section "cpuset Partitioning"
+    sysfs_write "/dev/cpuset/foreground/cpus" "$1"
+    sysfs_write "/dev/cpuset/background/cpus" "$2"
+    sysfs_write "/dev/cpuset/system-background/cpus" "$3"
+    sysfs_write "/dev/cpuset/top-app/cpus" "$4"
+}
+
+# ---------------------------------------------------------------------------
+# GPU configuration
+# ---------------------------------------------------------------------------
+apply_gpu() {
+    # Usage: apply_gpu <governor> <max_clock_pct>
+    local gov="$1"
+    local clk_pct="$2"
+
+    log_section "GPU Configuration"
+
+    # Qualcomm Adreno (kgsl)
+    if [ -d /sys/class/kgsl/kgsl-3d0 ]; then
+        local gpu_avail="/sys/class/kgsl/kgsl-3d0/gpu_available_frequencies"
+        local gpu_max_path="/sys/class/kgsl/kgsl-3d0/max_gpuclk"
+
+        # Try to set governor
+        local gpu_gov_path="/sys/class/kgsl/kgsl-3d0/devfreq/governor"
+        local gpu_avail_govs="/sys/class/kgsl/kgsl-3d0/devfreq/available_governors"
+        if [ -f "$gpu_avail_govs" ]; then
+            local avail_g
+            avail_g=$(cat "$gpu_avail_govs" 2>/dev/null)
+            if echo "$avail_g" | grep -qw "$gov" 2>/dev/null; then
+                sysfs_write "$gpu_gov_path" "$gov"
+            else
+                # Fallback to msm-adreno-tz or simple_ondemand
+                for fg in msm-adreno-tz simple_ondemand; do
+                    if echo "$avail_g" | grep -qw "$fg" 2>/dev/null; then
+                        sysfs_write "$gpu_gov_path" "$fg"
+                        break
+                    fi
+                done
+            fi
+        else
+            sysfs_write "$gpu_gov_path" "$gov"
+        fi
+
+        # Calculate and set max GPU clock
+        if [ -f "$gpu_avail" ] && [ -f "$gpu_max_path" ]; then
+            local max_gpu
+            max_gpu=$(cat "$gpu_avail" 2>/dev/null | tr ' ' '\n' | sort -rn | head -n 1)
+            if [ -n "$max_gpu" ] && [ "$max_gpu" -gt 0 ] 2>/dev/null; then
+                local target_gpu=$(( max_gpu * clk_pct / 100 ))
+                # Find closest available freq
+                local best_gpu=""
+                local best_diff=999999999
+                for f in $(cat "$gpu_avail" 2>/dev/null); do
+                    [ -z "$f" ] && continue
+                    local diff
+                    if [ "$f" -ge "$target_gpu" ]; then
+                        diff=$((f - target_gpu))
+                    else
+                        diff=$((target_gpu - f))
+                    fi
+                    if [ -z "$best_gpu" ] || [ "$diff" -lt "$best_diff" ]; then
+                        best_gpu="$f"
+                        best_diff="$diff"
+                    fi
+                done
+                [ -n "$best_gpu" ] && sysfs_write "$gpu_max_path" "$best_gpu"
+            fi
+        elif [ "$IS_WHYRED" -eq 1 ]; then
+            # Hardcoded Adreno 512 frequencies for whyred
+            local gpu_freqs="160000000 266000000 370000000 430000000 506000000 588000000 647000000 720000000"
+            local gpu_max=720000000
+            local target_gpu=$(( gpu_max * clk_pct / 100 ))
+            local best_gpu
+            best_gpu=$(closest_freq "$target_gpu" $gpu_freqs)
+            [ -n "$best_gpu" ] && sysfs_write "$gpu_max_path" "$best_gpu"
+        fi
+    fi
+
+    # Mali / Other SoCs via /sys/kernel/gpu/
+    if [ -d /sys/kernel/gpu ]; then
+        sysfs_write "/sys/kernel/gpu/gpu_governor" "$gov"
+        if [ -f /sys/kernel/gpu/gpu_max_clock ] && [ -f /sys/kernel/gpu/gpu_available_frequencies ]; then
+            local max_g
+            max_g=$(cat /sys/kernel/gpu/gpu_available_frequencies 2>/dev/null | tr ' ' '\n' | sort -rn | head -n 1)
+            if [ -n "$max_g" ] && [ "$max_g" -gt 0 ] 2>/dev/null; then
+                local tgt=$(( max_g * clk_pct / 100 ))
+                local best=""
+                local bdiff=999999999
+                for f in $(cat /sys/kernel/gpu/gpu_available_frequencies 2>/dev/null); do
+                    [ -z "$f" ] && continue
+                    local d
+                    if [ "$f" -ge "$tgt" ]; then d=$((f - tgt)); else d=$((tgt - f)); fi
+                    if [ -z "$best" ] || [ "$d" -lt "$bdiff" ]; then best="$f"; bdiff="$d"; fi
+                done
+                [ -n "$best" ] && sysfs_write "/sys/kernel/gpu/gpu_max_clock" "$best"
+            fi
+        fi
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# VM tuning
+# ---------------------------------------------------------------------------
+apply_vm() {
+    # Usage: apply_vm <swappiness> <vfs_cache_pressure> <dirty_ratio> <dirty_bg_ratio> <expire_cs> <writeback_cs>
+    log_section "VM Tuning"
+    proc_write "/proc/sys/vm/swappiness" "$1"
+    proc_write "/proc/sys/vm/vfs_cache_pressure" "$2"
+    proc_write "/proc/sys/vm/dirty_ratio" "$3"
+    proc_write "/proc/sys/vm/dirty_background_ratio" "$4"
+    proc_write "/proc/sys/vm/dirty_expire_centisecs" "$5"
+    proc_write "/proc/sys/vm/dirty_writeback_centisecs" "$6"
+}
+
+# ---------------------------------------------------------------------------
+# Thermal zone control
+# ---------------------------------------------------------------------------
+apply_thermals() {
+    # Usage: apply_thermals <passive_delay_ms>
+    log_section "Thermal Configuration (passive_delay=${1}ms)"
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+        for tz in /sys/class/thermal/thermal_zone*; do
+            [ -d "$tz" ] || continue
+            sysfs_write "$tz/mode" "enabled"
+            sysfs_write "$tz/passive_delay" "$1"
+        done
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Doze / Device Idle configuration
+# ---------------------------------------------------------------------------
+apply_doze() {
+    # Usage: apply_doze <light_idle_after_ms> <deep_idle_after_ms> <maint_window_ms>
+    log_section "Doze Configuration"
+    # Try cmd deviceidle first (Android 9+), fallback to dumpsys
+    local idle_cmd=""
+    if command -v cmd >/dev/null 2>&1; then
+        idle_cmd="cmd deviceidle"
+    else
+        idle_cmd="dumpsys deviceidle"
+    fi
+
+    # Enable force-idle if aggressive modes requested
+    if [ "$1" -le 30000 ] 2>/dev/null; then
+        $idle_cmd enable light 2>/dev/null
+        $idle_cmd enable deep 2>/dev/null
+        log "  Doze force-enabled (light + deep)"
+    fi
+
+    # Set idle timing parameters via settings (if available)
+    if command -v settings >/dev/null 2>&1; then
+        settings put global light_idle_timeout "$1" 2>/dev/null
+        settings put global device_idle_constants "inactive_to=$2,idle_after_inactive_to=$2,idle_pending_to=$3,max_idle_pending_to=$(( $3 * 2 )),idle_to=$(( $2 * 2 )),max_idle_to=$(( $2 * 4 )),light_idle_to=$1,light_max_idle_to=$(( $1 * 4 )),light_idle_maintenance_min_budget=$3,light_idle_maintenance_max_budget=$(( $3 * 2 ))" 2>/dev/null
+        log "  Doze timings: light_idle=${1}ms deep_idle=${2}ms maint=${3}ms"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Wakelock control
+# ---------------------------------------------------------------------------
+# Known safe-to-block wakelocks (battery drainers)
+WAKELOCKS_CONSERVATIVE="wlan_wow_wl wlan_extscan_wl wlan_ipa_rm_wl wlan_pno_wl sensors_wl"
+WAKELOCKS_AGGRESSIVE="$WAKELOCKS_CONSERVATIVE bluetooth_timer PowerManagerService.Broadcasts alarm_wakelock NetworkStats"
+WAKELOCKS_EXTREME="$WAKELOCKS_AGGRESSIVE qcom_rx_wakelock netmgr_wl event0 event1 event2"
+
+apply_wakelocks() {
+    # Usage: apply_wakelocks <level>  (conservative|aggressive|extreme|none)
+    log_section "Wakelock Control ($1)"
+
+    local wl_list=""
+    case "$1" in
+        conservative) wl_list="$WAKELOCKS_CONSERVATIVE" ;;
+        aggressive)   wl_list="$WAKELOCKS_AGGRESSIVE" ;;
+        extreme)      wl_list="$WAKELOCKS_EXTREME" ;;
+        none)         return ;;
+    esac
+
+    if [ -d /sys/class/wakeup ]; then
+        for wl_name in $wl_list; do
+            for wl_dir in /sys/class/wakeup/*; do
+                [ -d "$wl_dir" ] || continue
+                local name
+                name=$(cat "$wl_dir/name" 2>/dev/null)
+                if [ "$name" = "$wl_name" ]; then
+                    sysfs_write "$wl_dir/active_count" 0
+                    log "  Blocked wakelock: $wl_name"
+                fi
+            done
+        done
+    fi
+
+    # Also try /proc/wakelocks if present
+    if [ -f /proc/wakelocks ]; then
+        log "  /proc/wakelocks present (read-only on most kernels)"
+    fi
+
+    # Use wakelock blocker sysfs if kernel supports it
+    if [ -f /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker ]; then
+        local blocked
+        blocked=$(echo "$wl_list" | tr ' ' ';')
+        sysfs_write "/sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker" "$blocked"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# zRAM configuration
+# ---------------------------------------------------------------------------
+apply_zram() {
+    # Usage: apply_zram <size_mb> <algorithm>
+    log_section "zRAM Configuration"
+    local zram_dev="/dev/block/zram0"
+    local zram_sys="/sys/block/zram0"
+
+    if [ ! -d "$zram_sys" ]; then
+        log "  zRAM not available"
+        return
+    fi
+
+    # Set compression algorithm first (requires inactive zram)
+    if [ -f "$zram_sys/comp_algorithm" ]; then
+        local avail_alg
+        avail_alg=$(cat "$zram_sys/comp_algorithm" 2>/dev/null)
+        if echo "$avail_alg" | grep -qw "$2" 2>/dev/null; then
+            sysfs_write "$zram_sys/comp_algorithm" "$2"
+        else
+            log "  Algorithm $2 not available, keeping current"
+        fi
+    fi
+
+    # Resize zRAM
+    local size_bytes=$(( $1 * 1024 * 1024 ))
+    if [ -f "$zram_sys/disksize" ]; then
+        swapoff "$zram_dev" 2>/dev/null
+        sysfs_write "$zram_sys/reset" 1
+        sysfs_write "$zram_sys/disksize" "$size_bytes"
+        mkswap "$zram_dev" 2>/dev/null
+        swapon "$zram_dev" 2>/dev/null
+        log "  zRAM: ${1}MB with $2"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# I/O scheduler configuration
+# ---------------------------------------------------------------------------
+apply_io() {
+    # Usage: apply_io <scheduler> <read_ahead_kb>
+    log_section "I/O Scheduler ($1, read_ahead=${2}KB)"
+    for bdev in /sys/block/sd*/queue /sys/block/mmcblk*/queue /sys/block/dm-*/queue; do
+        [ -d "$bdev" ] || continue
+        # Check if scheduler is available
+        if [ -f "$bdev/scheduler" ]; then
+            local avail
+            avail=$(cat "$bdev/scheduler" 2>/dev/null)
+            if echo "$avail" | grep -qw "$1" 2>/dev/null; then
+                sysfs_write "$bdev/scheduler" "$1"
+            else
+                # Try common fallbacks
+                for s in cfq noop deadline mq-deadline none; do
+                    if echo "$avail" | grep -qw "$s" 2>/dev/null; then
+                        sysfs_write "$bdev/scheduler" "$s"
+                        break
+                    fi
+                done
+            fi
+        fi
+        sysfs_write "$bdev/read_ahead_kb" "$2"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Kill background processes (for extreme modes)
+# ---------------------------------------------------------------------------
+kill_background() {
+    log_section "Killing Background Processes"
+    # Get foreground package to avoid killing it
+    local fg_pkg
+    fg_pkg=$(dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -n 1 | sed 's/.*u0 \([^ /]*\).*/\1/' 2>/dev/null)
+
+    # Kill cached/background processes
+    local killed=0
+    for pid_dir in /proc/[0-9]*; do
+        [ -d "$pid_dir" ] || continue
+        local pid
+        pid=$(basename "$pid_dir")
+        local oom_adj
+        oom_adj=$(cat "$pid_dir/oom_score_adj" 2>/dev/null)
+        [ -z "$oom_adj" ] && continue
+        # Only kill processes with high oom_score_adj (cached/background)
+        if [ "$oom_adj" -ge 900 ] 2>/dev/null; then
+            local cmdline
+            cmdline=$(cat "$pid_dir/cmdline" 2>/dev/null | tr '\0' ' ')
+            # Skip essential processes
+            case "$cmdline" in
+                *systemui*|*launcher*|*inputmethod*|*system_server*|*zygote*|*servicemanager*) continue ;;
+            esac
+            # Skip foreground app
+            if [ -n "$fg_pkg" ]; then
+                case "$cmdline" in
+                    *${fg_pkg}*) continue ;;
+                esac
+            fi
+            kill -9 "$pid" 2>/dev/null
+            killed=$((killed + 1))
+        fi
+    done
+    log "  Killed $killed cached/background processes"
+}
+
+# ===========================================================================
+# STATUS command
+# ===========================================================================
+print_status() {
+    echo "=== ZORON-X Engine Status ==="
+    echo ""
+
+    # Current mode
+    local cur_mode
+    cur_mode=$(cat "$PROFILE_FILE" 2>/dev/null || echo "not set")
+    echo "Current Mode: $cur_mode"
+
+    # Power state
+    local pstate
+    pstate=$(cat "$LOG_DIR/power_state.txt" 2>/dev/null || echo "unknown")
+    echo "Power State:  $pstate"
+
+    # Device info
+    echo "Device:       $DEVICE_NAME (IS_WHYRED=$IS_WHYRED, CPUs=$NUM_CPUS)"
+    echo ""
+
+    # CPU info
+    echo "--- CPU ---"
+    for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+        [ -d "$policy" ] || continue
+        local pname
+        pname=$(basename "$policy")
+        local gov
+        gov=$(cat "$policy/scaling_governor" 2>/dev/null)
+        local cur
+        cur=$(cat "$policy/scaling_cur_freq" 2>/dev/null)
+        local min
+        min=$(cat "$policy/scaling_min_freq" 2>/dev/null)
+        local max
+        max=$(cat "$policy/scaling_max_freq" 2>/dev/null)
+        echo "  $pname: gov=$gov cur=${cur}kHz min=${min}kHz max=${max}kHz"
+    done
+    # Fallback for devices without policy dirs
+    if [ ! -d /sys/devices/system/cpu/cpufreq/policy0 ]; then
+        for cpu in /sys/devices/system/cpu/cpu[0-9]*/cpufreq; do
+            [ -d "$cpu" ] || continue
+            local cname
+            cname=$(echo "$cpu" | sed 's|.*/\(cpu[0-9]*\)/.*|\1|')
+            local gov
+            gov=$(cat "$cpu/scaling_governor" 2>/dev/null)
+            local cur
+            cur=$(cat "$cpu/scaling_cur_freq" 2>/dev/null)
+            echo "  $cname: gov=$gov cur=${cur}kHz"
+        done
+    fi
+    echo ""
+
+    # Online cores
+    echo "--- Core Status ---"
+    for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        [ -d "$cpu" ] || continue
+        local name
+        name=$(basename "$cpu")
+        local online
+        online=$(cat "$cpu/online" 2>/dev/null || echo "1")
+        echo "  $name: online=$online"
+    done
+    echo ""
+
+    # GPU
+    echo "--- GPU ---"
+    if [ -d /sys/class/kgsl/kgsl-3d0 ]; then
+        echo "  Governor: $(cat /sys/class/kgsl/kgsl-3d0/devfreq/governor 2>/dev/null)"
+        echo "  Max Clock: $(cat /sys/class/kgsl/kgsl-3d0/max_gpuclk 2>/dev/null)"
+        echo "  Cur Clock: $(cat /sys/class/kgsl/kgsl-3d0/devfreq/cur_freq 2>/dev/null)"
+    elif [ -d /sys/kernel/gpu ]; then
+        echo "  Governor: $(cat /sys/kernel/gpu/gpu_governor 2>/dev/null)"
+        echo "  Max Clock: $(cat /sys/kernel/gpu/gpu_max_clock 2>/dev/null)"
+    else
+        echo "  No supported GPU interface found"
+    fi
+    echo ""
+
+    # VM
+    echo "--- VM ---"
+    echo "  swappiness:       $(cat /proc/sys/vm/swappiness 2>/dev/null)"
+    echo "  vfs_cache_pressure: $(cat /proc/sys/vm/vfs_cache_pressure 2>/dev/null)"
+    echo "  dirty_ratio:      $(cat /proc/sys/vm/dirty_ratio 2>/dev/null)"
+    echo ""
+
+    # Thermals
+    echo "--- Thermal ---"
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+        local tz_count=0
+        for tz in /sys/class/thermal/thermal_zone*; do
+            [ -d "$tz" ] || continue
+            tz_count=$((tz_count + 1))
+        done
+        echo "  Zones: $tz_count"
+        echo "  Zone0 temp: $(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)"
+    fi
+    echo ""
+    echo "=== End Status ==="
+}
+
+# ===========================================================================
+# MAIN — Mode application
+# ===========================================================================
+if [ -z "$MODE" ]; then
+    echo "Usage: zoron_engine <balanced|deep|hibernation|burst|nightwatch|status>"
+    exit 1
+fi
+
+detect_device
+
+case "$MODE" in
+    status)
+        print_status
+        exit 0
+        ;;
+
+    balanced)
+        log "======================================"
+        log "Applying BALANCED mode on $DEVICE_NAME"
+        log "======================================"
+
+        #           l_min% l_max% b_min% b_max% governor     offline_big
+        apply_cpu   0      80     0      70     schedutil    0
+
+        #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
+        apply_scheduler 6000000      750000        1000000        500000            32
+
+        #            fg         bg         sys_bg     top_app
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-7"     "0-3"      "0-1"      "0-7"
+        else
+            local max_cpu=$((NUM_CPUS - 1))
+            apply_cpuset "0-${max_cpu}" "0-$((NUM_CPUS / 2 - 1))" "0-1" "0-${max_cpu}"
+        fi
+
+        apply_gpu   "msm-adreno-tz" 70
+
+        #        swap  vfs_cache dirty dirty_bg expire_cs writeback_cs
+        apply_vm 60    100       20    5        3000      500
+
+        apply_thermals 2000
+
+        #          light_idle  deep_idle  maint_window
+        apply_doze 300000      600000     60000
+
+        apply_wakelocks conservative
+
+        apply_zram 512 lz4
+
+        #        scheduler  read_ahead_kb
+        apply_io cfq        128
+        ;;
+
+    deep)
+        log "======================================"
+        log "Applying DEEP mode on $DEVICE_NAME"
+        log "======================================"
+
+        apply_cpu   0      60     0      50     schedutil    0
+
+        apply_scheduler 12000000   1500000     2000000        1000000         16
+
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-5"     "0-1"      "0"        "0-5"
+        else
+            local half=$((NUM_CPUS / 2))
+            local max_cpu=$((NUM_CPUS - 1))
+            apply_cpuset "0-${half}" "0-1" "0" "0-${half}"
+        fi
+
+        apply_gpu   "msm-adreno-tz" 40
+
+        apply_vm 100   200       10    3        1500      300
+
+        apply_thermals 1000
+
+        apply_doze 120000     300000     30000
+
+        apply_wakelocks aggressive
+
+        apply_zram 768 lz4
+
+        apply_io cfq        64
+        ;;
+
+    hibernation)
+        log "======================================"
+        log "Applying HIBERNATION mode on $DEVICE_NAME"
+        log "======================================"
+
+        apply_cpu   0      40     0      30     powersave   0
+
+        apply_scheduler 24000000   3000000     4000000        2000000         8
+
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-3"     "0"        "0"        "0-3"
+        else
+            local quarter=$((NUM_CPUS / 4))
+            [ "$quarter" -lt 1 ] && quarter=1
+            apply_cpuset "0-${quarter}" "0" "0" "0-${quarter}"
+        fi
+
+        apply_gpu   "powersave" 20
+
+        apply_vm 100   300       5     2        1000      200
+
+        apply_thermals 500
+
+        apply_doze 60000      120000     15000
+
+        apply_wakelocks extreme
+
+        apply_zram 1024 lz4
+
+        apply_io noop       32
+        ;;
+
+    burst)
+        log "======================================"
+        log "Applying BURST mode on $DEVICE_NAME"
+        log "======================================"
+
+        apply_cpu   40     100    30     100    performance 0
+
+        apply_scheduler 1000000    250000      500000         100000          64
+
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-7"     "0-3"      "0-3"      "0-7"
+        else
+            local max_cpu=$((NUM_CPUS - 1))
+            apply_cpuset "0-${max_cpu}" "0-${max_cpu}" "0-$((NUM_CPUS / 2 - 1))" "0-${max_cpu}"
+        fi
+
+        apply_gpu   "performance" 100
+
+        apply_vm 30    50        40    10       6000      1000
+
+        apply_thermals 3000
+
+        apply_doze 600000     1200000    120000
+
+        apply_wakelocks none
+
+        apply_zram 512 lz4
+
+        apply_io noop       2048
+        ;;
+
+    nightwatch)
+        log "======================================"
+        log "Applying NIGHTWATCH mode on $DEVICE_NAME"
+        log "======================================"
+
+        apply_cpu   0      30     0      0      powersave   1
+
+        apply_scheduler 48000000   6000000     8000000        5000000         4
+
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-3"     "0"        "0"        "0-3"
+        else
+            apply_cpuset "0-1"     "0"        "0"        "0-1"
+        fi
+
+        apply_gpu   "powersave" 20
+
+        apply_vm 100   500       5     1        500       100
+
+        apply_thermals 500
+
+        apply_doze 30000      60000      10000
+
+        apply_wakelocks extreme
+
+        apply_zram 1024 lz4
+
+        apply_io noop       16
+
+        # Kill background processes for maximum savings
+        kill_background
+
+        # Set light doze maintenance to every 60 min
+        if command -v settings >/dev/null 2>&1; then
+            settings put global light_idle_maintenance_min_budget 10000 2>/dev/null
+            settings put global light_idle_maintenance_max_budget 30000 2>/dev/null
+        fi
+        ;;
+
+    *)
+        log "Error: Unknown ZORON-X mode: $MODE"
+        echo "Error: Unknown mode '$MODE'"
+        echo "Valid modes: balanced deep hibernation burst nightwatch status"
+        exit 1
+        ;;
+esac
+
+# Save the active profile
+echo "$MODE" > "$PROFILE_FILE"
+chmod 666 "$PROFILE_FILE" 2>/dev/null
+log "Mode '$MODE' applied and saved."
+log "======================================"
+echo "ZORON-X: $MODE mode applied successfully."

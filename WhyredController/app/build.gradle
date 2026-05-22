@@ -6,19 +6,39 @@ android {
     namespace 'com.zoron.whyred'
     compileSdk 34
 
+    // Load signing credentials from local.properties (never committed)
+    def localProps = new Properties()
+    def localPropsFile = rootProject.file('local.properties')
+    if (localPropsFile.exists()) {
+        localProps.load(new FileInputStream(localPropsFile))
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(localProps.getProperty('RELEASE_STORE_FILE', '../zoron-release.jks'))
+            storePassword localProps.getProperty('RELEASE_STORE_PASSWORD', '')
+            keyAlias localProps.getProperty('RELEASE_KEY_ALIAS', '')
+            keyPassword localProps.getProperty('RELEASE_KEY_PASSWORD', '')
+        }
+    }
+
     defaultConfig {
         applicationId "com.zoron.whyred"
         minSdk 24
         targetSdk 34
-        versionCode 16
-        versionName "v3.0.0"
+        versionCode 20
+        versionName "v3.5.0"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
+    }
+    buildFeatures {
+        buildConfig true
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

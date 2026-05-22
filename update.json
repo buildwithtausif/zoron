@@ -1,6 +1,6 @@
 {
-  "version": "v3.0.0",
-  "versionCode": 16,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.0.0/zoron_optimizations_v3.0.0.zip",
-  "changelog": "v3.0.0 Update:\n- **FIXED: Module zip structure** — PowerShell's Compress-Archive was creating backslash paths (system\\bin\\whyred_opt) inside the zip, which Android/Linux cannot extract as directories. Zips are now built with proper forward-slash paths.\n- **Added META-INF** — Proper Magisk module installer bootstrap files.\n- **Robust service.sh** — Scripts are copied to /data/local/tmp/zoron/ with CRLF stripping on every boot, ensuring they always work regardless of zip structure.\n- **Error dialog** — Full diagnostic output with Copy to Clipboard."
+  "version": "v3.5.0",
+  "versionCode": 20,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.5.0/zoron_optimizations_v3.5.0.zip",
+  "changelog": "v3.5.0 — ZORON-X Power Architecture:\n- Complete next-gen power optimization engine with 5 intelligent modes (Balanced, Deep, Hibernation, Burst, Nightwatch)\n- Universal device support with dynamic capability detection\n- User Intent Prediction Engine — dynamic power state transitions\n- Process Monitor — wakelock abuse detection & per-tier restrictions\n- Material Expressive chart redesign\n- CSV & Log export via ShareSheet\n- Transitional upgrade from old module ID\n- Full-stack tuning: CPU/GPU/VM/Scheduler/IO/Thermal/Doze/zRAM"
 }

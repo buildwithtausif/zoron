@@ -23,7 +23,7 @@ import java.net.URL;
 public class OTAUpdater {
     // Official GitHub Raw URL for the unified module update
     private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json";
-    private static final int CURRENT_VERSION_CODE = 11; // v2.9.5
+    // Version code is now read dynamically from BuildConfig (generated from build.gradle)
 
     public static void checkUpdates(Activity activity, boolean manualCheck) {
         new Thread(() -> {
@@ -47,7 +47,7 @@ public class OTAUpdater {
                 String changelogText = json.has("changelog") ? json.getString("changelog") : "New update available.";
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (latestVersionCode > CURRENT_VERSION_CODE) {
+                    if (latestVersionCode != BuildConfig.VERSION_CODE) {
                         new AlertDialog.Builder(activity)
                             .setTitle("Update Available: " + latestVersionName)
                             .setMessage("A new Magisk Module update is available!\n\n" + changelogText + "\n\nThis will automatically download and flash the module, including the latest app update.")
