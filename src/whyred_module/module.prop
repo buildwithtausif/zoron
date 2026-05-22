@@ -1,7 +1,7 @@
 id=zoron_x_optimizer
 name=ZORON-X Power Optimizer
-version=v3.9.3
-versionCode=24
+version=v4.0.0
+versionCode=25
 updateJson=https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json
 author=Antigravity
 description=ZORON-X Ultra Intelligent Power Conservation Engine. Dynamic power states, intelligent process scheduling, and adaptive wakeup batching for all Android devices.

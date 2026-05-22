@@ -1,6 +1,6 @@
 {
-  "versionCode": 24,
-  "versionName": "v3.9.3",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.3/Zoron.apk",
-  "changelog": "v3.9.3 — Feature Update:\n- Process Monitor export button.\n- Mode transition progress bar with hide option.\n- Fastpath enable/disable toggle in Settings.\n- Persistent notification showing active mode.\n- Reduced refresh interval for smoother UI."
+  "versionCode": 25,
+  "versionName": "v4.0.0",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.0.0/Zoron.apk",
+  "changelog": "v4.0.0 — Engine Optimization:\n- All dumpsys replaced with sysfs reads.\n- Doubled daemon poll intervals.\n- Process monitor capped at 200 apps.\n- Dashboard pauses when backgrounded.\n- Staggered daemon boot."
 }

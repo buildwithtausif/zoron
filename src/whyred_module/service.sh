@@ -14,7 +14,7 @@ log() {
 }
 
 log "========================================"
-log "ZORON-X v3.5.0 service.sh starting"
+log "ZORON-X v4.0.0 service.sh starting"
 log "========================================"
 
 # Wait until boot completes
@@ -27,7 +27,7 @@ log "Boot completed, proceeding with initialization"
 # This is necessary because PowerShell's Compress-Archive uses backslash paths
 # in the zip, which can prevent Magisk's magic mount from working correctly.
 # Also strip any Windows CRLF line endings.
-for script in whyred_opt zoron_tracker.sh zoron_engine zoron_intent_engine zoron_process_monitor; do
+for script in whyred_opt zoron_tracker.sh zoron_engine zoron_intent_engine zoron_process_monitor zoron_fastpath.sh thermal_safety_daemon.sh idle_confidence.sh; do
     if [ -f "$MODDIR/system/bin/$script" ]; then
         sed 's/\r$//' "$MODDIR/system/bin/$script" > "$SCRIPT_DIR/$script"
         chmod 755 "$SCRIPT_DIR/$script"
@@ -127,6 +127,9 @@ elif command -v zoron_tracker.sh >/dev/null 2>&1; then
     log "Battery tracker daemon started via PATH (PID: $!)"
 fi
 
+# v4.0.0: Stagger daemon starts to avoid burst resource usage
+sleep 5
+
 # Start the intent engine daemon (with PID file check)
 INTENT_PID_FILE="$SCRIPT_DIR/zoron_intent_engine.pid"
 if [ -f "$INTENT_PID_FILE" ] && kill -0 "$(cat $INTENT_PID_FILE)" 2>/dev/null; then
@@ -138,6 +141,9 @@ else
         log "Intent engine daemon started (PID: $!)"
     fi
 fi
+
+# Stagger again before process monitor
+sleep 5
 
 # Start the process monitor daemon (with PID file check)
 PROCMON_PID_FILE="$SCRIPT_DIR/zoron_process_monitor.pid"
@@ -151,4 +157,4 @@ else
     fi
 fi
 
-log "ZORON-X service.sh initialization complete"
+log "ZORON-X v4.0.0 service.sh initialization complete"

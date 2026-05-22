@@ -1,10 +1,11 @@
 #!/system/bin/sh
 # ============================================================================
 # ZORON-X Thermal Safety Daemon
-# Monitors thermals and battery, enforces safety policies
+# v4.0.0: Optimized — sysfs-only reads, no dumpsys, 30s interval
 # ============================================================================
 
 LOG_FILE="/data/local/tmp/zoron/log.txt"
+PROFILE_FILE="/data/local/tmp/zoron/profile.txt"
 
 log() {
     echo "[$(date)] [thermal_daemon] $1" >> "$LOG_FILE"
@@ -20,12 +21,45 @@ sysfs_write() {
     fi
 }
 
+# Get battery temperature from sysfs (returns tenths of °C, e.g. 310 = 31.0°C)
+get_batt_temp() {
+    # Direct sysfs — no dumpsys
+    if [ -f /sys/class/power_supply/battery/temp ]; then
+        cat /sys/class/power_supply/battery/temp 2>/dev/null
+        return
+    fi
+    # Fallback: batt_therm thermal zone (some devices)
+    for tz in /sys/class/thermal/thermal_zone*; do
+        [ -d "$tz" ] || continue
+        local type
+        type=$(cat "$tz/type" 2>/dev/null)
+        case "$type" in
+            *battery*|*batt*|*bms*)
+                cat "$tz/temp" 2>/dev/null
+                return
+                ;;
+        esac
+    done
+    echo 0
+}
+
+# Get charging state from sysfs
+is_charging() {
+    if [ -f /sys/class/power_supply/battery/status ]; then
+        local status
+        status=$(cat /sys/class/power_supply/battery/status 2>/dev/null)
+        case "$status" in
+            Charging|Full) echo 1; return ;;
+        esac
+    fi
+    echo 0
+}
+
 while true; do
-    BATT_TEMP=$(dumpsys battery | grep temperature | grep -o "[0-9]*" | head -n 1)
-    [ -z "$BATT_TEMP" ] && BATT_TEMP=0
-    # dumpsys battery returns temp in tenths of a degree (e.g., 410 = 41.0C)
-    BATT_TEMP_C=$((BATT_TEMP / 10))
-    
+    BATT_TEMP_RAW=$(get_batt_temp)
+    [ -z "$BATT_TEMP_RAW" ] && BATT_TEMP_RAW=0
+    BATT_TEMP_C=$((BATT_TEMP_RAW / 10))
+
     CPU_TEMP=0
     if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
         TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
@@ -35,10 +69,10 @@ while true; do
             CPU_TEMP=$TEMP_RAW
         fi
     fi
-    
-    IS_CHARGING=$(dumpsys battery | grep -E "AC powered|USB powered|Wireless powered" | grep true)
-    PROFILE=$(cat /data/local/tmp/zoron/profile.txt 2>/dev/null)
-    
+
+    CHARGING=$(is_charging)
+    PROFILE=$(cat "$PROFILE_FILE" 2>/dev/null)
+
     # Policy 1: IF battery_temp >= 41C, deny BURST mode
     if [ "$BATT_TEMP_C" -ge 41 ]; then
         if [ "$PROFILE" = "burst" ]; then
@@ -47,17 +81,18 @@ while true; do
             /system/bin/zoron_engine "balanced" &
         fi
     fi
-    
+
     # Policy 2: IF cpu_temp >= 70C, clamp big cluster
     if [ "$CPU_TEMP" -ge 70 ]; then
         log "CPU temp critical (${CPU_TEMP}C), clamping big cluster"
-        sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq" "1401600" # 1.4 GHz clamp
+        sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq" "1401600"
     fi
-    
-    # Policy 3: IF charging == true, reduce max frequencies slightly to lower heat
-    if [ -n "$IS_CHARGING" ] && [ "$PROFILE" = "balanced" ]; then
+
+    # Policy 3: IF charging and balanced, reduce max freq slightly
+    if [ "$CHARGING" -eq 1 ] && [ "$PROFILE" = "balanced" ]; then
         sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq" "1804800"
     fi
 
-    sleep 15
+    # v4.0.0: 30s interval (thermal inertia, was 15s)
+    sleep 30
 done

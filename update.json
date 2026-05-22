@@ -1,6 +1,6 @@
 {
-  "version": "v3.9.3",
-  "versionCode": 24,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.3/zoron_optimizations_v3.9.3.zip",
-  "changelog": "v3.9.3 — Feature Update:\n- Process Monitor export button.\n- Mode transition progress bar with hide option.\n- Fastpath enable/disable toggle in Settings.\n- Persistent notification showing active mode.\n- Reduced refresh interval for smoother UI."
+  "version": "v4.0.0",
+  "versionCode": 25,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.0.0/zoron_optimizations_v4.0.0.zip",
+  "changelog": "v4.0.0 — Engine Optimization:\n- Replaced all dumpsys calls with direct sysfs reads (battery, screen, charging).\n- Intent engine poll intervals doubled (5s→10s interactive, 60s→120s sleep).\n- Process monitor interval increased to 120s, PID scan capped at 200 apps.\n- Thermal daemon uses sysfs-only detection, 30s interval.\n- Dashboard refresh pauses when app is backgrounded.\n- Chart replot skipped when data unchanged.\n- Staggered daemon starts to avoid boot burst."
 }

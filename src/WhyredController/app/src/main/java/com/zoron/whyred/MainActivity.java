@@ -137,12 +137,12 @@ public class MainActivity extends AppCompatActivity {
         // Start foreground service for persistent notification
         startZoronService();
 
-        // Start dashboard auto-refresh (15s for lower overhead)
+        // Start dashboard auto-refresh (20s for lower overhead)
         updateRunnable = new Runnable() {
             @Override
             public void run() {
                 refreshDashboard();
-                handler.postDelayed(this, 15000);
+                handler.postDelayed(this, 20000);
             }
         };
         handler.post(updateRunnable);
@@ -170,6 +170,19 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(updateRunnable);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        handler.removeCallbacks(updateRunnable);
+        handler.post(updateRunnable);
     }
 
     @Override
@@ -284,6 +297,11 @@ public class MainActivity extends AppCompatActivity {
             String powerState = parts[4].trim();
             String processReport = parts[5].trim();
 
+            // Update chart only if data changed
+            if (!csvData.equals(lastCsvData)) {
+                runOnUiThread(() -> plotChart(csvData));
+            }
+
             // Cache for export
             lastCsvData = csvData;
             lastLogData = logs;
@@ -302,9 +320,6 @@ public class MainActivity extends AppCompatActivity {
 
                 // Update process report
                 tvProcessReport.setText(processReport);
-
-                // Update chart
-                plotChart(csvData);
             });
         }).start();
     }

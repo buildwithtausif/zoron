@@ -1,7 +1,7 @@
 #!/system/bin/sh
 # ============================================================================
 # ZORON-X Intent Engine — Background daemon for user intent prediction
-# Monitors device state and dynamically adjusts power within mode bounds.
+# v4.0.0: Optimized — sysfs-first detection, reduced polling, batched calls
 # Usage: zoron_intent_engine [start|stop|status]
 # ============================================================================
 
@@ -127,32 +127,23 @@ state_name() {
 }
 
 # ---------------------------------------------------------------------------
-# Detection functions
+# Detection functions — sysfs-first, no dumpsys unless required
 # ---------------------------------------------------------------------------
 
 # Returns 1 if screen is ON, 0 if OFF
 get_screen_state() {
-    # Method 1: dumpsys display
-    local dstate
-    dstate=$(dumpsys display 2>/dev/null | grep 'mScreenState' | head -n 1)
-    if [ -n "$dstate" ]; then
-        case "$dstate" in
-            *ON*) echo 1; return ;;
-            *OFF*) echo 0; return ;;
-        esac
+    # Method 1: LCD backlight (cheapest)
+    if [ -f /sys/class/leds/lcd-backlight/brightness ]; then
+        local val
+        val=$(cat /sys/class/leds/lcd-backlight/brightness 2>/dev/null)
+        if [ -n "$val" ] && [ "$val" -gt 0 ] 2>/dev/null; then
+            echo 1; return
+        else
+            echo 0; return
+        fi
     fi
 
-    # Method 2: dumpsys power
-    local pstate
-    pstate=$(dumpsys power 2>/dev/null | grep 'Display Power' | head -n 1)
-    if [ -n "$pstate" ]; then
-        case "$pstate" in
-            *ON*) echo 1; return ;;
-            *OFF*) echo 0; return ;;
-        esac
-    fi
-
-    # Method 3: backlight brightness
+    # Method 2: backlight class
     for bl in /sys/class/backlight/*/brightness; do
         if [ -f "$bl" ]; then
             local val
@@ -165,38 +156,56 @@ get_screen_state() {
         fi
     done
 
-    # Method 4: check LCD backlight
-    if [ -f /sys/class/leds/lcd-backlight/brightness ]; then
-        local val
-        val=$(cat /sys/class/leds/lcd-backlight/brightness 2>/dev/null)
-        if [ -n "$val" ] && [ "$val" -gt 0 ] 2>/dev/null; then
-            echo 1; return
-        else
-            echo 0; return
-        fi
-    fi
+    # Method 3 (fallback): dumpsys power (expensive)
+    local pstate
+    pstate=$(dumpsys power 2>/dev/null | grep 'Display Power' | head -n 1)
+    case "$pstate" in
+        *ON*) echo 1; return ;;
+        *OFF*) echo 0; return ;;
+    esac
 
     # Default: assume on
     echo 1
 }
 
-# Get foreground app package name
+# Returns 1 if device is charging (sysfs-first)
+get_charging_state() {
+    # Direct sysfs read — no dumpsys
+    if [ -f /sys/class/power_supply/battery/status ]; then
+        local status
+        status=$(cat /sys/class/power_supply/battery/status 2>/dev/null)
+        case "$status" in
+            Charging|Full) echo 1; return ;;
+            *) echo 0; return ;;
+        esac
+    fi
+    # Fallback
+    local batt
+    batt=$(dumpsys battery 2>/dev/null)
+    if echo "$batt" | grep -q 'AC powered: true' 2>/dev/null; then echo 1; return; fi
+    if echo "$batt" | grep -q 'USB powered: true' 2>/dev/null; then echo 1; return; fi
+    echo 0
+}
+
+# Get foreground app package name (cached — only called every Nth tick)
+CACHED_FG_APP=""
+FG_TICK=0
 get_foreground_app() {
-    local fg
-    fg=$(dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -n 1 | sed 's/.*u0 \([^ /]*\).*/\1/' 2>/dev/null)
-    echo "$fg"
+    FG_TICK=$((FG_TICK + 1))
+    # Only query dumpsys every 3rd tick to reduce overhead
+    if [ $((FG_TICK % 3)) -eq 1 ] || [ -z "$CACHED_FG_APP" ]; then
+        CACHED_FG_APP=$(dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -n 1 | sed 's/.*u0 \([^ /]*\).*/\1/' 2>/dev/null)
+    fi
+    echo "$CACHED_FG_APP"
 }
 
 # Returns 1 if any touch input happened recently (within $1 seconds)
-# Uses /dev/input/event* file modification times as a proxy
 get_touch_recent() {
     local threshold="$1"
     local now
     now=$(date +%s)
     for ev in /dev/input/event*; do
         [ -e "$ev" ] || continue
-        # Check if the event device was accessed recently
-        # Use stat to get mtime (Android toolbox may not support all stat flags)
         local mtime
         mtime=$(stat -c %Y "$ev" 2>/dev/null || stat -f %m "$ev" 2>/dev/null)
         if [ -n "$mtime" ]; then
@@ -206,22 +215,6 @@ get_touch_recent() {
             fi
         fi
     done
-    echo 0
-}
-
-# Returns 1 if device is charging
-get_charging_state() {
-    local batt
-    batt=$(dumpsys battery 2>/dev/null)
-    if echo "$batt" | grep -q 'AC powered: true' 2>/dev/null; then
-        echo 1; return
-    fi
-    if echo "$batt" | grep -q 'USB powered: true' 2>/dev/null; then
-        echo 1; return
-    fi
-    if echo "$batt" | grep -q 'Wireless powered: true' 2>/dev/null; then
-        echo 1; return
-    fi
     echo 0
 }
 
@@ -238,7 +231,7 @@ is_intensive_app() {
         # Camera
         com.android.camera*|com.google.android.GoogleCamera*) echo 1; return ;;
         org.codeaurora.snapcam|com.sec.android.app.camera) echo 1; return ;;
-        com.instagram.android) echo 1; return ;; # often uses camera
+        com.instagram.android) echo 1; return ;;
         # Benchmarks
         com.antutu.*|com.futuremark.*|com.primatelabs.*) echo 1; return ;;
     esac
@@ -251,16 +244,13 @@ is_intensive_app() {
 
 adjust_hyper_active() {
     log "  Adjusting for HYPER_ACTIVE state"
-    # Allow all cores online, enable touch boost if available
     for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
         [ -d "$cpu" ] || continue
         sysfs_write "$cpu/online" 1
     done
-    # Enable touch boost
     sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 1
     sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 15
     sysfs_write "/sys/kernel/cpu_input_boost/enabled" 1
-    # Reduce I/O latency
     for bdev in /sys/block/sd*/queue /sys/block/mmcblk*/queue; do
         [ -d "$bdev" ] || continue
         sysfs_write "$bdev/nr_requests" 256
@@ -269,17 +259,14 @@ adjust_hyper_active() {
 
 adjust_interactive() {
     log "  Adjusting for INTERACTIVE state"
-    # Normal configuration — keep as mode set it
     sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 1
     sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 5
 }
 
 adjust_light_idle() {
     log "  Adjusting for LIGHT_IDLE state (reading/passive)"
-    # Reduce big core clocks slightly, keep cores online
     sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
     sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
-    # Reduce timer frequency for power saving
     sysfs_write "/proc/sys/kernel/timer_migration" 1
 }
 
@@ -287,14 +274,11 @@ adjust_deep_idle() {
     log "  Adjusting for DEEP_IDLE state (screen off)"
     local mode
     mode=$(cat "$PROFILE_FILE" 2>/dev/null || echo "balanced")
-    # Disable touch boost
     sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
     sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
     sysfs_write "/sys/kernel/cpu_input_boost/enabled" 0
-    # Park some big cores if mode allows
     case "$mode" in
         balanced|deep|hibernation|nightwatch)
-            # Offline half of big cores
             local cpu_count=0
             for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
                 [ -d "$cpu" ] || continue
@@ -311,7 +295,6 @@ adjust_deep_idle() {
             done
             ;;
     esac
-    # Batch network I/O
     sysfs_write "/proc/sys/net/ipv4/tcp_slow_start_after_idle" 1
 }
 
@@ -319,17 +302,14 @@ adjust_sleep_idle() {
     log "  Adjusting for SLEEP_IDLE state (extended screen off)"
     local mode
     mode=$(cat "$PROFILE_FILE" 2>/dev/null || echo "balanced")
-    # Disable all boost
     sysfs_write "/sys/module/cpu_boost/parameters/input_boost_enabled" 0
     sysfs_write "/sys/module/cpu_boost/parameters/dynamic_stune_boost" 0
     sysfs_write "/sys/kernel/cpu_input_boost/enabled" 0
-    # Maximum core parking
     local cpu_count=0
     for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
         [ -d "$cpu" ] || continue
         cpu_count=$((cpu_count + 1))
     done
-    # Keep only first 2 cores (or 1 for nightwatch)
     local keep=2
     case "$mode" in
         nightwatch) keep=1 ;;
@@ -344,36 +324,35 @@ adjust_sleep_idle() {
         fi
         idx=$((idx + 1))
     done
-    # Freeze maintenance windows
     sysfs_write "/proc/sys/net/ipv4/tcp_slow_start_after_idle" 1
     log "  Parked cores, keeping $keep online"
 }
 
 # ===========================================================================
-# MAIN LOOP — Intent prediction engine
+# MAIN LOOP — Intent prediction engine (v4.0.0 optimized intervals)
 # ===========================================================================
 CURRENT_STATE=$STATE_INTERACTIVE
 LAST_TOUCH_TIME=$(date +%s)
 SCREEN_OFF_TIME=0
 LAST_STATE_CHANGE=$(date +%s)
-CHECK_INTERVAL=5
+CHECK_INTERVAL=10
 
 log "Main loop starting (interval=${CHECK_INTERVAL}s)"
 
 while true; do
     NOW=$(date +%s)
 
-    # Read current screen state
+    # Read current screen state (sysfs-first)
     SCREEN_ON=$(get_screen_state)
 
     # Check for recent touch (within 30s)
     TOUCH_RECENT=$(get_touch_recent 30)
     TOUCH_60=$(get_touch_recent 60)
 
-    # Get foreground app
+    # Get foreground app (cached, queries only every 3rd tick)
     FG_APP=$(get_foreground_app)
 
-    # Get charging state
+    # Get charging state (sysfs-first)
     CHARGING=$(get_charging_state)
 
     # -----------------------------------------------------------------------
@@ -383,10 +362,8 @@ while true; do
 
     if [ "$SCREEN_ON" -eq 1 ]; then
         SCREEN_OFF_TIME=0
-        # Check for intensive app
         INTENSIVE=$(is_intensive_app "$FG_APP")
         if [ "$INTENSIVE" -eq 1 ] || [ "$TOUCH_RECENT" -eq 1 ]; then
-            # Rapid touch or gaming/camera => HYPER_ACTIVE
             if [ "$INTENSIVE" -eq 1 ]; then
                 TARGET_STATE=$STATE_HYPER_ACTIVE
             else
@@ -394,20 +371,17 @@ while true; do
             fi
             LAST_TOUCH_TIME=$NOW
         elif [ "$TOUCH_60" -eq 0 ]; then
-            # No touch for 60s+ => reading/passive usage
             TARGET_STATE=$STATE_LIGHT_IDLE
         else
             TARGET_STATE=$STATE_INTERACTIVE
         fi
     else
-        # Screen off
         if [ "$SCREEN_OFF_TIME" -eq 0 ]; then
             SCREEN_OFF_TIME=$NOW
         fi
         local off_duration=$((NOW - SCREEN_OFF_TIME))
 
         if [ "$off_duration" -ge 1800 ] && [ "$CHARGING" -eq 0 ]; then
-            # Screen off for 30+ min and not charging
             TARGET_STATE=$STATE_SLEEP_IDLE
         else
             TARGET_STATE=$STATE_DEEP_IDLE
@@ -427,7 +401,6 @@ while true; do
         CURRENT_STATE=$TARGET_STATE
         LAST_STATE_CHANGE=$NOW
 
-        # Apply adjustments for new state
         case "$CURRENT_STATE" in
             $STATE_HYPER_ACTIVE)  adjust_hyper_active ;;
             $STATE_INTERACTIVE)   adjust_interactive ;;
@@ -436,20 +409,19 @@ while true; do
             $STATE_SLEEP_IDLE)    adjust_sleep_idle ;;
         esac
 
-        # Write state file
         echo "$(state_name "$CURRENT_STATE") $NOW" > "$STATE_FILE"
         chmod 644 "$STATE_FILE" 2>/dev/null
     fi
 
     # -----------------------------------------------------------------------
-    # Adaptive sleep — check less frequently when idle
+    # Adaptive sleep — v4.0.0 optimized intervals (2x previous)
     # -----------------------------------------------------------------------
     case "$CURRENT_STATE" in
-        $STATE_HYPER_ACTIVE)  CHECK_INTERVAL=3 ;;
-        $STATE_INTERACTIVE)   CHECK_INTERVAL=5 ;;
-        $STATE_LIGHT_IDLE)    CHECK_INTERVAL=15 ;;
-        $STATE_DEEP_IDLE)     CHECK_INTERVAL=30 ;;
-        $STATE_SLEEP_IDLE)    CHECK_INTERVAL=60 ;;
+        $STATE_HYPER_ACTIVE)  CHECK_INTERVAL=5 ;;
+        $STATE_INTERACTIVE)   CHECK_INTERVAL=10 ;;
+        $STATE_LIGHT_IDLE)    CHECK_INTERVAL=30 ;;
+        $STATE_DEEP_IDLE)     CHECK_INTERVAL=60 ;;
+        $STATE_SLEEP_IDLE)    CHECK_INTERVAL=120 ;;
     esac
 
     sleep "$CHECK_INTERVAL"

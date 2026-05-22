@@ -1,7 +1,7 @@
 #!/system/bin/sh
 # ============================================================================
 # ZORON-X Process Monitor — Background daemon for app behavior monitoring
-# Tracks wakelocks, classifies processes into tiers, and applies restrictions.
+# v4.0.0: Optimized — removed dumpsys alarm, capped PID scan, 120s interval
 # Usage: zoron_process_monitor [start|stop|status]
 # ============================================================================
 
@@ -13,7 +13,7 @@ ABUSE_FILE="$LOG_DIR/abuse_scores.dat"
 PROFILE_FILE="$LOG_DIR/profile.txt"
 STATE_FILE="$LOG_DIR/power_state.txt"
 
-SCAN_INTERVAL=60  # seconds between scans
+SCAN_INTERVAL=120  # v4.0.0: 120s (was 60s — tiers are stable)
 
 mkdir -p "$LOG_DIR"
 chmod 777 "$LOG_DIR"
@@ -164,41 +164,13 @@ is_tier_b() {
 }
 
 # ---------------------------------------------------------------------------
-# Wakelock scanning
-# ---------------------------------------------------------------------------
-scan_wakelocks() {
-    # Returns lines: "package_hint wakelock_count active_since"
-    local wl_data=""
-
-    if [ -f /sys/kernel/wakeup_sources ]; then
-        # Parse wakeup_sources: name, active_count, event_count, etc.
-        wl_data=$(cat /sys/kernel/wakeup_sources 2>/dev/null | tail -n +2 | awk '{print $1, $3, $6}' 2>/dev/null)
-    elif [ -f /proc/wakelocks ]; then
-        wl_data=$(cat /proc/wakelocks 2>/dev/null | tail -n +2 | awk '{print $1, $2, $5}' 2>/dev/null)
-    fi
-
-    echo "$wl_data"
-}
-
-# ---------------------------------------------------------------------------
-# Get wakeup count for a package from alarm stats
-# ---------------------------------------------------------------------------
-get_alarm_wakeups() {
-    # Returns rough wakeup count from dumpsys alarm
-    local pkg="$1"
-    local count
-    count=$(dumpsys alarm 2>/dev/null | grep -c "$pkg" 2>/dev/null)
-    echo "${count:-0}"
-}
-
-# ---------------------------------------------------------------------------
 # Calculate priority score for a package
+# v4.0.0: Removed wakeup_count dependency (was from expensive dumpsys alarm)
 # ---------------------------------------------------------------------------
 calculate_score() {
     local pkg="$1"
     local is_foreground="$2"  # 1 or 0
     local oom_adj="$3"
-    local wakeup_count="$4"
 
     local score=0
 
@@ -206,7 +178,7 @@ calculate_score() {
     if [ "$is_foreground" -eq 1 ]; then
         score=$((score + 50))
     elif [ "$oom_adj" -le 200 ] 2>/dev/null; then
-        score=$((score + 25))  # Visible process
+        score=$((score + 25))
     fi
 
     # OOM score adjustment (lower oom = more important)
@@ -225,15 +197,6 @@ calculate_score() {
         score=$((score + 40))
     elif is_tier_b "$pkg"; then
         score=$((score + 15))
-    fi
-
-    # Penalty for excessive wakeups
-    if [ "$wakeup_count" -gt 50 ] 2>/dev/null; then
-        score=$((score - 30))
-    elif [ "$wakeup_count" -gt 20 ] 2>/dev/null; then
-        score=$((score - 15))
-    elif [ "$wakeup_count" -gt 10 ] 2>/dev/null; then
-        score=$((score - 5))
     fi
 
     # Read historical abuse score
@@ -265,7 +228,6 @@ apply_restriction() {
         return
     fi
 
-    # Determine aggressiveness based on mode
     local aggressive=0
     case "$mode" in
         deep|hibernation|nightwatch) aggressive=1 ;;
@@ -273,18 +235,15 @@ apply_restriction() {
 
     case "$tier" in
         D)
-            # Dormant/unused — restrict heavily
             if command -v am >/dev/null 2>&1; then
                 am set-standby-bucket "$pkg" restricted 2>/dev/null
             fi
-            # Try to force-stop if aggressive mode and not first few runs
             if [ "$aggressive" -eq 1 ] && [ "$RUN_COUNT" -gt 3 ]; then
                 am force-stop "$pkg" 2>/dev/null
                 log "  Tier D: force-stopped $pkg"
             fi
             ;;
         C)
-            # Cached/analytics — freeze in aggressive modes
             if [ "$aggressive" -eq 1 ]; then
                 if command -v am >/dev/null 2>&1; then
                     am set-standby-bucket "$pkg" restricted 2>/dev/null
@@ -293,7 +252,6 @@ apply_restriction() {
             fi
             ;;
         B)
-            # Grouped execution only in aggressive modes
             if [ "$aggressive" -eq 1 ]; then
                 if command -v am >/dev/null 2>&1; then
                     am set-standby-bucket "$pkg" rare 2>/dev/null
@@ -301,7 +259,6 @@ apply_restriction() {
             fi
             ;;
         A)
-            # Messaging — batch but don't restrict
             if command -v am >/dev/null 2>&1; then
                 am set-standby-bucket "$pkg" working_set 2>/dev/null
             fi
@@ -310,11 +267,11 @@ apply_restriction() {
 }
 
 # ---------------------------------------------------------------------------
-# Update abuse scores
+# Update abuse scores (v4.0.0: based on oom_adj instead of wakeup count)
 # ---------------------------------------------------------------------------
 update_abuse_score() {
     local pkg="$1"
-    local wakeup_count="$2"
+    local oom_adj="$2"
 
     local old_score=0
     if [ -f "$ABUSE_FILE" ]; then
@@ -322,12 +279,12 @@ update_abuse_score() {
         old_score="${old_score:-0}"
     fi
 
-    # Increase abuse score for excessive wakeups, decay slowly otherwise
     local new_score
-    if [ "$wakeup_count" -gt 30 ] 2>/dev/null; then
-        new_score=$((old_score + 5))
-    elif [ "$wakeup_count" -gt 10 ] 2>/dev/null; then
+    # High oom_adj cached processes that keep reappearing get penalized
+    if [ "$oom_adj" -ge 900 ] 2>/dev/null; then
         new_score=$((old_score + 2))
+    elif [ "$oom_adj" -ge 500 ] 2>/dev/null; then
+        new_score=$((old_score + 1))
     else
         # Decay by 1 (rehabilitation)
         if [ "$old_score" -gt 0 ]; then
@@ -354,7 +311,7 @@ update_abuse_score() {
 }
 
 # ===========================================================================
-# MAIN LOOP — Process monitoring
+# MAIN LOOP — Process monitoring (v4.0.0 optimized)
 # ===========================================================================
 log "Main loop starting (interval=${SCAN_INTERVAL}s)"
 
@@ -367,31 +324,37 @@ while true; do
     CUR_MODE=$(cat "$PROFILE_FILE" 2>/dev/null || echo "balanced")
     CUR_STATE=$(cat "$STATE_FILE" 2>/dev/null | awk '{print $1}' || echo "UNKNOWN")
 
-    # Get foreground app
+    # Get foreground app (single dumpsys call per scan cycle)
     FG_APP=$(dumpsys activity activities 2>/dev/null | grep mResumedActivity | head -n 1 | sed 's/.*u0 \([^ /]*\).*/\1/' 2>/dev/null)
     FG_APP="${FG_APP:-unknown}"
 
-    # Scan wakelocks
-    WL_DATA=$(scan_wakelocks)
-
     # -----------------------------------------------------------------------
-    # Build process list and classify
+    # Build process list and classify (capped at 200 app processes)
     # -----------------------------------------------------------------------
     REPORT_ENTRIES=""
-    WAKELOCK_ABUSERS=""
     TIER_S_COUNT=0
     TIER_A_COUNT=0
     TIER_B_COUNT=0
     TIER_C_COUNT=0
     TIER_D_COUNT=0
 
-    # Get list of installed packages with running processes
-    # Use /proc to find running Android app processes
     SEEN_PKGS=""
+    APP_COUNT=0
+    MAX_APPS=200
+
     for pid_dir in /proc/[0-9]*; do
         [ -d "$pid_dir" ] || continue
+
+        # v4.0.0: Cap scan at MAX_APPS to prevent excessive /proc reads
+        [ "$APP_COUNT" -ge "$MAX_APPS" ] && break
+
         local pid
         pid=$(basename "$pid_dir")
+
+        # Skip if no oom_score_adj readable (kernel thread)
+        local oom_adj
+        oom_adj=$(cat "$pid_dir/oom_score_adj" 2>/dev/null)
+        [ -z "$oom_adj" ] && continue
 
         # Get package name from cmdline
         local cmdline
@@ -409,10 +372,7 @@ while true; do
             *" $cmdline "*) continue ;;
         esac
         SEEN_PKGS="$SEEN_PKGS $cmdline"
-
-        # Get OOM score
-        local oom_adj
-        oom_adj=$(cat "$pid_dir/oom_score_adj" 2>/dev/null || echo "0")
+        APP_COUNT=$((APP_COUNT + 1))
 
         # Check if this is the foreground app
         local is_fg=0
@@ -420,13 +380,9 @@ while true; do
             is_fg=1
         fi
 
-        # Get alarm/wakeup count for this package
-        local wakeups
-        wakeups=$(get_alarm_wakeups "$cmdline")
-
-        # Calculate score
+        # v4.0.0: No dumpsys alarm — score based on oom_adj and tier only
         local score
-        score=$(calculate_score "$cmdline" "$is_fg" "$oom_adj" "$wakeups")
+        score=$(calculate_score "$cmdline" "$is_fg" "$oom_adj")
 
         # Determine tier
         local tier="C"  # default
@@ -465,19 +421,13 @@ while true; do
         REPORT_ENTRIES="${REPORT_ENTRIES}[TIER $tier] $cmdline - Score: $score - $restriction
 "
 
-        # Track wakelock abusers
-        if [ "$wakeups" -gt 20 ] 2>/dev/null; then
-            WAKELOCK_ABUSERS="${WAKELOCK_ABUSERS}$cmdline: $wakeups wakeups in last scan
-"
-        fi
-
         # Apply restrictions (be conservative on first few runs)
         if [ "$RUN_COUNT" -gt 2 ]; then
             apply_restriction "$cmdline" "$tier" "$CUR_MODE"
         fi
 
-        # Update abuse scores
-        update_abuse_score "$cmdline" "$wakeups"
+        # Update abuse scores (oom_adj-based)
+        update_abuse_score "$cmdline" "$oom_adj"
     done
 
     # -----------------------------------------------------------------------
@@ -494,14 +444,14 @@ while true; do
     done
 
     # -----------------------------------------------------------------------
-    # Write report
+    # Write report (single atomic write)
     # -----------------------------------------------------------------------
     {
         echo "=== ZORON-X Process Report ==="
         echo "Last updated: $TIMESTAMP"
         echo "Current Mode: $CUR_MODE"
         echo "Current State: $CUR_STATE"
-        echo "Scan #$RUN_COUNT (learning=$([ "$RUN_COUNT" -le 2 ] && echo 'yes' || echo 'no'))"
+        echo "Scan #$RUN_COUNT (apps_scanned=$APP_COUNT, learning=$([ "$RUN_COUNT" -le 2 ] && echo 'yes' || echo 'no'))"
         echo ""
         echo "--- Process Tiers ---"
         echo "Tier S (critical):    $TIER_S_COUNT"
@@ -512,15 +462,11 @@ while true; do
         echo ""
         echo "--- Detailed Process List ---"
         echo "$SORTED_REPORT"
-        if [ -n "$WAKELOCK_ABUSERS" ]; then
-            echo "=== Wakelock Abusers ==="
-            echo "$WAKELOCK_ABUSERS"
-        fi
         echo "=== End Report ==="
     } > "$REPORT_FILE"
     chmod 666 "$REPORT_FILE" 2>/dev/null
 
-    log "Scan #$RUN_COUNT complete: S=$TIER_S_COUNT A=$TIER_A_COUNT B=$TIER_B_COUNT C=$TIER_C_COUNT D=$TIER_D_COUNT"
+    log "Scan #$RUN_COUNT complete: S=$TIER_S_COUNT A=$TIER_A_COUNT B=$TIER_B_COUNT C=$TIER_C_COUNT D=$TIER_D_COUNT (apps=$APP_COUNT)"
 
     # -----------------------------------------------------------------------
     # Trim abuse scores file periodically (every 50 runs)
@@ -529,7 +475,6 @@ while true; do
         local lines
         lines=$(wc -l < "$ABUSE_FILE" 2>/dev/null || echo 0)
         if [ "$lines" -gt 500 ]; then
-            # Keep only entries with score > 0
             grep -v '=0$' "$ABUSE_FILE" > "$ABUSE_FILE.tmp" 2>/dev/null
             mv "$ABUSE_FILE.tmp" "$ABUSE_FILE" 2>/dev/null
             chmod 666 "$ABUSE_FILE" 2>/dev/null
