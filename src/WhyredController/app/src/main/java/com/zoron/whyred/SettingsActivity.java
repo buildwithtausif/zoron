@@ -57,5 +57,21 @@ public class SettingsActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        // Fastpath toggle
+        com.google.android.material.materialswitch.MaterialSwitch switchFastpath = findViewById(R.id.switchFastpath);
+        // Load current state
+        Shell.cmd("cat /data/local/tmp/zoron/fastpath_enabled.txt 2>/dev/null || echo '1'").submit(out -> {
+            runOnUiThread(() -> {
+                if (out.isSuccess() && !out.getOut().isEmpty()) {
+                    String val = out.getOut().get(0).trim();
+                    switchFastpath.setChecked(!"0".equals(val));
+                }
+            });
+        });
+        switchFastpath.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            String val = isChecked ? "1" : "0";
+            Shell.cmd("echo " + val + " > /data/local/tmp/zoron/fastpath_enabled.txt").exec();
+        });
     }
 }

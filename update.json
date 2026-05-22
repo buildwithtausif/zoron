@@ -1,6 +1,6 @@
 {
-  "version": "v3.9.2",
-  "versionCode": 23,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.2/zoron_optimizations_v3.9.2.zip",
-  "changelog": "v3.9.2 — Container UI Hotfix:\n- Fixed Diagnostics and Process Monitor containers expanding to full screen.\n- Containers now have fixed 240dp/280dp height with independent internal scrolling.\n- Reduced log and process data loading to tail-only for faster UI rendering."
+  "version": "v3.9.3",
+  "versionCode": 24,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.3/zoron_optimizations_v3.9.3.zip",
+  "changelog": "v3.9.3 — Feature Update:\n- Process Monitor export button.\n- Mode transition progress bar with hide option.\n- Fastpath enable/disable toggle in Settings.\n- Persistent notification showing active mode.\n- Reduced refresh interval for smoother UI."
 }

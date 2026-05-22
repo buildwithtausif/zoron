@@ -40,6 +40,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.os.Build;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.pm.PackageManager;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
+
 public class MainActivity extends AppCompatActivity {
     private TextView tvLogs, tvCurrentProfile, tvCpuInfo, tvPowerState, tvProcessReport;
     private View powerStateDot;
@@ -53,6 +60,11 @@ public class MainActivity extends AppCompatActivity {
     // Cached data for export
     private String lastCsvData = "";
     private String lastLogData = "";
+
+    // Progress bar views
+    private MaterialCardView cardTransitionProgress;
+    private TextView tvTransitionStatus, tvTransitionDetail;
+    private LinearProgressIndicator transitionProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,16 +122,27 @@ public class MainActivity extends AppCompatActivity {
         // Export buttons
         findViewById(R.id.btnExportCsv).setOnClickListener(v -> exportCsv());
         findViewById(R.id.btnExportLogs).setOnClickListener(v -> exportLogs());
+        findViewById(R.id.btnExportProcesses).setOnClickListener(v -> exportProcessReport());
+
+        // Transition progress bar
+        cardTransitionProgress = findViewById(R.id.cardTransitionProgress);
+        tvTransitionStatus = findViewById(R.id.tvTransitionStatus);
+        tvTransitionDetail = findViewById(R.id.tvTransitionDetail);
+        transitionProgressBar = findViewById(R.id.transitionProgressBar);
+        findViewById(R.id.btnHideProgress).setOnClickListener(v -> cardTransitionProgress.setVisibility(View.GONE));
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
 
-        // Start dashboard auto-refresh
+        // Start foreground service for persistent notification
+        startZoronService();
+
+        // Start dashboard auto-refresh (15s for lower overhead)
         updateRunnable = new Runnable() {
             @Override
             public void run() {
                 refreshDashboard();
-                handler.postDelayed(this, 10000);
+                handler.postDelayed(this, 15000);
             }
         };
         handler.post(updateRunnable);
@@ -499,19 +522,51 @@ public class MainActivity extends AppCompatActivity {
     // ==================== ZORON-X MODE APPLICATION ====================
 
     private void applyZoronMode(String mode) {
+        // Show progress bar
+        cardTransitionProgress.setVisibility(View.VISIBLE);
+        transitionProgressBar.setProgress(0);
+        tvTransitionStatus.setText("⚡ Applying " + mode.toUpperCase() + "...");
+        tvTransitionDetail.setText("Running zoron_fastpath.sh");
+
         // Optimistic UI Update
         tvCurrentProfile.setText("Mode: APPLYING...");
-        
+
         new Thread(() -> {
-            // 1. Fastpath for instant feel
-            Shell.cmd("sh /system/bin/zoron_fastpath.sh set_mode " + mode + " || sh /data/adb/modules/zoron_x_optimizer/system/bin/zoron_fastpath.sh set_mode " + mode).exec();
-            
-            runOnUiThread(() -> {
-                tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
-                Toast.makeText(MainActivity.this, "Fastpath " + mode.toUpperCase() + " activated!", Toast.LENGTH_SHORT).show();
-            });
+            // 1. Check if Fastpath is enabled
+            Shell.Result fpCheck = Shell.cmd("cat /data/local/tmp/zoron/fastpath_enabled.txt 2>/dev/null || echo '1'").exec();
+            boolean fastpathEnabled = true;
+            if (fpCheck.isSuccess() && !fpCheck.getOut().isEmpty()) {
+                fastpathEnabled = !"0".equals(fpCheck.getOut().get(0).trim());
+            }
+
+            if (fastpathEnabled) {
+                runOnUiThread(() -> {
+                    transitionProgressBar.setProgress(20);
+                    tvTransitionDetail.setText("Fastpath: CPU governor + frequencies");
+                });
+
+                Shell.cmd("sh /system/bin/zoron_fastpath.sh set_mode " + mode + " || sh /data/adb/modules/zoron_x_optimizer/system/bin/zoron_fastpath.sh set_mode " + mode).exec();
+
+                runOnUiThread(() -> {
+                    transitionProgressBar.setProgress(40);
+                    tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
+                    tvTransitionStatus.setText("\u26a1 Fastpath applied");
+                    tvTransitionDetail.setText("Running zoron_engine " + mode);
+                });
+            } else {
+                runOnUiThread(() -> {
+                    transitionProgressBar.setProgress(40);
+                    tvTransitionStatus.setText("Fastpath disabled — running engine directly");
+                    tvTransitionDetail.setText("Running zoron_engine " + mode);
+                });
+            }
 
             // 2. Heavy Engine processing
+            runOnUiThread(() -> {
+                transitionProgressBar.setProgress(50);
+                tvTransitionDetail.setText("Engine: Thermal + I/O + zRAM tuning");
+            });
+
             String scriptCmd = String.join("; ",
                 "SCRIPT_PATH=\"\"",
                 "for p in /data/local/tmp/zoron/zoron_engine /system/bin/zoron_engine /data/adb/modules/zoron_x_optimizer/system/bin/zoron_engine; do " +
@@ -522,12 +577,20 @@ public class MainActivity extends AppCompatActivity {
                 "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + mode
             );
             Shell.Result result = Shell.cmd(scriptCmd).exec();
-            
-            new Handler(Looper.getMainLooper()).post(() -> {
+
+            runOnUiThread(() -> {
                 if (result.isSuccess()) {
-                    tvCurrentProfile.setText("Mode: " + mode.toUpperCase() + " (COMPLETE)");
+                    transitionProgressBar.setProgress(100);
+                    tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
+                    tvTransitionDetail.setText("All optimizations applied successfully");
+                    tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
+                    // Auto-hide after 3 seconds
+                    handler.postDelayed(() -> cardTransitionProgress.setVisibility(View.GONE), 3000);
                     refreshDashboard();
                 } else {
+                    transitionProgressBar.setProgress(100);
+                    tvTransitionStatus.setText("❌ Error applying " + mode.toUpperCase());
+                    tvTransitionDetail.setText("Tap to view error details");
                     StringBuilder err = new StringBuilder("Error applying ZORON-X " + mode + " mode:\n");
                     err.append("Exit Code: ").append(result.getCode()).append("\n\n");
                     err.append("--- stdout ---\n");
@@ -578,5 +641,67 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }).start();
+    }
+
+    // ==================== PROCESS REPORT EXPORT ====================
+
+    private void exportProcessReport() {
+        new Thread(() -> {
+            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/process_report.txt 2>/dev/null").exec();
+            if (!result.isSuccess() || result.getOut().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "No process data to export", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            StringBuilder content = new StringBuilder();
+            for (String line : result.getOut()) {
+                content.append(line).append("\n");
+            }
+
+            try {
+                File exportFile = new File(getExternalCacheDir(), "zoron_process_report.txt");
+                FileWriter writer = new FileWriter(exportFile);
+                writer.write(content.toString());
+                writer.close();
+
+                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Process Report Export");
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Process Report")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    // ==================== FOREGROUND SERVICE ====================
+
+    private void startZoronService() {
+        // Request notification permission on Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
+                return;
+            }
+        }
+        Intent serviceIntent = new Intent(this, ZoronForegroundService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startZoronService();
+        }
     }
 }
