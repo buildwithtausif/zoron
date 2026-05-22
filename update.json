@@ -1,6 +1,6 @@
 {
-  "version": "v3.9.0",
-  "versionCode": 21,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.0/zoron_optimizations_v3.9.0.zip",
-  "changelog": "v3.9.0 — ZORON-X Fastpath Engine:\n- Complete next-gen fastpath optimization engine for instant UI responsiveness.\n- Added Thermal Safety Daemon and Idle Confidence Engine.\n- Atomic CSV Logging improvements.\n- State caching to reduce unnecessary module writes."
+  "version": "v3.9.1",
+  "versionCode": 22,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.1/zoron_optimizations_v3.9.1.zip",
+  "changelog": "v3.9.1 — ZORON-X UI Fixes:\n- Added NestedScrolling support for Diagnostics and Process Monitor.\n- Added Learn About Modes and Settings Activities.\n- Added automatic log rotation to zoron_engine."
 }

@@ -1,6 +1,6 @@
 {
-  "versionCode": 21,
-  "versionName": "v3.9.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.0/Zoron.apk",
-  "changelog": "v3.9.0 Update:\n- **IMPORTANT**: Please flash the updated module ZIP from Magisk to apply the new bash engine updates.\n- **Fastpath Engine** — Instant mode transitions with Optimistic UI updates.\n- **Thermal Safety Daemon** — Protects battery and CPU from thermal runaway.\n- **Idle Confidence Engine** — Smarter deep sleep detection.\n- **UI Improvements** — Legacy mode redundant prompts and faster transitions."
+  "versionCode": 22,
+  "versionName": "v3.9.1",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.1/Zoron.apk",
+  "changelog": "v3.9.1 — ZORON-X UI Fixes:\n- Added NestedScrolling support for Diagnostics and Process Monitor.\n- Added Learn About Modes and Settings Activities.\n- Added automatic log rotation to zoron_engine."
 }

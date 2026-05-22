@@ -22,6 +22,12 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ModeLearnActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -17,8 +17,36 @@ touch "$LOG_FILE"
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
+LOG_LEVEL_FILE="/data/local/tmp/zoron/log_level.txt"
+[ ! -f "$LOG_LEVEL_FILE" ] && echo "NORMAL" > "$LOG_LEVEL_FILE"
+LOG_LEVEL=$(cat "$LOG_LEVEL_FILE" 2>/dev/null || echo "NORMAL")
+
+rotate_logs() {
+    local size
+    size=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
+    if [ "$size" -gt 5242880 ]; then
+        mv "$LOG_FILE.2.gz" "$LOG_FILE.3.gz" 2>/dev/null
+        mv "$LOG_FILE.1.gz" "$LOG_FILE.2.gz" 2>/dev/null
+        gzip -c "$LOG_FILE" > "$LOG_FILE.1.gz" 2>/dev/null
+        > "$LOG_FILE"
+    fi
+}
+
 log() {
-    echo "[$(date)] [zoron_engine] $1" >> "$LOG_FILE"
+    if [ "$LOG_LEVEL" = "NORMAL" ]; then
+        # Normal mode: errors and section headers only
+        if echo "$1" | grep -qE "FAIL|---|SUCCESS"; then
+            echo "[$(date)] [zoron_engine] $1" >> "$LOG_FILE"
+        fi
+    else
+        # DEBUG or TRACE
+        echo "[$(date)] [zoron_engine] $1" >> "$LOG_FILE"
+    fi
+    # Rotate check periodically
+    local rand=$(( RANDOM % 50 ))
+    if [ "$rand" -eq 0 ]; then
+        rotate_logs
+    fi
 }
 
 log_section() {

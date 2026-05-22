@@ -139,6 +139,12 @@ public class MainActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.action_check_updates) {
             OTAUpdater.checkUpdates(this, true);
             return true;
+        } else if (item.getItemId() == R.id.action_settings) {
+            startActivity(new android.content.Intent(this, SettingsActivity.class));
+            return true;
+        } else if (item.getItemId() == R.id.action_docs) {
+            startActivity(new android.content.Intent(this, ModeLearnActivity.class));
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }

@@ -612,7 +612,7 @@
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
                 android:layout_marginBottom="32dp">
 
-                <ScrollView
+                <androidx.core.widget.NestedScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:maxHeight="200dp"
@@ -630,7 +630,7 @@
                         android:textSize="12sp"
                         android:padding="20dp"
                         android:minHeight="100dp" />
-                </ScrollView>
+                </androidx.core.widget.NestedScrollView>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ==================== DIAGNOSTICS (Scrollable + Export) ==================== -->
@@ -669,7 +669,7 @@
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large">
 
-                <ScrollView
+                <androidx.core.widget.NestedScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:maxHeight="300dp"
@@ -687,7 +687,7 @@
                         android:textSize="13sp"
                         android:padding="24dp"
                         android:minHeight="150dp" />
-                </ScrollView>
+                </androidx.core.widget.NestedScrollView>
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
