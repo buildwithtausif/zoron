@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Orbit Path -->
+    <path
+        android:pathData="M 54 18 A 36 36 0 1 1 18 54"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear" android:startX="18" android:startY="18" android:endX="90" android:endY="90">
+                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="1" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M 54 90 A 36 36 0 0 1 18 54"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear" android:startX="54" android:startY="90" android:endX="18" android:endY="54">
+                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="1" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Orbit Path -->
+    <path
+        android:pathData="M 54 26 A 28 28 0 1 0 82 54"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.4"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear" android:startX="26" android:startY="82" android:endX="82" android:endY="26">
+                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="1" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Planet dots -->
+    <path
+        android:pathData="M 79.5 28.5 A 3.5 3.5 0 1 1 79.4 28.5"
+        android:fillColor="#00C853" />
+    <path
+        android:pathData="M 18 54 A 2 2 0 1 1 17.9 54"
+        android:fillColor="#69F0AE" />
+    <path
+        android:pathData="M 54 90 A 2.5 2.5 0 1 1 53.9 90"
+        android:fillColor="#00E676" />
+
+    <!-- Center 'Z' with Drop Shadow -->
+    <path
+        android:pathData="M 36.5 30.5 H 72.5 V 40.5 L 48.5 70.5 H 72.5 V 80.5 H 36.5 V 70.5 L 60.5 40.5 H 36.5 Z"
+        android:fillColor="#33000000" />
+        
+    <!-- Main Z -->
+    <path
+        android:pathData="M 36 29 H 72 V 39 L 48 69 H 72 V 79 H 36 V 69 L 60 39 H 36 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="36" android:startY="29" android:endX="72" android:endY="79">
+                <item android:offset="0" android:color="#69F0AE" />
+                <item android:offset="0.5" android:color="#00E676" />
+                <item android:offset="1" android:color="#00A859" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Z Highlight/Stroke -->
+    <path
+        android:pathData="M 36 29 H 72 V 39 L 48 69 H 72 V 79 H 36 V 69 L 60 39 H 36 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.5" />
+
+    <!-- Subtle Battery Icon on orbit -->
+    <group android:translateX="2" android:translateY="-2">
+        <!-- Base -->
+        <path
+            android:pathData="M 72 67 H 80 A 2 2 0 0 1 82 69 V 83 A 2 2 0 0 1 80 85 H 72 A 2 2 0 0 1 70 83 V 69 A 2 2 0 0 1 72 67 Z"
+            android:fillColor="#E8F5E9"
+            android:strokeColor="#00A859"
+            android:strokeWidth="1.5" />
+        <!-- Cap -->
+        <path
+            android:pathData="M 74 65 H 78 A 1 1 0 0 1 79 66 V 67 H 73 V 66 A 1 1 0 0 1 74 65 Z"
+            android:fillColor="#00A859" />
+        <!-- Fill -->
+        <path
+            android:pathData="M 71 74 H 81 V 83 A 1 1 0 0 1 80 84 H 72 A 1 1 0 0 1 71 83 Z"
+            android:fillColor="#00E676" />
+        <!-- Bolt inside battery -->
+        <path
+            android:pathData="M 76.5 70 L 73.5 75 H 76 L 75 80 L 79 74 H 76.5 Z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>

@@ -28,3 +28,6 @@ local.properties
 /android-sdk/
 /gradle-dir/
 /jdk-17.0.2/
+build_tools/
+src/WhyredController/app/build/
+src/WhyredController/.gradle/

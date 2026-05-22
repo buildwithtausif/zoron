@@ -1,0 +1,19 @@
+Create an exact Material 3 adaptive icon for the Zoron app called "Battery Orbit" by editing the existing Android adaptive icon XML source files.
+
+Requirements:
+
+1. Use the current adaptive icon XML files as the starting point.
+2. Center the 'Z' character with a gradient in green shades to represent battery life.
+3. Add circular orbiting elements around the 'Z' symbolizing power flow and system resource management.
+4. Integrate a subtle battery icon into the orbit design.
+5. Separate layers correctly:
+   - Foreground: 'Z' + orbiting elements + battery icon.
+   - Background: smooth gradient following Material 3 expressive style.
+6. Create both light and dark mode variants.
+7. Ensure the icon scales properly for all launcher sizes (512px, 256px, 128px, 64px, 32px).
+8. Follow Material 3 design principles: rounded shapes, subtle shadows, depth, expressive dynamic colors.
+9. Output fully edited XML files ready to replace the existing adaptive icon in res/mipmap-anydpi-v26.
+
+The final result should exactly replicate the Battery Orbit design seen in the provided mockup, keeping it fully adaptive and Material 3 compliant.
+
+do not release anything yet, just commit and push the updated code to GitHub.
