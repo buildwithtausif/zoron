@@ -1,6 +1,6 @@
 {
-  "version": "v3.5.0",
-  "versionCode": 20,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.5.0/zoron_optimizations_v3.5.0.zip",
-  "changelog": "v3.5.0 — ZORON-X Power Architecture:\n- Complete next-gen power optimization engine with 5 intelligent modes (Balanced, Deep, Hibernation, Burst, Nightwatch)\n- Universal device support with dynamic capability detection\n- User Intent Prediction Engine — dynamic power state transitions\n- Process Monitor — wakelock abuse detection & per-tier restrictions\n- Material Expressive chart redesign\n- CSV & Log export via ShareSheet\n- Transitional upgrade from old module ID\n- Full-stack tuning: CPU/GPU/VM/Scheduler/IO/Thermal/Doze/zRAM"
+  "version": "v3.9.0",
+  "versionCode": 21,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.0/zoron_optimizations_v3.9.0.zip",
+  "changelog": "v3.9.0 — ZORON-X Fastpath Engine:\n- Complete next-gen fastpath optimization engine for instant UI responsiveness.\n- Added Thermal Safety Daemon and Idle Confidence Engine.\n- Atomic CSV Logging improvements.\n- State caching to reduce unnecessary module writes."
 }

@@ -1,6 +1,6 @@
 {
-  "versionCode": 16,
-  "versionName": "v3.0.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.0.0/Zoron.apk",
-  "changelog": "v3.0.0 Update:\n- **FIXED: Module zip structure** — PowerShell's Compress-Archive was creating backslash paths (system\\bin\\whyred_opt) inside the zip, which Android/Linux cannot extract as directories. Zips are now built with proper forward-slash paths.\n- **Added META-INF** — Proper Magisk module installer bootstrap files.\n- **Robust service.sh** — Scripts are copied to /data/local/tmp/zoron/ with CRLF stripping on every boot, ensuring they always work regardless of zip structure.\n- **Error dialog** — Full diagnostic output with Copy to Clipboard."
+  "versionCode": 21,
+  "versionName": "v3.9.0",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v3.9.0/Zoron.apk",
+  "changelog": "v3.9.0 Update:\n- **IMPORTANT**: Please flash the updated module ZIP from Magisk to apply the new bash engine updates.\n- **Fastpath Engine** — Instant mode transitions with Optimistic UI updates.\n- **Thermal Safety Daemon** — Protects battery and CPU from thermal runaway.\n- **Idle Confidence Engine** — Smarter deep sleep detection.\n- **UI Improvements** — Legacy mode redundant prompts and faster transitions."
 }

@@ -1,0 +1,1218 @@
+========================================
+ZORON-X v3.9 ENGINEERING ALGORITHM
+Adaptive Runtime Optimization Framework
+Unified Runtime + Controller Architecture
+========================================
+
+AUTHOR NOTES:
+This document contains:
+1. Critical failures discovered from diagnostics
+2. Root-cause analysis
+3. Required architectural fixes
+4. Runtime adaptation algorithm
+5. Mode-transition redesign
+6. Reliability improvements
+7. Safety framework
+8. Controller app redesign
+9. Diagnostics optimization
+10. UI/UX modernization
+11. Learning/documentation framework
+12. Runtime intelligence roadmap
+
+TARGET DEVICE:
+whyred (Snapdragon 660)
+Android kernel userspace optimization layer
+Magisk/KSU compatible
+
+========================================
+SECTION 1 — CRITICAL ISSUES DETECTED
+========================================
+
+----------------------------------------
+ISSUE #1 — GPU GOVERNOR FAILURE
+----------------------------------------
+
+LOGS:
+FAIL /sys/class/kgsl/kgsl-3d0/devfreq/governor = performance
+FAIL /sys/kernel/gpu/gpu_governor = performance
+
+ROOT CAUSE:
+The "performance" governor likely does not exist on this kernel.
+
+CURRENT BEHAVIOR:
+Burst mode falsely assumes GPU entered high-performance mode.
+
+ACTUAL RESULT:
+GPU remains under default governor behavior.
+
+REQUIRED FIX:
+Before applying any GPU governor:
+1. Read available governors dynamically
+2. Validate governor existence
+3. Fallback safely
+
+IMPLEMENTATION:
+
+AVAILABLE=$(cat /sys/class/kgsl/kgsl-3d0/devfreq/available_governors)
+
+if echo "$AVAILABLE" | grep -q "performance"; then
+    GOV="performance"
+elif echo "$AVAILABLE" | grep -q "msm-adreno-tz"; then
+    GOV="msm-adreno-tz"
+elif echo "$AVAILABLE" | grep -q "simple_ondemand"; then
+    GOV="simple_ondemand"
+else
+    GOV="powersave"
+fi
+
+echo $GOV > /sys/class/kgsl/kgsl-3d0/devfreq/governor
+
+REQUIRED:
+Never log success unless write verification succeeds.
+
+========================================
+ISSUE #2 — zRAM CONFIGURATION FAILURE
+========================================
+
+LOGS:
+FAIL /sys/block/zram0/comp_algorithm = lz4
+FAIL /sys/block/zram0/reset = 1
+FAIL /sys/block/zram0/disksize = 805306368
+
+ROOT CAUSE:
+zRAM reset attempted while swap still active.
+
+CURRENT ISSUE:
+Engine reports zRAM configured even after failure.
+
+THIS IS A FALSE SUCCESS STATE.
+
+REQUIRED FIX:
+Implement proper zRAM lifecycle management.
+
+CORRECT ALGORITHM:
+
+if [ -e /dev/block/zram0 ]; then
+    swapoff /dev/block/zram0 2>/dev/null
+
+    echo 1 > /sys/block/zram0/reset
+
+    if grep -q "lz4" /sys/block/zram0/comp_algorithm; then
+        echo lz4 > /sys/block/zram0/comp_algorithm
+    fi
+
+    echo $ZRAM_SIZE > /sys/block/zram0/disksize
+
+    mkswap /dev/block/zram0
+    swapon /dev/block/zram0
+fi
+
+POST-VALIDATION:
+Verify:
+- active swap
+- actual disksize
+- active compression algorithm
+
+ONLY THEN:
+log success.
+
+========================================
+ISSUE #3 — MODE TRANSITION LAG
+========================================
+
+USER OBSERVED BUG:
+Mode switching feels delayed.
+Sometimes takes:
+- 1 minute
+- even 5 minutes
+to transition.
+
+ROOT CAUSE ANALYSIS:
+
+Current architecture likely depends on:
+- polling loops
+- delayed process monitor scans
+- long sleep intervals
+- serialized engine execution
+
+LOG EVIDENCE:
+intent_engine interval = 5s
+process_monitor interval = 60s
+
+DEEP/BURST transitions also execute:
+- huge thermal writes
+- massive I/O scheduler loops
+- repeated sysfs operations
+
+THIS CREATES:
+1. Slow responsiveness
+2. Blocking behavior
+3. Delayed state propagation
+
+========================================
+SECTION 2 — REQUIRED TRANSITION REDESIGN
+========================================
+
+NEW ARCHITECTURE:
+EVENT-DRIVEN HYBRID ENGINE
+
+OLD MODEL:
+poll -> analyze -> apply full profile
+
+NEW MODEL:
+event -> diff -> apply delta only
+
+========================================
+DELTA APPLY ALGORITHM
+========================================
+
+DO NOT:
+Reapply all sysfs nodes every transition.
+
+INSTEAD:
+Track active state.
+
+Example:
+
+CURRENT_MODE="deep"
+TARGET_MODE="burst"
+
+Only apply differences.
+
+BAD:
+rewrite:
+- thermal
+- cpusets
+- governors
+- vm
+- io
+- zram
+every transition
+
+GOOD:
+only update:
+- frequencies
+- governors
+- cpusets
+
+RESULT:
+Massive latency reduction.
+
+========================================
+FAST TRANSITION ENGINE
+========================================
+
+Create:
+zoron_fastpath.sh
+
+Purpose:
+Handle immediate responsiveness-sensitive changes.
+
+FASTPATH APPLIES:
+- CPU freq
+- governor
+- cpuset
+- touch boost
+
+DEFERRED ENGINE APPLIES:
+- thermal tuning
+- zRAM
+- I/O scheduler
+- process classification
+
+RESULT:
+Instant feel while heavy operations execute later.
+
+========================================
+SECTION 3 — THERMAL SAFETY SYSTEM
+========================================
+
+BURST MODE CURRENTLY TOO AGGRESSIVE.
+
+RISKS:
+- battery degradation
+- PMIC overheating
+- NAND wear
+- thermal runaway
+- instability
+
+IMPLEMENT:
+THERMAL SAFETY DAEMON
+
+----------------------------------------
+THERMAL POLICY
+----------------------------------------
+
+IF battery_temp >= 41C:
+    deny BURST mode
+
+IF skin_temp >= 43C:
+    force BALANCED
+
+IF charging == true:
+    reduce max frequencies
+
+IF cpu_temp >= 70C:
+    clamp big cluster
+
+IF sustained load >= 120s:
+    gradually decay frequencies
+
+========================================
+SECTION 4 — READ_AHEAD FIX
+========================================
+
+CURRENT:
+2048 KB read_ahead
+
+PROBLEM:
+Too large for whyred storage subsystem.
+
+NEGATIVE EFFECTS:
+- wasted RAM
+- unnecessary prefetch
+- battery drain
+- poor random I/O behavior
+
+RECOMMENDED:
+DEEP:
+64-128
+
+BALANCED:
+256
+
+BURST:
+512 max
+
+NEVER:
+2048
+
+========================================
+SECTION 5 — PROCESS CLASSIFICATION ENGINE
+========================================
+
+CURRENT SYSTEM:
+Tier A/B/C/D classification
+
+THIS IS GOOD.
+
+NEXT EVOLUTION:
+Dynamic QoS engine.
+
+----------------------------------------
+NEW RULES
+----------------------------------------
+
+FOREGROUND APP:
+priority boost
+
+MEDIA PLAYBACK:
+allow DSP/audio services
+
+CAMERA OPEN:
+temporarily relax restrictions
+
+GAMING:
+burst mode allowed
+
+SCREEN OFF:
+aggressive background restriction
+
+CHARGING:
+favor thermals
+
+========================================
+SECTION 6 — EVENT-DRIVEN STATE ENGINE
+========================================
+
+CURRENT:
+polling every X seconds
+
+PROBLEM:
+Slow adaptation
+
+NEW MODEL:
+React to:
+- screen on/off broadcasts
+- touch events
+- app launches
+- charging state
+- thermal events
+
+IMPLEMENT USING:
+inotify
+dumpsys hooks
+input event monitoring
+uevents where possible
+
+========================================
+SECTION 7 — WRITE VALIDATION SYSTEM
+========================================
+
+CRITICAL:
+Never assume sysfs write success.
+
+ALGORITHM:
+
+write_value() {
+    echo "$2" > "$1"
+
+    CURRENT=$(cat "$1" 2>/dev/null)
+
+    if [ "$CURRENT" = "$2" ]; then
+        log "SUCCESS $1=$2"
+        return 0
+    else
+        log "FAIL $1 expected=$2 actual=$CURRENT"
+        return 1
+    fi
+}
+
+ALL ENGINE WRITES MUST USE THIS.
+
+========================================
+SECTION 8 — V3.9 ROADMAP
+========================================
+
+----------------------------------------
+PHASE 1 — RELIABILITY
+----------------------------------------
+
+GOALS:
+- fix false success states
+- add validation
+- fix zRAM
+- governor detection
+- reduce blocking
+
+TARGET:
+stable runtime layer
+
+----------------------------------------
+PHASE 2 — RESPONSIVENESS
+----------------------------------------
+
+GOALS:
+- delta application engine
+- fastpath mode switching
+- asynchronous heavy tuning
+- instant governor switching
+
+TARGET:
+sub-1-second transitions
+
+----------------------------------------
+PHASE 3 — INTELLIGENCE
+----------------------------------------
+
+GOALS:
+- adaptive thermal prediction
+- per-app behavior
+- touch-aware boosts
+- dynamic cpusets
+
+TARGET:
+OEM-grade behavior
+
+----------------------------------------
+PHASE 4 — SAFETY
+----------------------------------------
+
+GOALS:
+- thermal daemon
+- charging protections
+- battery aging protections
+- fail-safe rollback
+
+TARGET:
+long-term stability
+
+========================================
+SECTION 9 — PERFORMANCE TARGETS
+========================================
+
+TARGETS FOR v3.9:
+
+Mode switch latency:
+< 1 second
+
+Governor application:
+< 200 ms
+
+Foreground responsiveness:
+instant touch response
+
+Idle drain:
+optimized without UI lag
+
+Thermal stability:
+no sustained overheating
+
+False-success logs:
+ZERO
+
+========================================
+SECTION 10 — FINAL DIRECTIVE
+========================================
+
+ZORON-X should evolve from:
+"static tweak module"
+
+INTO:
+adaptive runtime optimization framework.
+
+PRIORITIES:
+1. Reliability
+2. Validation
+3. Responsiveness
+4. Safety
+5. Intelligence
+
+DO NOT:
+blindly optimize for benchmarks.
+
+OPTIMIZE FOR:
+- perceptual responsiveness
+- intelligent idling
+- thermal consistency
+- battery longevity
+- adaptive behavior
+- minimum unnecessary work
+
+========================================
+SECTION 11 — STATE CACHE ENGINE
+========================================
+
+PROBLEM:
+Current engine rewrites identical sysfs values repeatedly.
+
+NEGATIVE EFFECTS:
+- unnecessary wakeups
+- storage I/O
+- transition lag
+- CPU overhead
+- battery drain from engine itself
+
+REQUIRED:
+Implement runtime state cache.
+
+ALGORITHM:
+
+Before every write:
+1. read current value
+2. compare against target
+3. skip identical writes
+
+Example:
+
+apply_if_needed() {
+    CURRENT=$(cat "$1" 2>/dev/null)
+
+    if [ "$CURRENT" != "$2" ]; then
+        echo "$2" > "$1"
+        log "UPDATED $1 -> $2"
+    else
+        log "SKIPPED $1 already=$2"
+    fi
+}
+
+RESULT:
+- lower transition latency
+- fewer wakeups
+- reduced sysfs spam
+- lower CPU overhead
+
+========================================
+SECTION 12 — LOGGER OPTIMIZATION
+========================================
+
+PROBLEM:
+Verbose logging creates:
+- storage overhead
+- unnecessary writes
+- additional wakeups
+- self-induced battery drain
+
+CURRENT ISSUE:
+Engine diagnostics becoming too heavy.
+
+REQUIRED:
+Adaptive logging framework.
+
+----------------------------------------
+NEW LOGGING MODES
+----------------------------------------
+
+1. NORMAL
+minimal logs
+errors only
+daily rotation
+
+2. DEBUG
+verbose diagnostics
+temporary only
+
+3. TRACE
+full sysfs tracing
+developer mode only
+
+----------------------------------------
+ROTATION POLICY
+----------------------------------------
+
+MAX_LOG_SIZE=5MB
+
+When exceeded:
+- compress old logs using gzip
+- keep latest 3 archives only
+- delete oldest automatically
+
+----------------------------------------
+WRITE BUFFERING
+----------------------------------------
+
+DO NOT:
+write every event instantly
+
+INSTEAD:
+buffer logs in memory
+flush periodically
+
+TARGET:
+minimize storage wakeups
+
+----------------------------------------
+CSV LOGGER IMPROVEMENTS
+----------------------------------------
+
+Current CSV missing fields:
+- power state
+- temperatures
+- frequencies
+
+REQUIRED:
+atomic row generation
+
+If metrics unavailable:
+store:
+"N/A"
+
+NEVER:
+skip columns or produce partial rows
+
+========================================
+SECTION 13 — MICROBURST ENGINE
+========================================
+
+GOAL:
+Improve perceived smoothness
+WITHOUT sustained high power draw.
+
+CONCEPT:
+Short-duration boost windows.
+
+EXAMPLE:
+On:
+- touch input
+- scrolling
+- app launch
+- keyboard open
+
+Temporarily:
+- raise frequencies
+- relax cpusets
+- allow scheduler boost
+
+BOOST DURATION:
+300ms to 1500ms max
+
+AFTER WINDOW:
+return to adaptive state.
+
+RESULT:
+- smooth UI
+- lower sustained heat
+- better battery efficiency
+
+THIS IS SUPERIOR TO:
+permanent BURST mode.
+
+========================================
+SECTION 14 — IDLE CONFIDENCE ENGINE
+========================================
+
+GOAL:
+Increase optimization aggressiveness
+ONLY when device truly idle.
+
+CURRENT ISSUE:
+Transitions happen too aggressively.
+
+NEW MODEL:
+Calculate idle confidence score.
+
+FACTORS:
+- screen off duration
+- touch inactivity
+- motion sensor inactivity
+- charging state
+- audio playback state
+- wakelock activity
+
+IF confidence >= threshold:
+enter DEEP_IDLE aggressively
+
+IF confidence low:
+remain LIGHT_IDLE
+
+RESULT:
+- fewer false deep-idle transitions
+- better notification reliability
+- improved responsiveness
+
+========================================
+SECTION 15 — ENGINE SELF-PROTECTION
+========================================
+
+GOAL:
+Prevent ZORON itself
+from becoming battery drain source.
+
+REQUIRED:
+
+IF engine CPU usage high:
+reduce scan frequency
+
+IF thermal high:
+defer heavy writes
+
+IF storage busy:
+delay log flushes
+
+IF battery low:
+disable non-essential diagnostics
+
+WATCHDOG:
+detect stuck loops
+auto-restart failed daemons
+
+RESULT:
+self-aware runtime engine
+
+========================================
+SECTION 16 — CONTROLLER APP RESPONSIVENESS
+========================================
+
+CRITICAL USER ISSUE:
+Controller app feels laggy.
+
+OBSERVED SYMPTOMS:
+- mode switching takes 5-10 minutes
+- UI freezes during transitions
+- diagnostics rendering blocks UI
+- process monitor extremely heavy
+- full-screen scrolling feels clunky
+
+ROOT CAUSE ANALYSIS:
+
+CURRENT APP PROBLEMS:
+1. Heavy operations executed on main thread
+2. Entire diagnostics loaded into TextView at once
+3. Full file parsing during every refresh
+4. Massive string rendering
+5. Blocking shell execution
+6. Repeated polling loops
+7. No async transition system
+8. No UI virtualization
+
+========================================
+REQUIRED FIX — ASYNC TRANSITION ENGINE
+========================================
+
+CURRENT:
+UI waits for engine completion.
+
+BAD FLOW:
+tap button
+-> execute full profile
+-> rewrite hundreds of sysfs nodes
+-> wait
+-> refresh logs
+-> update UI
+
+RESULT:
+multi-minute delays.
+
+NEW FLOW:
+tap button
+-> instant UI acknowledgement
+-> queue transition job
+-> apply FASTPATH immediately
+-> background apply remaining changes
+-> progressive status updates
+
+TARGET:
+instant perceived switching.
+
+========================================
+FASTPATH APP TRANSITIONS
+========================================
+
+Immediately apply:
+- governor
+- CPU frequencies
+- cpusets
+
+Defer:
+- thermal writes
+- zRAM
+- diagnostics cleanup
+- process classification rebuild
+- I/O tuning
+
+RESULT:
+device behavior changes instantly
+while deep tuning continues silently.
+
+========================================
+TRANSITION STATUS SYSTEM
+========================================
+
+NEW UI STATES:
+
+1. APPLYING
+small animated chip
+
+2. FASTPATH ACTIVE
+core tuning active
+
+3. OPTIMIZING
+background tuning running
+
+4. COMPLETE
+all tuning finalized
+
+USER SHOULD NEVER:
+wait blindly.
+
+========================================
+SECTION 17 — DIAGNOSTICS UI REDESIGN
+========================================
+
+CURRENT PROBLEM:
+Diagnostics uses huge scrolling text block.
+
+NEGATIVE EFFECTS:
+- expensive rendering
+- UI jank
+- poor readability
+- full-screen scroll conflicts
+
+REQUIRED:
+Virtualized container rendering.
+
+----------------------------------------
+NEW UI MODEL
+----------------------------------------
+
+Diagnostics container:
+- fixed height
+- internal scroll only
+- lazy rendering
+- line virtualization
+
+DO NOT:
+render entire logs immediately.
+
+ONLY:
+render visible viewport.
+
+----------------------------------------
+RECOMMENDED UI
+----------------------------------------
+
+Card container:
+height:
+240dp to 320dp
+
+Inside:
+monospace scrolling region.
+
+OVERFLOW:
+scroll inside container ONLY.
+
+SCREEN:
+must remain static.
+
+========================================
+PROCESS MONITOR WRAPPER
+========================================
+
+CURRENT ISSUE:
+Process monitor dumps raw text directly.
+
+REQUIRED:
+Dedicated wrapper parser.
+
+NEW STRUCTURE:
+
+ProcessMonitorWrapper:
+- parse tiers
+- summarize statistics
+- virtualize long lists
+- collapse repetitive entries
+
+----------------------------------------
+NEW PROCESS MONITOR UI
+----------------------------------------
+
+TOP:
+summary cards
+
+Examples:
+- Tier S count
+- Tier A count
+- monitored services
+- current optimization state
+
+MIDDLE:
+collapsible sections
+
+BOTTOM:
+scrollable process viewer
+
+RESULT:
+massive performance improvement.
+
+========================================
+EXPORT BUTTON REQUIREMENT
+========================================
+
+ADD:
+Export button inside process monitor page.
+
+EXPORT OPTIONS:
+- txt
+- csv
+- compressed zip
+
+EXPORT SHOULD INCLUDE:
+- process tiers
+- scores
+- timestamps
+- active profile
+- active runtime state
+
+OPTIONAL:
+share directly using Android share sheet.
+
+========================================
+SECTION 18 — LOG PARSING OPTIMIZATION
+========================================
+
+CRITICAL:
+Never load entire files repeatedly.
+
+IMPLEMENT:
+incremental parser.
+
+ALGORITHM:
+
+1. Track last read offset
+2. Read only appended content
+3. Append diff to UI
+4. Avoid reparsing old logs
+
+RESULT:
+dramatic UI smoothness improvement.
+
+========================================
+SECTION 19 — MODERN MATERIAL UI FRAMEWORK
+========================================
+
+DESIGN PHILOSOPHY:
+Google Expressive Material UI.
+
+PRINCIPLES:
+- soft motion
+- large typography
+- spacious layout
+- expressive cards
+- adaptive surfaces
+- meaningful animations
+
+----------------------------------------
+REQUIRED UI IMPROVEMENTS
+----------------------------------------
+
+1. Animated profile transitions
+2. Smooth expandable sections
+3. Spring animations
+4. Dynamic color integration
+5. Rounded expressive cards
+6. Responsive spacing
+7. Better hierarchy
+8. Status chips
+9. Transition indicators
+
+----------------------------------------
+MODE BUTTON BEHAVIOR
+----------------------------------------
+
+ON TAP:
+- immediate ripple
+- animate selection
+- optimistic UI update
+- loading indicator
+
+DO NOT:
+appear frozen.
+
+========================================
+SECTION 20 — LEARN ABOUT MODES PAGE
+========================================
+
+ADD NEW PAGE:
+"Learn About Modes"
+
+ACCESS:
+three-dot menu
+-> Learn About Modes
+
+NEW SCREEN PURPOSE:
+User-facing documentation.
+
+========================================
+PAGE STRUCTURE
+========================================
+
+Each mode gets:
+- overview
+- CPU behavior
+- GPU behavior
+- RAM behavior
+- thermal behavior
+- battery expectations
+- responsiveness expectations
+- ideal usage scenario
+- risks/tradeoffs
+
+========================================
+MODE DOCUMENTATION CONTENT
+========================================
+
+----------------------------------------
+STOCK MODE
+----------------------------------------
+
+Behavior:
+No runtime modifications.
+
+CPU:
+OEM/default scaling.
+
+GPU:
+stock governor behavior.
+
+Battery:
+depends on ROM defaults.
+
+Best For:
+maximum compatibility.
+
+Expected Feel:
+manufacturer-defined behavior.
+
+----------------------------------------
+BATTERY MODE
+----------------------------------------
+
+Behavior:
+Aggressive power optimization.
+
+CPU:
+lower sustained frequencies.
+
+GPU:
+restricted scaling.
+
+RAM:
+aggressive cleanup.
+
+Thermals:
+cooler operation.
+
+Battery:
+maximum longevity.
+
+Possible Effects:
+- slower app launches
+- reduced gaming performance
+- delayed background tasks
+
+Best For:
+travel
+overnight idle
+low battery situations.
+
+----------------------------------------
+BALANCED MODE
+----------------------------------------
+
+Behavior:
+adaptive middle ground.
+
+CPU:
+dynamic scaling.
+
+GPU:
+moderate limits.
+
+RAM:
+balanced cleanup policy.
+
+Thermals:
+stable sustained operation.
+
+Battery:
+efficient daily usage.
+
+Expected Feel:
+smooth without excessive drain.
+
+Best For:
+daily use.
+
+----------------------------------------
+PERFORM/BURST MODE
+----------------------------------------
+
+Behavior:
+responsiveness prioritized.
+
+CPU:
+high frequency availability.
+
+GPU:
+reduced throttling.
+
+RAM:
+minimal cleanup.
+
+Thermals:
+higher heat output.
+
+Battery:
+faster drain expected.
+
+Possible Effects:
+- warmer device
+- reduced battery life
+- sustained thermal load
+
+Best For:
+gaming
+multitasking
+heavy workloads.
+
+========================================
+DEEP & hibernate modes
+========================================
+
+adapt similar documentation format for these
+two modes as well.
+
+========================================
+VISUAL DOCUMENTATION REQUIREMENTS
+========================================
+
+Each mode page should include:
+- expressive iconography
+- animated graphs
+- battery impact indicators
+- thermal indicators
+- smoothness indicators
+- estimated drain scale
+- expected temperature scale
+
+OPTIONAL:
+interactive comparison cards.
+
+========================================
+SECTION 21 — SETTINGS ARCHITECTURE
+========================================
+
+ADD:
+dedicated settings page.
+
+SETTINGS SHOULD INCLUDE:
+- logging mode
+- diagnostics retention
+- process monitor interval
+- export preferences
+- animation intensity
+- developer mode
+- advanced diagnostics
+- adaptive mode learning
+
+========================================
+SECTION 22 — APP PERFORMANCE TARGETS
+========================================
+
+TARGETS:
+
+Mode switch UI response:
+<100ms
+
+Fastpath activation:
+<500ms
+
+Full optimization completion:
+<5s
+
+Diagnostics rendering:
+60fps scrolling
+
+Process monitor refresh:
+non-blocking
+
+App startup:
+<1s
+
+ANR occurrences:
+ZERO
+
+========================================
+FINAL DIRECTIVE
+========================================
+
+The controller app must evolve from:
+"shell script frontend"
+
+INTO:
+premium runtime control center.
+
+PRIORITIES:
+1. instant responsiveness
+2. smooth animations
+3. readable diagnostics
+4. non-blocking operations
+5. expressive UX
+6. adaptive rendering
+7. intelligent documentation
+
+USER SHOULD FEEL:
+- immediate feedback
+- confidence
+- clarity
+- control
+- smoothness
+
+NOT:
+lag
+freezes
+uncertainty
+or delayed transitions.
+
+END OF DOCUMENT
+========================================

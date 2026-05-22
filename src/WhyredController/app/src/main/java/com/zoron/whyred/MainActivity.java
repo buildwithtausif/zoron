@@ -88,8 +88,24 @@ public class MainActivity extends AppCompatActivity {
         // Legacy Profile Cards
         findViewById(R.id.cardNone).setOnClickListener(v -> applyLegacyProfile("none"));
         findViewById(R.id.cardBattery).setOnClickListener(v -> applyLegacyProfile("battery"));
-        findViewById(R.id.cardBalanced).setOnClickListener(v -> applyLegacyProfile("balanced"));
-        findViewById(R.id.cardPerformance).setOnClickListener(v -> applyLegacyProfile("performance"));
+        
+        findViewById(R.id.cardBalanced).setOnClickListener(v -> {
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Legacy Mode Warning")
+                .setMessage("This is a legacy profile. ZORON-X 'Balanced' offers superior thermal awareness and responsiveness. Would you like to try the ZORON-X version instead?")
+                .setPositiveButton("Use ZORON-X", (dialog, which) -> applyZoronMode("balanced"))
+                .setNegativeButton("Continue Legacy", (dialog, which) -> applyLegacyProfile("balanced"))
+                .show();
+        });
+        
+        findViewById(R.id.cardPerformance).setOnClickListener(v -> {
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Legacy Mode Warning")
+                .setMessage("This is a legacy profile. ZORON-X 'Burst' provides better touch boosting and microburst engine support. Would you like to try ZORON-X Burst instead?")
+                .setPositiveButton("Use ZORON-X Burst", (dialog, which) -> applyZoronMode("burst"))
+                .setNegativeButton("Continue Legacy", (dialog, which) -> applyLegacyProfile("performance"))
+                .show();
+        });
 
         // Export buttons
         findViewById(R.id.btnExportCsv).setOnClickListener(v -> exportCsv());
@@ -477,29 +493,33 @@ public class MainActivity extends AppCompatActivity {
     // ==================== ZORON-X MODE APPLICATION ====================
 
     private void applyZoronMode(String mode) {
+        // Optimistic UI Update
+        tvCurrentProfile.setText("Mode: APPLYING...");
+        
         new Thread(() -> {
+            // 1. Fastpath for instant feel
+            Shell.cmd("sh /system/bin/zoron_fastpath.sh set_mode " + mode + " || sh /data/adb/modules/zoron_x_optimizer/system/bin/zoron_fastpath.sh set_mode " + mode).exec();
+            
+            runOnUiThread(() -> {
+                tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
+                Toast.makeText(MainActivity.this, "Fastpath " + mode.toUpperCase() + " activated!", Toast.LENGTH_SHORT).show();
+            });
+
+            // 2. Heavy Engine processing
             String scriptCmd = String.join("; ",
                 "SCRIPT_PATH=\"\"",
                 "for p in /data/local/tmp/zoron/zoron_engine /system/bin/zoron_engine /data/adb/modules/zoron_x_optimizer/system/bin/zoron_engine; do " +
                     "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
                 "if [ -z \"$SCRIPT_PATH\" ]; then " +
                     "echo 'ERROR: zoron_engine not found.'; " +
-                    "echo ''; " +
-                    "echo 'ZORON-X engine is not installed.'; " +
-                    "echo 'Please flash the latest Zoron module ZIP (v3.5.0+) and reboot.'; " +
-                    "echo ''; " +
-                    "echo '--- Module directory listing ---'; " +
-                    "ls -la /data/adb/modules/zoron_x_optimizer/ 2>&1; " +
-                    "echo ''; " +
-                    "echo '--- /data/local/tmp/zoron/ listing ---'; " +
-                    "ls -la /data/local/tmp/zoron/ 2>&1; " +
                     "exit 1; fi",
                 "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + mode
             );
             Shell.Result result = Shell.cmd(scriptCmd).exec();
+            
             new Handler(Looper.getMainLooper()).post(() -> {
                 if (result.isSuccess()) {
-                    Toast.makeText(MainActivity.this, "ZORON-X " + mode.toUpperCase() + " activated!", Toast.LENGTH_SHORT).show();
+                    tvCurrentProfile.setText("Mode: " + mode.toUpperCase() + " (COMPLETE)");
                     refreshDashboard();
                 } else {
                     StringBuilder err = new StringBuilder("Error applying ZORON-X " + mode + " mode:\n");

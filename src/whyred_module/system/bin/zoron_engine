@@ -31,11 +31,18 @@ log_section() {
 sysfs_write() {
     # Usage: sysfs_write <path> <value>
     if [ -e "$1" ]; then
-        echo "$2" > "$1" 2>/dev/null
-        if [ $? -eq 0 ]; then
-            log "  SET $1 = $2"
+        local CURRENT
+        CURRENT=$(cat "$1" 2>/dev/null)
+        if [ "$CURRENT" != "$2" ]; then
+            echo "$2" > "$1" 2>/dev/null
+            CURRENT=$(cat "$1" 2>/dev/null)
+            if [ "$CURRENT" = "$2" ]; then
+                log "  SET $1 = $2"
+            else
+                log "  FAIL $1 expected=$2 actual=$CURRENT"
+            fi
         else
-            log "  FAIL $1 = $2"
+            log "  SKIP $1 already=$2"
         fi
     fi
 }
@@ -43,8 +50,19 @@ sysfs_write() {
 proc_write() {
     # Same as sysfs_write but for /proc paths
     if [ -e "$1" ]; then
-        echo "$2" > "$1" 2>/dev/null
-        log "  SET $1 = $2"
+        local CURRENT
+        CURRENT=$(cat "$1" 2>/dev/null)
+        if [ "$CURRENT" != "$2" ]; then
+            echo "$2" > "$1" 2>/dev/null
+            CURRENT=$(cat "$1" 2>/dev/null)
+            if [ "$CURRENT" = "$2" ]; then
+                log "  SET $1 = $2"
+            else
+                log "  FAIL $1 expected=$2 actual=$CURRENT"
+            fi
+        else
+            log "  SKIP $1 already=$2"
+        fi
     fi
 }
 
@@ -438,8 +456,8 @@ apply_gpu() {
             if echo "$avail_g" | grep -qw "$gov" 2>/dev/null; then
                 sysfs_write "$gpu_gov_path" "$gov"
             else
-                # Fallback to msm-adreno-tz or simple_ondemand
-                for fg in msm-adreno-tz simple_ondemand; do
+                # Fallback to msm-adreno-tz, simple_ondemand, or powersave
+                for fg in msm-adreno-tz simple_ondemand powersave; do
                     if echo "$avail_g" | grep -qw "$fg" 2>/dev/null; then
                         sysfs_write "$gpu_gov_path" "$fg"
                         break
@@ -626,6 +644,12 @@ apply_zram() {
         return
     fi
 
+    if grep -q "$zram_dev" /proc/swaps 2>/dev/null; then
+        swapoff "$zram_dev" 2>/dev/null
+    fi
+
+    sysfs_write "$zram_sys/reset" 1
+
     # Set compression algorithm first (requires inactive zram)
     if [ -f "$zram_sys/comp_algorithm" ]; then
         local avail_alg
@@ -640,12 +664,14 @@ apply_zram() {
     # Resize zRAM
     local size_bytes=$(( $1 * 1024 * 1024 ))
     if [ -f "$zram_sys/disksize" ]; then
-        swapoff "$zram_dev" 2>/dev/null
-        sysfs_write "$zram_sys/reset" 1
         sysfs_write "$zram_sys/disksize" "$size_bytes"
         mkswap "$zram_dev" 2>/dev/null
         swapon "$zram_dev" 2>/dev/null
-        log "  zRAM: ${1}MB with $2"
+        if grep -q "$zram_dev" /proc/swaps 2>/dev/null; then
+            log "  SUCCESS zRAM: ${1}MB with $2"
+        else
+            log "  FAIL zRAM: failed to enable swap"
+        fi
     fi
 }
 
@@ -961,7 +987,7 @@ case "$MODE" in
 
         apply_zram 512 lz4
 
-        apply_io noop       2048
+        apply_io noop       512
         ;;
 
     nightwatch)
