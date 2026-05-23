@@ -76,8 +76,8 @@ public class ZoronAutopilotService extends Service {
                     String current = out.getOut().get(0).trim();
                     if (!current.equals(finalTargetMode)) {
                         applyZoronMode(finalTargetMode);
-                        lastMode = finalTargetMode;
                     }
+                    lastMode = finalTargetMode;
                 }
             });
         }
