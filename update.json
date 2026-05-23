@@ -1,6 +1,6 @@
 {
-  "version": "v4.0.0",
-  "versionCode": 25,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.0.0/zoron_optimizations_v4.0.0.zip",
-  "changelog": "v4.0.0 — Engine Optimization:\n- Replaced all dumpsys calls with direct sysfs reads (battery, screen, charging).\n- Intent engine poll intervals doubled (5s→10s interactive, 60s→120s sleep).\n- Process monitor interval increased to 120s, PID scan capped at 200 apps.\n- Thermal daemon uses sysfs-only detection, 30s interval.\n- Dashboard refresh pauses when app is backgrounded.\n- Chart replot skipped when data unchanged.\n- Staggered daemon starts to avoid boot burst."
+  "version": "v4.1.0",
+  "versionCode": 26,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.1.0/zoron_v4.1.0.zip",
+  "changelog": "v4.1.0:\n- Added Autopilot Mode via UsageStatsManager.\n- Refactored Fastpath to reduce cpuset jitter.\n- Added comprehensive UI Settings (Export Logs, Clear Analytics).\n- Developer Mode diagnostics."
 }
