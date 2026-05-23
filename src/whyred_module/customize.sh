@@ -2,7 +2,8 @@
 DEVICE=$(getprop ro.product.device)
 MODEL=$(getprop ro.product.model)
 SOC=$(getprop ro.board.platform)
-CORES=$(nproc 2>/dev/null || cat /proc/cpuinfo | grep -c processor 2>/dev/null || echo "unknown")
+CORES=$(ls -d /sys/devices/system/cpu/cpu[0-9]* 2>/dev/null | wc -l)
+[ "$CORES" -eq 0 ] && CORES=$(nproc 2>/dev/null || cat /proc/cpuinfo | grep -c processor 2>/dev/null || echo "unknown")
 RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}')
 if [ -n "$RAM_KB" ]; then
   RAM_MB=$((RAM_KB / 1024))
