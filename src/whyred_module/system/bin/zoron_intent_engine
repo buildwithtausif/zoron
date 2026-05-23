@@ -331,7 +331,7 @@ adjust_sleep_idle() {
 # ===========================================================================
 # MAIN LOOP — Intent prediction engine (v4.0.0 optimized intervals)
 # ===========================================================================
-CURRENT_STATE=$STATE_INTERACTIVE
+CURRENT_STATE=-1
 LAST_TOUCH_TIME=$(date +%s)
 SCREEN_OFF_TIME=0
 LAST_STATE_CHANGE=$(date +%s)
