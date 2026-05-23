@@ -91,34 +91,66 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:padding="16dp">
                     
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Export Preferences"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Zip logs before export"
+                                android:textSize="12sp"
+                                android:textColor="?android:attr/textColorSecondary" />
+                        </LinearLayout>
+                        
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchZipExport"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Export Preferences"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Zip logs before export"
-                            android:textSize="12sp"
-                            android:textColor="?android:attr/textColorSecondary" />
+                            android:checked="true" />
                     </LinearLayout>
                     
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchZipExport"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:checked="true" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="16dp">
+                        
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSettingsExportLogs"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Export Logs" />
+                            
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSettingsClearLogs"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="#FF5252"
+                            app:strokeColor="#FF5252"
+                            android:text="Clear Data" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -247,7 +279,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Enable advanced diagnostics"
+                            android:text="Enable advanced diagnostics (verbose logs, raw metrics, fastpath stats)"
                             android:textSize="12sp"
                             android:textColor="?android:attr/textColorSecondary" />
                     </LinearLayout>

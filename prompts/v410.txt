@@ -1,0 +1,644 @@
+ZORON-X v4.1.0 — FINAL STABLE OPTIMIZATION, FASTPATH, RUNTIME REFACTOR, USER DOCS, AUTOPILOT & EXPORT LOGS UI
+
+IMPORTANT:
+This version (v4.1.0) is intended to become the FINAL STABLE RELEASE unless future critical bugs are discovered.
+
+STABILITY IS THE HIGHEST PRIORITY.
+
+DO NOT:
+- break existing working functionality
+- introduce unstable kernel behavior
+- reduce real-world optimization effectiveness
+- create bootloops
+- cause scheduler instability
+- break suspend/deep sleep
+- introduce thermal runaway
+- freeze the controller
+- cause delayed mode application
+- create random lag spikes
+- degrade responsiveness
+- ship untested changes
+
+Before publishing:
+FULLY DEBUG, VALIDATE, STRESS TEST, AND VERIFY EVERYTHING.
+
+This release should prioritize:
+- reliability
+- efficiency
+- responsiveness
+- lightweight runtime behavior
+- production-grade stability
+
+====================================================
+PHASE 1 — FULL RUNTIME AUDIT
+====================================================
+Audit ALL currently applied tweaks. Categorize into:
+
+1. BOOT-ONLY TWEAKS:
+- Apply once during boot only.
+- Examples: VM settings, static kernel tunables, permanent I/O settings, non-runtime optimizations.
+- Never rewrite these during mode switching.
+
+2. PROFILE-INIT TWEAKS:
+- Rarely changed.
+- Apply only when required.
+
+3. FASTPATH RUNTIME TWEAKS:
+- Only lightweight runtime-safe operations.
+- Must remain tiny, fast, low-overhead, and non-blocking.
+
+====================================================
+PHASE 2 — DELTA-BASED SWITCHING (MANDATORY)
+====================================================
+Before ANY runtime write:
+- Read current value.
+- Compare against target value.
+- Skip redundant writes if already matching.
+
+Logic:
+if current_value != target_value:
+    apply_write()
+else:
+    skip_write()
+
+Goal: Reduce runtime sysfs writes by 60–90%. DO NOT rewrite already-matching values.
+
+====================================================
+PHASE 3 — FASTPATH REFACTOR
+====================================================
+Fastpath should ONLY modify:
+- freq ceilings
+- boost behavior
+- governor aggressiveness
+- idle policy
+- thermal scaling intensity
+
+Avoid:
+- VM setting rewrites
+- cpuset rebuilds
+- thermal engine rewrites
+- scheduler topology resets
+- unnecessary governor resets
+
+====================================================
+PHASE 4 — FIX CONTROLLER FREEZING & LAG
+====================================================
+Required fixes:
+- Asynchronous apply engine
+- Background runtime processing
+- Non-blocking shell operations
+- UI thread isolation
+- Lightweight execution queues
+
+====================================================
+PHASE 5 — REDUCE HEAVY OPERATIONS
+====================================================
+Prefer:
+- lower freq ceilings
+- shorter boost durations
+- intelligent idle biasing
+- lightweight governor tuning
+- task migration instead of hotplugging
+
+====================================================
+PHASE 6 — TRUE DEEP MODE EVOLUTION
+====================================================
+Deep mode improvements:
+- Aggressive idle collapse
+- Smart low-frequency strategy
+- Input boost minimization
+- Thermal-aware efficiency
+- Background task containment
+- Suspend optimization
+
+====================================================
+PHASE 7 — MODE LIGHTWEIGHTING & WRITE OPTIMIZATION
+====================================================
+All profiles must:
+- minimize total runtime writes
+- apply only essential tweaks
+- prevent redundant writes
+- execute fastpaths asynchronously
+- preserve scheduler/thermal stability
+
+====================================================
+PHASE 8 — LOGGING & DEBUGGING OPTIMIZATION
+====================================================
+Logging must remain lightweight:
+- Avoid giant logs
+- Structured compact logging
+- Scheduled cleanup/compression
+- Efficient export handling
+
+====================================================
+PHASE 9 — REBOOT-AWARE CHANGE MANAGEMENT
+====================================================
+Notify user if a reboot is required and provide "Reboot Now" / "Later" options.
+
+====================================================
+PHASE 10 — MANDATORY VALIDATION BEFORE RELEASE
+====================================================
+Tests:
+- Rapid/repeated mode switching
+- Night Watch/Burst stress test
+- Overnight idle drain & deep sleep
+- Thermal recovery
+- Controller responsiveness & touch latency
+- Scheduler recovery
+- Verify no frozen states, no delayed mode application, no broken governors
+
+====================================================
+PHASE 11 — CLEAR LOGS & ANALYTICS DATA OPTION
+====================================================
+Settings option: "Clear Logs & Analytics" deletes all logs/analytics and resets counters. Requires user confirmation.
+
+====================================================
+PHASE 12 — DEVELOPER MODE & USER-END DOCUMENTATION
+====================================================
+Developer Mode:
+- Full advanced diagnostics
+- Verbose logging, raw sysfs metrics, CPU/governor monitoring, fastpath statistics
+- Enable/disable safely
+
+User-End Documentation:
+- Clear explanations for all settings:
+  - Logging Mode: NORMAL, DEBUG, TRACE
+  - Export Preferences: zip logs before export
+  - Fastpath Engine
+  - Adaptive Mode Learning
+  - Developer Mode
+- Tooltips or brief in-app help
+- Ensure descriptions match real behavior
+
+====================================================
+PHASE 13 — AUTOPILOT MODE
+====================================================
+Default mode:
+- Automatically switches between Legacy and Zoron-X modes based on app usage
+- Heavy rendering/scrolling → performance mode
+- Idle/low-demand → battery/deep mode
+- Integrates with Fastpath Engine, Adaptive Mode Learning, deep mode, and thermal scaling
+- Respect manual mode overrides
+- Smooth, fast, and non-blocking transitions
+====================================================
+PHASE 13.5 — AUTOPILOT DECISION ENGINE & ADAPTIVE ALGORITHMIC LOGIC
+====================================================
+
+Autopilot mode should NOT behave like:
+- a simple timer-based mode switcher
+- a random aggressive AI optimizer
+- an unstable constantly-switching controller
+
+Instead:
+Autopilot should behave like a lightweight adaptive behavioral power-management engine.
+
+Primary objective:
+- intelligently balance performance, battery, thermals, and responsiveness
+- minimize unnecessary switching
+- reduce runtime overhead
+- preserve production-grade stability
+
+====================================================
+AUTOPILOT CORE DESIGN PRINCIPLES
+====================================================
+
+Autopilot should:
+- detect real device usage patterns
+- adapt dynamically
+- remain lightweight
+- avoid expensive ML inference
+- use heuristic-driven adaptive logic
+- prioritize stability over aggressiveness
+
+DO NOT implement:
+- heavy machine learning pipelines
+- battery-draining AI services
+- aggressive continuous inference systems
+
+Prefer:
+- lightweight heuristics
+- confidence scoring
+- adaptive thresholds
+- behavioral pattern recognition
+- low-overhead decision logic
+
+====================================================
+TIER 1 — CONTEXT DETECTION LAYER
+====================================================
+
+Autopilot should monitor:
+
+- foreground app
+- rendering intensity
+- scrolling activity
+- touch frequency
+- screen state
+- charging state
+- thermal state
+- battery level
+- idle duration
+- wakeup frequency
+- interaction density
+
+Examples:
+- scrolling reels/social feeds
+- gaming/render-heavy activity
+- video playback
+- idle/static reading
+- overnight idle
+- charging sessions
+
+====================================================
+TIER 2 — DYNAMIC POWER MANAGEMENT LOGIC
+====================================================
+
+Implement adaptive runtime behavior inspired by dynamic power management principles.
+
+Concept:
+- low workload → aggressive efficiency
+- medium workload → balanced runtime
+- high workload → responsive performance
+
+Behavior examples:
+
+IDLE / STATIC UI:
+→ Deep or Night Watch
+
+SOCIAL MEDIA SCROLLING:
+→ Balanced or Balanced+
+
+HEAVY RENDERING / GAMING:
+→ Burst or Burst-lite
+
+CHARGING + IDLE:
+→ maintenance/cleanup opportunity mode
+
+THERMAL SPIKE:
+→ adaptive cooldown scaling
+
+LOW BATTERY:
+→ aggressive battery preservation mode
+
+====================================================
+TIER 3 — INTELLIGENT PROCESS SCHEDULING
+====================================================
+
+Autopilot should intelligently prioritize background operations.
+
+Separate:
+- critical tasks
+- deferred tasks
+
+Critical tasks:
+- foreground responsiveness
+- notifications
+- essential runtime operations
+
+Deferred tasks:
+- analytics syncing
+- cleanup jobs
+- compression/export operations
+- maintenance jobs
+
+When:
+- battery low
+- thermal state elevated
+- deep idle active
+
+Then:
+- defer non-essential background work
+
+====================================================
+TIER 4 — ADAPTIVE POLLING & MONITORING
+====================================================
+
+Monitoring itself must remain battery-efficient.
+
+Dynamically reduce:
+- polling intervals
+- analytics updates
+- sensor checks
+- monitoring frequency
+
+during:
+- idle states
+- deep mode
+- low interaction periods
+- overnight idle
+
+Avoid:
+- aggressive continuous polling
+- unnecessary wakeups
+- excessive timer activity
+
+====================================================
+TIER 5 — LIGHTWEIGHT BEHAVIORAL LEARNING
+====================================================
+
+DO NOT implement heavy ML systems in v4.1.0.
+
+Instead:
+Implement lightweight heuristic-based adaptive learning.
+
+Examples:
+
+If:
+- user consistently opens certain apps at specific times
+Then:
+- preload optimized balanced behavior
+
+If:
+- device repeatedly overheats during specific workloads
+Then:
+- trigger earlier adaptive cooldown next session
+
+If:
+- overnight idle patterns detected repeatedly
+Then:
+- optimize deeper idle entry confidence
+
+This provides:
+- intelligent adaptation
+WITHOUT:
+- heavy ML overhead
+
+====================================================
+TIER 6 — SMART TRANSITION CONTROL
+====================================================
+
+Autopilot MUST avoid:
+- constant switching
+- profile oscillation
+- scheduler instability
+- thermal instability
+- excessive runtime writes
+
+Implement:
+- cooldown timers
+- confidence thresholds
+- minimum dwell time
+- hysteresis logic
+
+Example:
+- remain in selected mode for minimum duration before switching again
+
+Goal:
+Prevent:
+- mode spam
+- scheduler chaos
+- thermal spikes
+- lag during repeated transitions
+
+====================================================
+AUTOPILOT RUNTIME RULES
+====================================================
+
+Autopilot transitions must:
+- remain lightweight
+- avoid full profile rewrites
+- use delta-based switching
+- preserve fastpath responsiveness
+- remain asynchronous
+- avoid blocking UI/controller threads
+
+Autopilot itself MUST NOT:
+- become battery-hungry
+- generate excessive logs
+- spam kernel writes
+- reduce responsiveness
+- create instability
+
+====================================================
+AUTOPILOT + ANDROID FRAMEWORK OPTIMIZATION
+====================================================
+
+Integrate with:
+- JobScheduler constraints
+- WorkManager optimization
+- deferred maintenance execution
+- charging/Wi-Fi-only heavy jobs
+- adaptive polling logic
+- Doze-aware scheduling
+
+If location access required:
+Prefer:
+PRIORITY_PASSIVE
+
+to minimize:
+- GPS wakeups
+- sensor drain
+- unnecessary power usage
+
+====================================================
+AUTOPILOT VALIDATION REQUIREMENTS
+====================================================
+
+Test Autopilot across:
+- social media scrolling
+- gaming
+- video playback
+- idle standby
+- overnight idle
+- charging sessions
+- multitasking
+- thermal stress conditions
+
+Verify:
+- smooth transitions
+- no UI lag
+- no controller freezing
+- no excessive switching
+- stable thermals
+- improved battery behavior
+- preserved responsiveness
+
+====================================================
+FINAL AUTOPILOT OBJECTIVE
+====================================================
+
+Autopilot should feel:
+- invisible
+- intelligent
+- lightweight
+- adaptive
+- stable
+- responsive
+- thermally aware
+- battery efficient
+
+The user should feel:
+"the device naturally adapts itself intelligently"
+
+WITHOUT:
+- instability
+- lag
+- heavy runtime overhead
+- battery-draining AI behavior.
+====================================================
+PHASE 14 — EXPORT LOGS BUTTON IN SETTINGS UI
+====================================================
+Task: Update Zoron Settings UI to add an "Export Logs" button.
+
+Instructions:
+- Place the button inside **Settings → Export Preferences**, next to the "Zip logs before export" toggle
+- If toggle is ON: clicking exports all logs as a single .zip with .txt/.csv files
+- If toggle is OFF: clicking exports logs individually
+- Show feedback message: "Logs exported successfully" and display the file path
+- Maintain dark theme and layout
+- Include comments for direct developer integration
+- Produce code only (XML/React/Flutter depending on Zoron version) for Settings UI; no home screen changes
+
+Deliverable:
+- Full UI code snippet implementing the Export Logs button behavior as specified
+====================================================
+PHASE 15 — ANDROID FRAMEWORK & BACKGROUND POWER OPTIMIZATION
+====================================================
+
+In addition to kernel/runtime optimization, integrate Android-native power efficiency practices to reduce unnecessary workload generation at the framework/app level.
+
+Goal:
+Prevent avoidable battery drain before kernel-level mitigation becomes necessary.
+
+====================================================
+1. JOBSCHEDULER OPTIMIZATION
+====================================================
+
+For background syncing, analytics uploads, cleanup tasks, log exports, and maintenance jobs:
+
+Use Android JobScheduler APIs with proper constraints.
+
+Recommended constraints:
+- setRequiredNetworkType(NetworkType.UNMETERED)
+- setRequiresCharging(true)
+
+Purpose:
+- prevent heavy syncing on battery
+- avoid unnecessary mobile data usage
+- defer expensive background operations until device is charging and on Wi-Fi
+
+Apply this especially to:
+- analytics syncing
+- large log exports
+- cleanup/compression jobs
+- telemetry uploads
+- heavy maintenance operations
+
+Avoid:
+- aggressive periodic wakeups
+- unnecessary background polling
+- battery-draining sync loops
+
+====================================================
+2. FUSED LOCATION PROVIDER OPTIMIZATION
+====================================================
+
+If any service/module requires location access:
+
+Prefer:
+PRIORITY_PASSIVE
+
+instead of:
+high-frequency active location requests.
+
+Purpose:
+- only receive location updates if another app already requested location
+- dramatically reduce GPS and sensor power usage
+- minimize unnecessary wakeups
+
+Only escalate to higher priority location modes when:
+- absolutely required
+- user explicitly initiates location-dependent functionality
+
+====================================================
+3. BACKGROUND TASK MINIMIZATION
+====================================================
+
+Reduce:
+- unnecessary wake locks
+- aggressive polling loops
+- constant timers
+- excessive worker scheduling
+
+Prefer:
+- event-driven architecture
+- deferred background execution
+- batching operations together
+- opportunistic execution during charging/Wi-Fi
+
+====================================================
+4. WORKMANAGER / SERVICE OPTIMIZATION
+====================================================
+
+Audit:
+- foreground services
+- WorkManager jobs
+- persistent background tasks
+
+Ensure:
+- no unnecessary always-running services
+- services terminate cleanly
+- workers respect Doze/App Standby behavior
+- background execution remains lightweight
+
+====================================================
+5. BATTERY-FIRST FRAMEWORK DESIGN
+====================================================
+
+ZORON-X should optimize not only:
+- CPU
+- governors
+- thermal behavior
+
+but also:
+- Android framework workload generation itself.
+
+Best optimization:
+"prevent unnecessary work before it reaches the kernel."
+
+====================================================
+VALIDATION
+====================================================
+
+Verify:
+- reduced background wakeups
+- lower idle drain
+- fewer unnecessary jobs during battery usage
+- proper charging/Wi-Fi deferred execution
+- no excessive location polling
+- compatibility with Android Doze/App Standby
+
+Ensure:
+- functionality remains intact
+- notifications are not broken
+- jobs still execute reliably under correct conditions
+
+====================================================
+FINAL OBJECTIVE
+====================================================
+
+Combine:
+- intelligent Android framework scheduling
+WITH
+- lightweight kernel/runtime optimization
+
+to create:
+a truly adaptive low-overhead battery management system.
+====================================================
+FINAL RELEASE DIRECTIVE
+====================================================
+v4.1.0 is the FINAL STABLE ZORON-X RELEASE.
+
+Requirements:
+- Stability over experimental aggressiveness
+- Efficiency over tweak quantity
+- Runtime smoothness over brute-force optimization
+- Autopilot integrated and default-enabled
+- Developer Mode fully functional
+- User-end documentation complete
+- Export Logs button fully implemented in Settings UI
+
+MOST IMPORTANT:
+- DO NOT BREAK EXISTING CODEBASE
+- DO NOT SHIP WITHOUT FULL DEBUGGING
+- DO NOT RELEASE UNTIL VERIFIED STABLE
+- PRESERVE ALL WORKING FUNCTIONALITY WHILE IMPLEMENTING THESE OPTIMIZATIONS

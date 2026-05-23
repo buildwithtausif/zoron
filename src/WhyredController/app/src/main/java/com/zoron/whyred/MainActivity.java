@@ -1,5 +1,7 @@
 package com.zoron.whyred;
 
+import android.app.AppOpsManager;
+import android.provider.Settings;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -133,6 +135,33 @@ public class MainActivity extends AppCompatActivity {
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
+
+        // Autopilot
+        com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
+        switchAutopilot.setChecked(autopilotEnabled);
+        
+        if (autopilotEnabled && hasUsageStatsPermission()) {
+            startService(new Intent(this, ZoronAutopilotService.class));
+        }
+
+        switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (!hasUsageStatsPermission()) {
+                    buttonView.setChecked(false);
+                    requestUsageStatsPermission();
+                } else {
+                    prefs.edit().putBoolean("autopilot_enabled", true).apply();
+                    startService(new Intent(MainActivity.this, ZoronAutopilotService.class));
+                    Toast.makeText(MainActivity.this, "Autopilot Enabled", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                prefs.edit().putBoolean("autopilot_enabled", false).apply();
+                stopService(new Intent(MainActivity.this, ZoronAutopilotService.class));
+                Toast.makeText(MainActivity.this, "Autopilot Disabled", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Start foreground service for persistent notification
         startZoronService();
@@ -718,5 +747,26 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 1001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startZoronService();
         }
+    }
+
+    private boolean hasUsageStatsPermission() {
+        AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
+        int mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, 
+            android.os.Process.myUid(), getPackageName());
+        if (mode == AppOpsManager.MODE_DEFAULT) {
+            return checkCallingOrSelfPermission(android.Manifest.permission.PACKAGE_USAGE_STATS) == PackageManager.PERMISSION_GRANTED;
+        }
+        return mode == AppOpsManager.MODE_ALLOWED;
+    }
+
+    private void requestUsageStatsPermission() {
+        new AlertDialog.Builder(this)
+            .setTitle("Permission Required")
+            .setMessage("Autopilot needs 'Usage Access' permission to detect the current foreground app and adjust performance automatically. Please enable it for ZORON-X in the next screen.")
+            .setPositiveButton("Grant", (dialog, which) -> {
+                startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }

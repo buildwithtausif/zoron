@@ -34,9 +34,6 @@ case "$ACTION" in
             sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor" "performance"
         fi
         
-        sysfs_write "/dev/cpuset/foreground/cpus" "0-7"
-        sysfs_write "/dev/cpuset/top-app/cpus" "0-7"
-        
         # We don't have floating point sleep in standard Android shell often, fallback to sleep 1
         sleep 1
         
@@ -54,18 +51,12 @@ case "$ACTION" in
         if [ "$MODE" = "burst" ] || [ "$MODE" = "perform" ]; then
             sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" "performance"
             sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor" "performance"
-            sysfs_write "/dev/cpuset/foreground/cpus" "0-7"
-            sysfs_write "/dev/cpuset/top-app/cpus" "0-7"
         elif [ "$MODE" = "balanced" ]; then
             sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" "schedutil"
             sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor" "schedutil"
-            sysfs_write "/dev/cpuset/foreground/cpus" "0-7"
-            sysfs_write "/dev/cpuset/top-app/cpus" "0-7"
         elif [ "$MODE" = "deep" ] || [ "$MODE" = "hibernation" ] || [ "$MODE" = "nightwatch" ]; then
             sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" "powersave"
             sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor" "powersave"
-            sysfs_write "/dev/cpuset/foreground/cpus" "0-3"
-            sysfs_write "/dev/cpuset/top-app/cpus" "0-3"
         fi
         ;;
     *)
