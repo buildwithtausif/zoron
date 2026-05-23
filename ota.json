@@ -1,6 +1,6 @@
 {
-  "versionCode": 25,
-  "versionName": "v4.0.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.0.0/Zoron.apk",
-  "changelog": "v4.0.0 — Engine Optimization:\n- All dumpsys replaced with sysfs reads.\n- Doubled daemon poll intervals.\n- Process monitor capped at 200 apps.\n- Dashboard pauses when backgrounded.\n- Staggered daemon boot."
+  "versionCode": 26,
+  "versionName": "v4.1.0",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.1.0/Zoron.apk",
+  "changelog": "v4.1.0:\n- Added Autopilot Mode via UsageStatsManager.\n- Refactored Fastpath to reduce cpuset jitter.\n- Added comprehensive UI Settings (Export Logs, Clear Analytics).\n- Developer Mode diagnostics."
 }
