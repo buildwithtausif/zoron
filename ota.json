@@ -1,6 +1,6 @@
 {
-  "versionCode": 31,
-  "versionName": "v4.4.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.0/Zoron.apk",
-  "changelog": "v4.4.0:\n- Native fallback support for Non-Root devices with a fully simulated Java-based fallback optimization engine.\n- Expanded non-root techniques including Master Sync toggles, Haptic & sound control, screen off timeouts, auto brightness overrides, and AMOLED pure black layout styling.\n- Added developer attributions for Tausif Alam aka buildwithtausif linking directly to the Zoron GitHub repository."
+  "versionCode": 32,
+  "versionName": "v4.4.1",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.1/Zoron.apk",
+  "changelog": "v4.4.1:\n- Added in-app Non-Root advisory dialog with 'Learn More' and 'Don't show again' options.\n- Minor UI and documentation updates.\n- Packaging update: module zip (zoron_v4.4.1.zip) and APK published."
 }
