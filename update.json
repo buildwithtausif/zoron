@@ -1,6 +1,6 @@
 {
-  "version": "v4.1.0",
-  "versionCode": 26,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.1.0/zoron_v4.1.0.zip",
-  "changelog": "v4.1.0:\n- Added Autopilot Mode via UsageStatsManager.\n- Refactored Fastpath to reduce cpuset jitter.\n- Added comprehensive UI Settings (Export Logs, Clear Analytics).\n- Developer Mode diagnostics."
+  "version": "v4.1.1",
+  "versionCode": 27,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.1.1/zoron_v4.1.1.zip",
+  "changelog": "v4.1.1:\n- Fixed whyred_opt device detection bug on non-whyred devices.\n- Improved battery drain optimization for balanced and legacy modes.\n- Improved app stability during mode switches."
 }

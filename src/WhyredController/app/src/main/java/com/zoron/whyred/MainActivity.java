@@ -585,6 +585,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (fastpathEnabled) {
                 runOnUiThread(() -> {
+                    if (isDestroyed()) return;
                     transitionProgressBar.setProgress(20);
                     tvTransitionDetail.setText("Fastpath: CPU governor + frequencies");
                 });
@@ -592,13 +593,15 @@ public class MainActivity extends AppCompatActivity {
                 Shell.cmd("sh /system/bin/zoron_fastpath.sh set_mode " + mode + " || sh /data/adb/modules/zoron_x_optimizer/system/bin/zoron_fastpath.sh set_mode " + mode).exec();
 
                 runOnUiThread(() -> {
+                    if (isDestroyed()) return;
                     transitionProgressBar.setProgress(40);
                     tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
-                    tvTransitionStatus.setText("\u26a1 Fastpath applied");
+                    tvTransitionStatus.setText("⚡ Fastpath applied");
                     tvTransitionDetail.setText("Running zoron_engine " + mode);
                 });
             } else {
                 runOnUiThread(() -> {
+                    if (isDestroyed()) return;
                     transitionProgressBar.setProgress(40);
                     tvTransitionStatus.setText("Fastpath disabled — running engine directly");
                     tvTransitionDetail.setText("Running zoron_engine " + mode);
@@ -607,6 +610,7 @@ public class MainActivity extends AppCompatActivity {
 
             // 2. Heavy Engine processing
             runOnUiThread(() -> {
+                if (isDestroyed()) return;
                 transitionProgressBar.setProgress(50);
                 tvTransitionDetail.setText("Engine: Thermal + I/O + zRAM tuning");
             });
@@ -623,13 +627,16 @@ public class MainActivity extends AppCompatActivity {
             Shell.Result result = Shell.cmd(scriptCmd).exec();
 
             runOnUiThread(() -> {
+                if (isDestroyed()) return;
                 if (result.isSuccess()) {
                     transitionProgressBar.setProgress(100);
                     tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
                     tvTransitionDetail.setText("All optimizations applied successfully");
                     tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
                     // Auto-hide after 3 seconds
-                    handler.postDelayed(() -> cardTransitionProgress.setVisibility(View.GONE), 3000);
+                    handler.postDelayed(() -> {
+                        if (!isDestroyed()) cardTransitionProgress.setVisibility(View.GONE);
+                    }, 3000);
                     refreshDashboard();
                 } else {
                     transitionProgressBar.setProgress(100);
@@ -653,24 +660,23 @@ public class MainActivity extends AppCompatActivity {
         new Thread(() -> {
             // Search paths in priority order
             String scriptCmd = String.join("; ",
+                "DEVICE=$(getprop ro.product.device 2>/dev/null)",
+                "if [ \"$DEVICE\" = \"whyred\" ] || [ \"$DEVICE\" = \"tulip\" ]; then ",
+                "  SCRIPT_NAME=\"whyred_opt\"",
+                "else",
+                "  SCRIPT_NAME=\"zoron_engine\"",
+                "fi",
                 "SCRIPT_PATH=\"\"",
-                "for p in /data/local/tmp/zoron/whyred_opt /system/bin/whyred_opt /data/adb/modules/zoron_x_optimizer/system/bin/whyred_opt /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt; do " +
+                "for p in /data/local/tmp/zoron/$SCRIPT_NAME /system/bin/$SCRIPT_NAME /data/adb/modules/zoron_x_optimizer/system/bin/$SCRIPT_NAME /data/adb/modules/whyred_battery_optimizer/system/bin/$SCRIPT_NAME; do " +
                     "if [ -f \"$p\" ]; then SCRIPT_PATH=\"$p\"; break; fi; done",
                 "if [ -z \"$SCRIPT_PATH\" ]; then " +
-                    "echo 'ERROR: whyred_opt not found.'; " +
-                    "echo ''; " +
-                    "echo 'Searched paths:'; " +
-                    "echo '  /data/local/tmp/zoron/whyred_opt'; " +
-                    "echo '  /system/bin/whyred_opt'; " +
-                    "echo '  /data/adb/modules/zoron_x_optimizer/system/bin/whyred_opt'; " +
-                    "echo '  /data/adb/modules/whyred_battery_optimizer/system/bin/whyred_opt'; " +
-                    "echo ''; " +
-                    "echo 'Please reflash the Zoron module ZIP and reboot.'; " +
+                    "echo \"ERROR: $SCRIPT_NAME not found.\"; " +
                     "exit 1; fi",
                 "sed 's/\\r$//' \"$SCRIPT_PATH\" | sh -s " + profile
             );
             Shell.Result result = Shell.cmd(scriptCmd).exec();
             new Handler(Looper.getMainLooper()).post(() -> {
+                if (isDestroyed()) return;
                 if (result.isSuccess()) {
                     Toast.makeText(MainActivity.this, profile.toUpperCase() + " profile applied!", Toast.LENGTH_SHORT).show();
                     refreshDashboard();

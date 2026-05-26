@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v4.1.1
+- **Universal Legacy Modes**: Legacy profiles (None, Battery, Performance) now fully support all Android devices by utilizing the new `zoron_engine`, fixing the `whyred_opt` error.
+- **Battery Drain Fix**: Radically optimized parameter limits in Balanced and Deep modes. Balanced mode now severely restricts frequency scaling for background tasks, resolving the 14% drain issue.
+- **Stability Improvement**: The ZORON-X mode switcher now includes robust thread safeguards, preventing the controller app from randomly crashing during transitions.
+
 ## v3.5.0 — ZORON-X Power Architecture
 - **ZORON-X Engine**: Complete next-generation power optimization engine replacing the legacy profile system. Implements 5 intelligent power modes (Balanced, Deep, Hibernation, Burst, Nightwatch) with dynamic device capability detection.
 - **Universal Device Support**: ZORON-X now works on ALL Android devices by dynamically probing sysfs paths and applying only compatible optimizations. Whyred/Tulip (SDM636/660) devices receive hardcoded optimal frequency tuning.

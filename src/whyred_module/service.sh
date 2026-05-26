@@ -84,8 +84,14 @@ case "$PROFILE" in
         log "ZORON-X profile detected, using zoron_engine"
         ;;
     none|battery|performance)
-        ENGINE="whyred_opt"
-        log "Legacy profile detected, using whyred_opt"
+        DEVICE=$(getprop ro.product.device 2>/dev/null)
+        if [ "$DEVICE" = "whyred" ] || [ "$DEVICE" = "tulip" ]; then
+            ENGINE="whyred_opt"
+            log "Legacy profile detected on whyred/tulip, using whyred_opt"
+        else
+            ENGINE="zoron_engine"
+            log "Legacy profile detected on generic device, using zoron_engine"
+        fi
         ;;
     *)
         # Unknown profile, treat as ZORON-X balanced
