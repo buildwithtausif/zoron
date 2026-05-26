@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "Enable ignore battery optimization manually in system settings.", Toast.LENGTH_LONG).show();
                 }
             });
+            showNonRootAdvisoryDialog();
         }
 
         // Developer attribution click listener
@@ -1125,5 +1126,69 @@ public class MainActivity extends AppCompatActivity {
             }
             return defaultContent;
         }
+    }
+
+    private void showNonRootAdvisoryDialog() {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean showWarning = prefs.getBoolean("show_non_root_warning", true);
+        if (!showWarning) return;
+
+        android.widget.ScrollView scrollView = new android.widget.ScrollView(this);
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(padding, padding, padding, padding);
+
+        android.widget.TextView tvMessage = new android.widget.TextView(this);
+        tvMessage.setText(
+            "ZORON-X is designed and optimized primarily for Rooted devices (custom ROMs/kernels) " +
+            "where standard OEM power management has been bypassed. Custom setups often disable core parking, " +
+            "use aggressive scaling governors, and allow unmanaged background wakelocks, requiring an explicit saver.\n\n" +
+            "Stock non-rooted devices already have highly optimized, vendor-specific power systems tuned by manufacturers, " +
+            "and do not require third-party savers.\n\n" +
+            "We recommend ZORON-X on non-root devices ONLY if your battery has suffered significant degradation/wear " +
+            "and cannot be physically replaced. In this case, ZORON-X acts as a supplementary layer (toggling sync, capping " +
+            "brightness/timeouts, disabling haptics) to stretch the remaining capacity."
+        );
+        tvMessage.setTextSize(14f);
+        tvMessage.setTextColor(getColor(R.color.purple_on_surface_variant));
+        tvMessage.setLineSpacing(4f, 1f);
+        layout.addView(tvMessage);
+
+        android.widget.CheckBox cbDontShow = new android.widget.CheckBox(this);
+        cbDontShow.setText("Don't show this advisory again");
+        cbDontShow.setTextColor(getColor(R.color.purple_on_surface));
+        cbDontShow.setTextSize(14f);
+        android.widget.LinearLayout.LayoutParams cbParams = new android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cbParams.setMargins(0, (int) (16 * getResources().getDisplayMetrics().density), 0, 0);
+        cbDontShow.setLayoutParams(cbParams);
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            cbDontShow.setButtonTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.purple_primary)));
+        }
+        layout.addView(cbDontShow);
+
+        scrollView.addView(layout);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Non-Root Advisory")
+            .setView(scrollView)
+            .setPositiveButton("I Understand", (dialog, which) -> {
+                if (cbDontShow.isChecked()) {
+                    prefs.edit().putBoolean("show_non_root_warning", false).apply();
+                }
+            })
+            .setNeutralButton("Learn More", (dialog, which) -> {
+                try {
+                    startActivity(new android.content.Intent(this, ModeLearnActivity.class));
+                } catch (Exception e) {
+                    android.widget.Toast.makeText(this, "Unable to open documentation.", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setCancelable(false)
+            .show();
     }
 }

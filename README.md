@@ -15,6 +15,8 @@ ZORON-X supports both **Rooted** (Magisk/KernelSU) and **Non-Rooted** devices.
 > [!IMPORTANT]
 > **Recommended for Root Devices**: ZORON-X is designed primarily for rooted devices to achieve optimal results. Non-root fallback mode is recommended **only** when the device has a heavily worn-out battery that cannot be replaced.
 
+On non-root devices the app will show an in-app advisory describing technical limitations and recommended usage. The advisory appears on first run and includes a "Don't show this advisory again" option and a "Learn More" button linking to the in-app documentation.
+
 ### Technical Aspects: Why Root Needs ZORON-X (and Stock Doesn't)
 - **Root Devices (Custom ROMs/Kernels)**: Custom ROMs, kernels, and root modifications often bypass standard OEM power management. They can disable CPU core parking, run aggressive scaling governors, allow unmanaged background wakelocks, and prevent the SOC from entering deep suspend states. Thus, root devices need an explicit kernel-level saver like ZORON-X to force-regulate resource allocations.
 - **Non-Root Devices (Stock OEM Firmware)**: Stock OEM firmware already contains highly optimized, hardware-specific power managers tuned by manufacturers. They manage system resources, app standby buckets, and doze timers natively. Adding third-party battery managers is generally unnecessary.

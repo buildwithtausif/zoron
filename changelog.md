@@ -4,6 +4,7 @@
 - **Non-Root Device Fallback**: Introduced native fallback support for non-root devices. The app runs a sandboxed optimization daemon when root is missing, preventing blocking the user.
 - **Simulated Sandbox Diagnostics**: Simulated `profile.txt`, `log.txt`, `battery.csv`, and `process_report.txt` in the local app directory (`context.getFilesDir()`) for seamless dashboard and chart updates on non-root.
 - **Java Fallback Engine**: Configured custom system-level optimizations using Android APIs (Master Sync, screen off timeout, screen brightness, haptics overrides, and touch sound management).
+- **Non-Root Advisory Dialog**: Added an in-app advisory that explains the technical limitations of non-root operation. It appears on first launch for non-root devices and provides a "Don't show this advisory again" checkbox and a "Learn More" button to open detailed documentation.
 - **AMOLED Pure Black Mode**: Dynamically switches the app background to solid black (`#000000`) instead of gradient dark purple when a deep battery saving profile is active to save extra OLED display power.
 - **Developer Attributions**: Added developer attribution card acknowledging **Tausif Alam aka buildwithtausif** with a direct repository link in both the main dashboard and settings pages.
 
