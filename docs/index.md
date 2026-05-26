@@ -1,4 +1,4 @@
-﻿# ZORON-X Documentation
+# ZORON-X Documentation
 
 Welcome to the official documentation for **ZORON-X**, the ultra-intelligent power conservation engine for Android devices.
 
@@ -44,6 +44,40 @@ When a sudden heavy workload is detected, Zoron-X triggers a `microburst`. It in
 
 ### 5. Process Tiering Monitor
 The `zoron_process_monitor` periodically scans `/proc` to evaluate running apps. It scores them based on OOM adjustments, CPU time consumed, and current state, assigning tiers (Foreground, Background, Cached, Dormant). Misbehaving background apps are aggressively frozen to prevent wakelocks.
+
+## Root vs. Non-Root Compatibility
+
+ZORON-X supports both **Rooted** (Magisk/KernelSU) and **Non-Rooted** devices natively.
+
+> [!IMPORTANT]
+> **Recommended for Root Devices**: ZORON-X is designed primarily for rooted devices to achieve optimal results. Non-root fallback mode is recommended **only** when the device has a heavily worn-out battery that cannot be replaced.
+
+### Why Do Rooted Devices Require Explicit Battery Savers?
+Rooted devices are often modified with custom ROMs, third-party kernels, and administrative tweaks. These custom packages frequently bypass standard OEM power configurations:
+- **Core Parking**: Custom kernels may disable core parking to maximize multi-threaded synthetic benchmark scores, running all CPU clusters at high frequencies even during idle tasks.
+- **Aggressive Governors**: Governor tunings in custom kernels often prioritize benchmark execution speeds over thermals/efficiency, triggering frequency spikes on minimal touch inputs.
+- **Wakelocks & Background Daemons**: Root applications frequently install background daemons that hold continuous CPU wakelocks, preventing the system-on-chip (SoC) from entering its ultra-low-power `suspend-to-RAM` (deep sleep) state.
+- **Custom Doze Profiles**: Rom configurations often disable or extend Android's aggressive Doze window, resulting in significant overnight standby battery drain (often 10% to 20%).
+
+Due to these factors, rooted devices require an explicit battery saver like ZORON-X to actively park unused cores, throttle scaling governors, batch doze alarms, and restrict aggressive background threads.
+
+### Why Do Stock (Non-Rooted) Devices Not Require It?
+Stock non-rooted devices running factory firmware (Pixel, Samsung, OnePlus, etc.) are already tuned at the hardware level by the OEM's battery engineers:
+- **Hardware-Specific Tuning**: Governors, cpuset limits, scheduler parameters, and task placement policies are optimized for that specific SoC and board configuration.
+- **App Standby Buckets**: OEM firmware natively enforces restrictive standby buckets, preventing cached/dormant applications from executing background threads.
+- **Optimized Idle Suspends**: The factory ROM ensures the device enters deep sleep efficiently within minutes of screen-off.
+
+Because stock devices are highly optimized out-of-the-box, adding third-party battery savers can introduce redundant background overhead.
+
+### ZORON-X Non-Root Fallback Engine
+ZORON-X provides a Non-Root Fallback mode for cases where a user has a stock device with a **heavily degraded (worn-out) battery** that cannot be physically replaced. In this fallback mode, ZORON-X runs a Java-based daemon to apply supplementary settings-level optimizations:
+- Toggles system-wide master sync dynamically to prevent sync adapters from keeping the CPU awake.
+- Caps maximum screen off timeouts to 15 seconds to prevent accidental battery drain.
+- Sets manual screen brightness limits and toggles off automatic brightness spikes.
+- Disables haptic motor feedback and touch sound effects to conserve extra battery cycles.
+- Enforces an AMOLED pure black theme (`#000000`) across all controller activity layouts to minimize display power draw in deep saving profiles.
+
+---
 
 ## Getting Started
 
