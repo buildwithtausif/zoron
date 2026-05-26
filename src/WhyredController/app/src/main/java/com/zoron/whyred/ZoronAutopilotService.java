@@ -5,6 +5,8 @@ import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,6 +17,7 @@ public class ZoronAutopilotService extends Service {
     private Handler handler;
     private Runnable autopilotTask;
     private String lastMode = "";
+    private boolean isVideoBoostActive = false;
 
     @Override
     public void onCreate() {
@@ -24,19 +27,26 @@ public class ZoronAutopilotService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        autopilotTask = new Runnable() {
-            @Override
-            public void run() {
-                evaluateAndSwitchMode();
-                handler.postDelayed(this, 10000); // Check every 10 seconds
-            }
-        };
-        handler.post(autopilotTask);
+        if (autopilotTask == null) {
+            autopilotTask = new Runnable() {
+                @Override
+                public void run() {
+                    evaluateAndSwitchMode();
+                    // Check every 2 seconds for high responsiveness (dynamic video scaling)
+                    handler.postDelayed(this, 2000);
+                }
+            };
+            handler.post(autopilotTask);
+        }
         return START_STICKY;
     }
 
     private void evaluateAndSwitchMode() {
-        // 1. Get Battery Level & Charging State
+        // 1. Read autopilot enabled state from preferences
+        SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
+
+        // 2. Get Battery Level & Charging State
         BatteryManager bm = (BatteryManager) getSystemService(BATTERY_SERVICE);
         boolean isCharging = false;
         int batteryLevel = 50;
@@ -45,42 +55,106 @@ public class ZoronAutopilotService extends Service {
             isCharging = bm.isCharging();
         }
 
-        // 2. Get Foreground App
+        // 3. Get Foreground App
         String fgApp = getForegroundApp();
-        String targetMode = "balanced";
+        
+        // 4. Universal Video Playback Detection
+        // Detects if the foreground app is a known video/social media app, OR if any audio output is active system-wide (covers unknown apps/players)
+        boolean isVideoPlaying = isVideoPlaybackApp(fgApp) || isAudioActive();
 
-        if (fgApp == null || fgApp.isEmpty()) {
-            targetMode = "deep"; // Screen likely off or idle
-        } else {
-            // Context Detection Heuristics
-            if (fgApp.contains("youtube") || fgApp.contains("netflix") || fgApp.contains("video")) {
-                targetMode = "balanced"; // Video playback
-            } else if (fgApp.contains("pubg") || fgApp.contains("mihoyo") || fgApp.contains("game") || fgApp.contains("roblox") || fgApp.contains("epicgames")) {
-                targetMode = "burst"; // Heavy gaming
-            } else if (fgApp.contains("launcher") || fgApp.contains("systemui")) {
-                targetMode = "deep"; // Idle at home screen
-            } else if (batteryLevel < 20 && !isCharging) {
-                targetMode = "nightwatch"; // Low battery preservation
-            } else if (isCharging) {
-                targetMode = "balanced"; // Allow cleanup operations
+        if (autopilotEnabled) {
+            // Autopilot Mode: Active dynamic mode management
+            String targetMode = "balanced";
+
+            if (fgApp == null || fgApp.isEmpty()) {
+                targetMode = "deep"; // Screen likely off or idle
             } else {
-                targetMode = "balanced"; // Default social media / web
+                if (isVideoPlaying) {
+                    targetMode = "video"; // Video playback optimization mode
+                } else if (fgApp.contains("pubg") || fgApp.contains("mihoyo") || fgApp.contains("game") || fgApp.contains("roblox") || fgApp.contains("epicgames")) {
+                    targetMode = "burst"; // Heavy gaming
+                } else if (fgApp.contains("launcher") || fgApp.contains("systemui")) {
+                    targetMode = "deep"; // Idle at home screen
+                } else if (batteryLevel < 20 && !isCharging) {
+                    targetMode = "nightwatch"; // Low battery preservation
+                } else if (isCharging) {
+                    targetMode = "balanced"; // Allow cleanup operations
+                } else {
+                    targetMode = "balanced"; // Default social media / web
+                }
+            }
+
+            // Turn off manual dynamic video boost if it was active
+            if (isVideoBoostActive) {
+                Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+                isVideoBoostActive = false;
+            }
+
+            if (!targetMode.equals(lastMode)) {
+                String finalTargetMode = targetMode;
+                Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
+                    if (out.isSuccess() && !out.getOut().isEmpty()) {
+                        String current = out.getOut().get(0).trim();
+                        if (!current.equals(finalTargetMode)) {
+                            applyZoronMode(finalTargetMode);
+                        }
+                        lastMode = finalTargetMode;
+                    } else {
+                        applyZoronMode(finalTargetMode);
+                        lastMode = finalTargetMode;
+                    }
+                });
+            }
+        } else {
+            // Manual Mode: Keep manual profile active, but apply temporary dynamic video boost
+            lastMode = ""; // Reset autopilot state
+
+            if (isVideoPlaying) {
+                if (!isVideoBoostActive) {
+                    Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_on").exec();
+                    isVideoBoostActive = true;
+                }
+            } else {
+                if (isVideoBoostActive) {
+                    Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+                    isVideoBoostActive = false;
+                }
             }
         }
+    }
 
-        if (!targetMode.equals(lastMode)) {
-            // Apply new mode asynchronously with delta-based execution
-            String finalTargetMode = targetMode;
-            Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
-                if (out.isSuccess() && !out.getOut().isEmpty()) {
-                    String current = out.getOut().get(0).trim();
-                    if (!current.equals(finalTargetMode)) {
-                        applyZoronMode(finalTargetMode);
-                    }
-                    lastMode = finalTargetMode;
-                }
-            });
-        }
+    private boolean isAudioActive() {
+        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        return am != null && am.isMusicActive();
+    }
+
+    private boolean isVideoPlaybackApp(String fgApp) {
+        if (fgApp == null || fgApp.isEmpty()) return false;
+        String app = fgApp.toLowerCase();
+        
+        return app.contains("youtube") ||
+               app.contains("netflix") ||
+               app.contains("instagram") ||
+               app.contains("tiktok") ||
+               app.contains("musically") ||
+               app.contains("twitch") ||
+               app.contains("disney") ||
+               app.contains("hotstar") ||
+               app.contains("primevideo") ||
+               app.contains("facebook") ||
+               app.contains("snapchat") ||
+               app.contains("vlc") ||
+               app.contains("videoplayer") ||
+               app.contains("mxtech") ||
+               app.contains("video") ||
+               app.contains("player") ||
+               app.contains("gallery") ||
+               app.contains("photos") ||
+               app.contains("hulu") ||
+               app.contains("hbo") ||
+               app.contains("plex") ||
+               app.contains("mxplayer") ||
+               app.contains("kodi");
     }
 
     private String getForegroundApp() {
@@ -102,7 +176,6 @@ public class ZoronAutopilotService extends Service {
     }
 
     private void applyZoronMode(String mode) {
-        // Fastpath + Engine
         Shell.cmd(
             "sh /system/bin/zoron_fastpath.sh set_mode " + mode,
             "sh /system/bin/zoron_engine " + mode + " &"
@@ -114,6 +187,10 @@ public class ZoronAutopilotService extends Service {
         super.onDestroy();
         if (handler != null && autopilotTask != null) {
             handler.removeCallbacks(autopilotTask);
+        }
+        // If the service is destroyed, ensure video boost is cleaned up
+        if (isVideoBoostActive) {
+            Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
         }
     }
 

@@ -892,10 +892,10 @@ case "$MODE" in
         log "======================================"
 
         #           l_min% l_max% b_min% b_max% governor     offline_big
-        apply_cpu   0      65     0      50     schedutil    0
+        apply_cpu   0      80     0      65     schedutil    0
 
         #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
-        apply_scheduler 6000000      750000        1000000        500000            32
+        apply_scheduler 5000000      500000        1000000        250000            32
 
         #            fg         bg         sys_bg     top_app
         if [ "$IS_WHYRED" -eq 1 ]; then
@@ -905,7 +905,7 @@ case "$MODE" in
             apply_cpuset "0-${max_cpu}" "0-$((NUM_CPUS / 2 - 1))" "0-1" "0-${max_cpu}"
         fi
 
-        apply_gpu   "msm-adreno-tz" 70
+        apply_gpu   "msm-adreno-tz" 75
 
         #        swap  vfs_cache dirty dirty_bg expire_cs writeback_cs
         apply_vm 60    100       20    5        3000      500
@@ -928,19 +928,20 @@ case "$MODE" in
         log "Applying DEEP mode on $DEVICE_NAME"
         log "======================================"
 
-        apply_cpu   0      50     0      40     powersave    1
+        #           l_min% l_max% b_min% b_max% governor     offline_big
+        apply_cpu   0      60     0      45     schedutil    0
 
-        apply_scheduler 12000000   1500000     2000000        1000000         16
+        #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
+        apply_scheduler 8000000      1000000       1500000        500000            16
 
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-5"     "0-1"      "0"        "0-5"
         else
             local half=$((NUM_CPUS / 2))
-            local max_cpu=$((NUM_CPUS - 1))
             apply_cpuset "0-${half}" "0-1" "0" "0-${half}"
         fi
 
-        apply_gpu   "msm-adreno-tz" 40
+        apply_gpu   "msm-adreno-tz" 50
 
         apply_vm 100   200       10    3        1500      300
 
@@ -960,8 +961,10 @@ case "$MODE" in
         log "Applying HIBERNATION mode on $DEVICE_NAME"
         log "======================================"
 
-        apply_cpu   0      35     0      25     powersave   1
+        #           l_min% l_max% b_min% b_max% governor     offline_big
+        apply_cpu   0      50     0      30     schedutil    0
 
+        #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
         apply_scheduler 24000000   3000000     4000000        2000000         8
 
         if [ "$IS_WHYRED" -eq 1 ]; then
@@ -972,7 +975,7 @@ case "$MODE" in
             apply_cpuset "0-${quarter}" "0" "0" "0-${quarter}"
         fi
 
-        apply_gpu   "powersave" 20
+        apply_gpu   "msm-adreno-tz" 30
 
         apply_vm 100   300       5     2        1000      200
 
@@ -985,6 +988,39 @@ case "$MODE" in
         apply_zram 1024 lz4
 
         apply_io noop       32
+        ;;
+
+    video)
+        log "======================================"
+        log "Applying VIDEO playback mode on $DEVICE_NAME"
+        log "======================================"
+
+        #           l_min% l_max% b_min% b_max% governor     offline_big
+        apply_cpu   0      85     0      75     schedutil    0
+
+        #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
+        apply_scheduler 4000000      500000        1000000        250000            32
+
+        if [ "$IS_WHYRED" -eq 1 ]; then
+            apply_cpuset "0-7"     "0-3"      "0-1"      "0-7"
+        else
+            local max_cpu=$((NUM_CPUS - 1))
+            apply_cpuset "0-${max_cpu}" "0-$((NUM_CPUS / 2 - 1))" "0-1" "0-${max_cpu}"
+        fi
+
+        apply_gpu   "msm-adreno-tz" 85
+
+        apply_vm 60    100       20    5        3000      500
+
+        apply_thermals 2000
+
+        apply_doze 300000      600000     60000
+
+        apply_wakelocks conservative
+
+        apply_zram 512 lz4
+
+        apply_io cfq        256
         ;;
 
     burst)
@@ -1080,15 +1116,15 @@ case "$MODE" in
         log "======================================"
         log "Applying BATTERY mode on $DEVICE_NAME"
         log "======================================"
-        apply_cpu   0      60     0      40     schedutil    1
-        apply_scheduler 10000000 1000000 1500000 1000000 16
+        apply_cpu   0      70     0      50     schedutil    0
+        apply_scheduler 8000000 1000000 1500000 500000 16
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-5" "0-1" "0" "0-5"
         else
             local half=$((NUM_CPUS / 2))
             apply_cpuset "0-${half}" "0-1" "0" "0-${half}"
         fi
-        apply_gpu   "msm-adreno-tz" 40
+        apply_gpu   "msm-adreno-tz" 50
         apply_vm 100 150 10 3 1500 300
         apply_thermals 1000
         apply_doze 120000 300000 30000
@@ -1119,7 +1155,7 @@ case "$MODE" in
     *)
         log "Error: Unknown ZORON-X mode: $MODE"
         echo "Error: Unknown mode '$MODE'"
-        echo "Valid modes: balanced deep hibernation burst nightwatch none battery performance status"
+        echo "Valid modes: balanced deep hibernation burst nightwatch video none battery performance status"
         exit 1
         ;;
 esac

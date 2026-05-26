@@ -1,5 +1,11 @@
 # Zoron Changelog
 
+## v4.3.0
+- **Universal Video Playback Detection**: Leveraged `AudioManager.isMusicActive()` and advanced package name matching to dynamically identify video/media playback system-wide from any app.
+- **Dynamic Video Boost**: Implemented automated foreground/background triggers to apply a temporary, high-frequency fastpath video boost during playback on *any* profile, reverting instantly once playback halts.
+- **Governor Tuning**: Switched power-saving profiles (`deep`, `hibernation`, `battery`) to use `schedutil` governor when the screen is on (restricting bounds via `scaling_max_freq`) to completely eliminate playback stutters.
+- **Dynamic Material 3 UI**: Upgraded all layouts, backgrounds, card borders, ripples, and glows to use color-state-lists tied to Material 3 dynamic theme attributes.
+
 ## v4.2.0
 - **UI Revamp**: Re-styled the entire controller app (Main, Settings, Splash, Mode Learn screens) using a premium purple/violet dark glassmorphism theme.
 - **Staggered Animations**: Introduced elegant staggered slide-up and fade-in entry transitions for all activity components.

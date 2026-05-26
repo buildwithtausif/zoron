@@ -41,11 +41,6 @@
     <color name="purple_outline_variant">#FF79747E</color>
 
     <!-- ==================== GLASSMORPHISM ==================== -->
-    <color name="card_glass_bg">#CC1A1A2E</color>
-    <color name="card_glass_bg_elevated">#CC252542</color>
-    <color name="card_glass_stroke">#663D3456</color>
-    <color name="card_glass_stroke_bright">#885A4E8A</color>
-    <color name="glass_overlay">#1AB388FF</color>
 
     <!-- ==================== MODE ACCENTS ==================== -->
     <color name="balanced_accent">#FFB388FF</color>
@@ -99,8 +94,6 @@
     <color name="info_blue">#FF448AFF</color>
 
     <!-- ==================== MISC ==================== -->
-    <color name="ripple_purple">#33B388FF</color>
-    <color name="divider_purple">#33B388FF</color>
     <color name="splash_status_text">#FFCAC4D0</color>
     <color name="white">#FFFFFFFF</color>
     <color name="white_70">#B3FFFFFF</color>

@@ -152,16 +152,16 @@ public class MainActivity extends AppCompatActivity {
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
 
-        // Autopilot
+        // Autopilot Service runs persistently to handle dynamic video boosts
+        if (hasUsageStatsPermission()) {
+            startService(new Intent(this, ZoronAutopilotService.class));
+        }
+
         com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
         android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
         boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
         switchAutopilot.setChecked(autopilotEnabled);
         
-        if (autopilotEnabled && hasUsageStatsPermission()) {
-            startService(new Intent(this, ZoronAutopilotService.class));
-        }
-
         switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 if (!hasUsageStatsPermission()) {
@@ -174,8 +174,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 prefs.edit().putBoolean("autopilot_enabled", false).apply();
-                stopService(new Intent(MainActivity.this, ZoronAutopilotService.class));
-                Toast.makeText(MainActivity.this, "Autopilot Disabled", Toast.LENGTH_SHORT).show();
+                // Do NOT stop the service, let it run in background to detect video playback and boost manual modes
+                Toast.makeText(MainActivity.this, "Autopilot Disabled (Dynamic Video Boost active)", Toast.LENGTH_SHORT).show();
             }
         });
 

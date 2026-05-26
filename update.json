@@ -1,6 +1,6 @@
 {
-  "version": "v4.2.0",
-  "versionCode": 28,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.2.0/zoron_v4.2.0.zip",
-  "changelog": "v4.2.0:\n- Complete premium UI revamp with purple/violet dark glassmorphism theme.\n- Added staggered card entry animations across all activities.\n- Added interactive card touch scaling and animated pulse power dot.\n- Redesigned system launcher icons & foreground service notification."
+  "version": "v4.3.0",
+  "versionCode": 29,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.0/zoron_v4.3.0.zip",
+  "changelog": "v4.3.0:\n- Optimized Autopilot to detect video/media playback system-wide.\n- Added dynamic video playback performance boost across all profiles.\n- Overhauled CPU scaling governors to schedutil in power-saving modes to prevent stuttering.\n- Fully integrated Material 3 dynamic coloring using system wallpaper accents."
 }

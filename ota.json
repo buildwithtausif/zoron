@@ -1,6 +1,6 @@
 {
-  "versionCode": 28,
-  "versionName": "v4.2.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.2.0/Zoron.apk",
-  "changelog": "v4.2.0:\n- Complete premium UI revamp with purple/violet dark glassmorphism theme.\n- Added staggered card entry animations across all activities.\n- Added interactive card touch scaling and animated pulse power dot.\n- Redesigned system launcher icons & foreground service notification."
+  "versionCode": 29,
+  "versionName": "v4.3.0",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.0/Zoron.apk",
+  "changelog": "v4.3.0:\n- Optimized Autopilot to detect video/media playback system-wide.\n- Added dynamic video playback performance boost across all profiles.\n- Overhauled CPU scaling governors to schedutil in power-saving modes to prevent stuttering.\n- Fully integrated Material 3 dynamic coloring using system wallpaper accents."
 }
