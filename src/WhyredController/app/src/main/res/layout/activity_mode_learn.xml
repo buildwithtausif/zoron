@@ -31,10 +31,9 @@
         android:paddingBottom="32dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            style="@style/Widget.Zoron.Container"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:orientation="vertical">
 
             <!-- Section: ZORON-X Modes -->
             <TextView
@@ -199,6 +198,46 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Race-to-idle performance mode. All CPU cores online at maximum frequency with performance governor. GPU clocked to max. Designed for short bursts of heavy workloads — gaming sessions, video rendering, app installations. Uses the race-to-idle philosophy: finish tasks faster so the CPU can return to sleep sooner."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Video Playback Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/video_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📹 Video Playback"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Optimized media streaming mode. Activates dynamically when video or audio playback is detected system-wide (e.g., YouTube, Instagram, Netflix, or local players). Locks CPU scaling governors to schedutil but boosts limits to 85% max on little cores and 75% on big cores. Sets GPU clock bounds to 85% and enforces ultra-low scheduling latency (4ms) to completely eliminate stuttering and frame drops."
                             style="@style/TextAppearance.Zoron.BodyMedium"
                             android:lineSpacingExtra="4dp" />
                     </LinearLayout>

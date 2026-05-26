@@ -53,6 +53,8 @@
     <color name="burst_accent_dark">#FFD81B60</color>
     <color name="nightwatch_accent">#FF7986CB</color>
     <color name="nightwatch_accent_dark">#FF0D0D2B</color>
+    <color name="video_accent">#FF00E5FF</color>
+    <color name="video_accent_dark">#FF006064</color>
 
     <!-- ==================== POWER STATES ==================== -->
     <color name="state_hyper">#FFFF4081</color>

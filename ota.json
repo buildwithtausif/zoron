@@ -1,6 +1,6 @@
 {
-  "versionCode": 29,
-  "versionName": "v4.3.0",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.0/Zoron.apk",
-  "changelog": "v4.3.0:\n- Optimized Autopilot to detect video/media playback system-wide.\n- Added dynamic video playback performance boost across all profiles.\n- Overhauled CPU scaling governors to schedutil in power-saving modes to prevent stuttering.\n- Fully integrated Material 3 dynamic coloring using system wallpaper accents."
+  "versionCode": 30,
+  "versionName": "v4.3.1",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.1/Zoron.apk",
+  "changelog": "v4.3.1:\n- Added Video Playback mode details to the Learn About Modes page.\n- Made all controller screens fully tablet-friendly using custom content container width constraints and horizontal/vertical spacing refinements."
 }

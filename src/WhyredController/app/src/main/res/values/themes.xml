@@ -113,6 +113,13 @@
         <item name="cardElevation">0dp</item>
     </style>
 
+    <style name="Widget.Zoron.Container" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:paddingHorizontal">20dp</item>
+        <item name="android:paddingTop">8dp</item>
+    </style>
+
     <style name="Widget.Zoron.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
         <item name="thumbTint">@color/purple_primary</item>
         <item name="trackTint">@color/purple_surface_container_high</item>

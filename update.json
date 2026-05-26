@@ -1,6 +1,6 @@
 {
-  "version": "v4.3.0",
-  "versionCode": 29,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.0/zoron_v4.3.0.zip",
-  "changelog": "v4.3.0:\n- Optimized Autopilot to detect video/media playback system-wide.\n- Added dynamic video playback performance boost across all profiles.\n- Overhauled CPU scaling governors to schedutil in power-saving modes to prevent stuttering.\n- Fully integrated Material 3 dynamic coloring using system wallpaper accents."
+  "version": "v4.3.1",
+  "versionCode": 30,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.1/zoron_v4.3.1.zip",
+  "changelog": "v4.3.1:\n- Added Video Playback mode details to the Learn About Modes page.\n- Made all controller screens fully tablet-friendly using custom content container width constraints and horizontal/vertical spacing refinements."
 }

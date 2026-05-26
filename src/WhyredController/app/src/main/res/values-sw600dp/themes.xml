@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet-specific layout container styling -->
+    <style name="Widget.Zoron.Container" parent="">
+        <item name="android:layout_width">720dp</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:paddingHorizontal">32dp</item>
+        <item name="android:paddingTop">16dp</item>
+    </style>
+</resources>

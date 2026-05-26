@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.3.1
+- **Tablet Friendly UI**: Overhauled all pages (`Main`, `Settings`, `Learn About Modes`) to restrict width to a centered 720dp maximum width on screens with width >= 600dp (tablets). This prevents awkward content stretching and ensures a premium, readable, and balanced layout on large displays.
+- **Learn About Modes Documentation**: Added detailed description card for the new **📹 Video Playback** mode explaining dynamic hardware boost behavior.
+
 ## v4.3.0
 - **Universal Video Playback Detection**: Leveraged `AudioManager.isMusicActive()` and advanced package name matching to dynamically identify video/media playback system-wide from any app.
 - **Dynamic Video Boost**: Implemented automated foreground/background triggers to apply a temporary, high-frequency fastpath video boost during playback on *any* profile, reverting instantly once playback halts.
