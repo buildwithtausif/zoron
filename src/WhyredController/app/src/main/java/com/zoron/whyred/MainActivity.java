@@ -1,5 +1,7 @@
 package com.zoron.whyred;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.AppOpsManager;
 import android.provider.Settings;
 import android.content.ClipData;
@@ -14,9 +16,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.OvershootInterpolator;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private LineChart batteryChart;
     private LinearLayout legacyContainer;
     private TextView tvLegacyToggle;
+    private ImageView ivLegacyToggle;
     private boolean legacyExpanded = false;
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable updateRunnable;
@@ -88,7 +96,15 @@ public class MainActivity extends AppCompatActivity {
         // Legacy section toggle
         legacyContainer = findViewById(R.id.legacyContainer);
         tvLegacyToggle = findViewById(R.id.tvLegacyToggle);
+        ivLegacyToggle = findViewById(R.id.ivLegacyToggle);
         findViewById(R.id.legacyHeader).setOnClickListener(v -> toggleLegacy());
+
+        // Card press animations for ZORON-X mode cards
+        setupCardPressAnimation(findViewById(R.id.cardZoronBalanced));
+        setupCardPressAnimation(findViewById(R.id.cardZoronDeep));
+        setupCardPressAnimation(findViewById(R.id.cardZoronHibernation));
+        setupCardPressAnimation(findViewById(R.id.cardZoronBurst));
+        setupCardPressAnimation(findViewById(R.id.cardZoronNightwatch));
 
         setupChart();
 
@@ -178,6 +194,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Start pulse animation on power state dot
         startPulseAnimation();
+
+        // Staggered entry animations
+        animateStaggeredEntry();
     }
 
     @Override
@@ -232,9 +251,13 @@ public class MainActivity extends AppCompatActivity {
         batteryChart.setBackgroundColor(Color.TRANSPARENT);
         batteryChart.setExtraOffsets(8, 8, 8, 12);
 
-        // Material Expressive X-Axis
+        int axisTextColor = getColor(R.color.chart_axis_text);
+        int gridColor = getColor(R.color.chart_grid);
+        int legendTextColor = getColor(R.color.chart_legend_text);
+
+        // X-Axis
         XAxis xAxis = batteryChart.getXAxis();
-        xAxis.setTextColor(Color.parseColor("#B0B0B0"));
+        xAxis.setTextColor(axisTextColor);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
         xAxis.setDrawAxisLine(false);
@@ -249,13 +272,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Material Expressive Y-Axis
+        // Y-Axis
         YAxis leftAxis = batteryChart.getAxisLeft();
-        leftAxis.setTextColor(Color.parseColor("#B0B0B0"));
+        leftAxis.setTextColor(axisTextColor);
         leftAxis.setAxisMaximum(100f);
         leftAxis.setAxisMinimum(0f);
         leftAxis.setDrawGridLines(true);
-        leftAxis.setGridColor(Color.parseColor("#1A1A1A"));
+        leftAxis.setGridColor(gridColor);
         leftAxis.setGridLineWidth(0.5f);
         leftAxis.enableGridDashedLine(8f, 4f, 0f);
         leftAxis.setDrawAxisLine(false);
@@ -269,9 +292,9 @@ public class MainActivity extends AppCompatActivity {
 
         batteryChart.getAxisRight().setEnabled(false);
 
-        // Material Expressive Legend
+        // Legend
         Legend legend = batteryChart.getLegend();
-        legend.setTextColor(Color.parseColor("#D0D0D0"));
+        legend.setTextColor(legendTextColor);
         legend.setTextSize(11f);
         legend.setForm(Legend.LegendForm.CIRCLE);
         legend.setFormSize(8f);
@@ -280,7 +303,6 @@ public class MainActivity extends AppCompatActivity {
         legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
 
-        // Smooth animations
         batteryChart.animateX(800);
     }
 
@@ -361,22 +383,22 @@ public class MainActivity extends AppCompatActivity {
 
         if (state.startsWith("HYPER_ACTIVE")) {
             displayState = "⚡ HYPER ACTIVE";
-            dotColor = Color.parseColor("#FF4444");
+            dotColor = getColor(R.color.state_hyper);
         } else if (state.startsWith("INTERACTIVE")) {
             displayState = "✋ INTERACTIVE";
-            dotColor = Color.parseColor("#00FF7F");
+            dotColor = getColor(R.color.state_interactive);
         } else if (state.startsWith("LIGHT_IDLE")) {
             displayState = "💤 LIGHT IDLE";
-            dotColor = Color.parseColor("#FFD700");
+            dotColor = getColor(R.color.state_light_idle);
         } else if (state.startsWith("DEEP_IDLE")) {
             displayState = "🔒 DEEP IDLE";
-            dotColor = Color.parseColor("#2196F3");
+            dotColor = getColor(R.color.state_deep_idle);
         } else if (state.startsWith("SLEEP_IDLE")) {
             displayState = "🌙 SLEEP IDLE";
-            dotColor = Color.parseColor("#7B68EE");
+            dotColor = getColor(R.color.state_sleep);
         } else {
             displayState = "📡 DETECTING...";
-            dotColor = Color.parseColor("#808080");
+            dotColor = getColor(R.color.state_unknown);
         }
 
         tvPowerState.setText(displayState);
@@ -387,11 +409,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startPulseAnimation() {
-        AlphaAnimation pulse = new AlphaAnimation(1.0f, 0.3f);
-        pulse.setDuration(1000);
-        pulse.setRepeatMode(Animation.REVERSE);
-        pulse.setRepeatCount(Animation.INFINITE);
-        powerStateDot.startAnimation(pulse);
+        // Enhanced pulse: combined alpha + scale animation
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(powerStateDot, "alpha", 1.0f, 0.4f);
+        alpha.setDuration(1200);
+        alpha.setRepeatMode(ObjectAnimator.REVERSE);
+        alpha.setRepeatCount(ObjectAnimator.INFINITE);
+
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(powerStateDot, "scaleX", 1.0f, 1.15f);
+        scaleX.setDuration(1200);
+        scaleX.setRepeatMode(ObjectAnimator.REVERSE);
+        scaleX.setRepeatCount(ObjectAnimator.INFINITE);
+
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(powerStateDot, "scaleY", 1.0f, 1.15f);
+        scaleY.setDuration(1200);
+        scaleY.setRepeatMode(ObjectAnimator.REVERSE);
+        scaleY.setRepeatCount(ObjectAnimator.INFINITE);
+
+        AnimatorSet pulseSet = new AnimatorSet();
+        pulseSet.playTogether(alpha, scaleX, scaleY);
+        pulseSet.start();
     }
 
     // ==================== CHART PLOTTING (Material Expressive) ====================
@@ -426,14 +462,14 @@ public class MainActivity extends AppCompatActivity {
 
         LineData lineData = new LineData();
 
-        // Material Expressive color palette — vibrant, harmonious, modern
+        // Purple-themed chart color palette
         int[][] colorPalettes = {
-            {Color.parseColor("#00E676"), Color.parseColor("#1B5E20")}, // Green gradient
-            {Color.parseColor("#448AFF"), Color.parseColor("#1A237E")}, // Blue gradient
-            {Color.parseColor("#FF5252"), Color.parseColor("#B71C1C")}, // Red gradient
-            {Color.parseColor("#FFD740"), Color.parseColor("#F57F17")}, // Amber gradient
-            {Color.parseColor("#E040FB"), Color.parseColor("#7B1FA2")}, // Purple gradient
-            {Color.parseColor("#18FFFF"), Color.parseColor("#006064")}, // Cyan gradient
+            {getColor(R.color.chart_line_1), getColor(R.color.chart_fill_1)},
+            {getColor(R.color.chart_line_2), getColor(R.color.chart_fill_2)},
+            {getColor(R.color.chart_line_3), getColor(R.color.chart_fill_3)},
+            {getColor(R.color.chart_line_4), getColor(R.color.chart_fill_4)},
+            {getColor(R.color.chart_line_5), getColor(R.color.chart_fill_5)},
+            {getColor(R.color.chart_line_6), getColor(R.color.chart_fill_6)},
         };
         int colorIdx = 0;
 
@@ -474,8 +510,29 @@ public class MainActivity extends AppCompatActivity {
 
     private void toggleLegacy() {
         legacyExpanded = !legacyExpanded;
-        legacyContainer.setVisibility(legacyExpanded ? View.VISIBLE : View.GONE);
-        tvLegacyToggle.setText(legacyExpanded ? "▼" : "▶");
+        if (legacyExpanded) {
+            legacyContainer.setVisibility(View.VISIBLE);
+            Animation expandAnim = AnimationUtils.loadAnimation(this, R.anim.expand_section);
+            legacyContainer.startAnimation(expandAnim);
+            if (ivLegacyToggle != null) {
+                Animation rotateAnim = AnimationUtils.loadAnimation(this, R.anim.rotate_arrow_expand);
+                ivLegacyToggle.startAnimation(rotateAnim);
+            }
+        } else {
+            Animation collapseAnim = AnimationUtils.loadAnimation(this, R.anim.collapse_section);
+            collapseAnim.setAnimationListener(new Animation.AnimationListener() {
+                @Override public void onAnimationStart(Animation a) {}
+                @Override public void onAnimationRepeat(Animation a) {}
+                @Override public void onAnimationEnd(Animation a) {
+                    legacyContainer.setVisibility(View.GONE);
+                }
+            });
+            legacyContainer.startAnimation(collapseAnim);
+            if (ivLegacyToggle != null) {
+                Animation rotateAnim = AnimationUtils.loadAnimation(this, R.anim.rotate_arrow_collapse);
+                ivLegacyToggle.startAnimation(rotateAnim);
+            }
+        }
     }
 
     // ==================== EXPORT FUNCTIONS ====================
@@ -774,5 +831,64 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    // ==================== CARD PRESS ANIMATION ====================
+
+    private void setupCardPressAnimation(View card) {
+        card.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).start();
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    v.animate().scaleX(1.0f).scaleY(1.0f)
+                        .setDuration(200)
+                        .setInterpolator(new OvershootInterpolator(2f))
+                        .start();
+                    break;
+            }
+            return false; // Don't consume — let onClick still fire
+        });
+    }
+
+    // ==================== STAGGERED ENTRY ANIMATION ====================
+
+    private void animateStaggeredEntry() {
+        // Find the main scroll content container
+        View scrollView = findViewById(android.R.id.content);
+        if (scrollView == null) return;
+
+        // Get the NestedScrollView's child (LinearLayout)
+        ViewGroup rootContent = (ViewGroup) ((ViewGroup) scrollView).getChildAt(0); // CoordinatorLayout
+        if (rootContent == null || rootContent.getChildCount() < 2) return;
+
+        // The NestedScrollView is the second child (after AppBarLayout)
+        View nestedScroll = rootContent.getChildAt(1);
+        if (!(nestedScroll instanceof ViewGroup)) return;
+
+        ViewGroup scrollContent = (ViewGroup) nestedScroll;
+        if (scrollContent.getChildCount() == 0) return;
+
+        // The LinearLayout inside NestedScrollView
+        View innerLayout = scrollContent.getChildAt(0);
+        if (!(innerLayout instanceof ViewGroup)) return;
+
+        ViewGroup mainLayout = (ViewGroup) innerLayout;
+        int childCount = mainLayout.getChildCount();
+
+        for (int i = 0; i < childCount; i++) {
+            View child = mainLayout.getChildAt(i);
+            child.setAlpha(0f);
+            child.setTranslationY(60f);
+            child.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(500)
+                .setStartDelay(i * 60L)
+                .setInterpolator(new OvershootInterpolator(1.0f))
+                .start();
+        }
     }
 }

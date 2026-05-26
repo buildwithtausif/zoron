@@ -1,6 +1,5 @@
 package com.zoron.whyred;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -8,6 +7,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.topjohnwu.superuser.Shell;
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,6 +87,21 @@ public class SettingsActivity extends AppCompatActivity {
             Shell.cmd("echo " + val + " > /data/local/tmp/zoron/fastpath_enabled.txt").exec();
         });
 
+        // Adaptive Learning toggle
+        com.google.android.material.materialswitch.MaterialSwitch switchAdaptiveLearning = findViewById(R.id.switchAdaptiveLearning);
+        Shell.cmd("cat /data/local/tmp/zoron/adaptive_learning.txt 2>/dev/null || echo '1'").submit(out -> {
+            runOnUiThread(() -> {
+                if (out.isSuccess() && !out.getOut().isEmpty()) {
+                    String val = out.getOut().get(0).trim();
+                    switchAdaptiveLearning.setChecked(!"0".equals(val));
+                }
+            });
+        });
+        switchAdaptiveLearning.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            String val = isChecked ? "1" : "0";
+            Shell.cmd("echo " + val + " > /data/local/tmp/zoron/adaptive_learning.txt").exec();
+        });
+
         // Developer Mode toggle
         com.google.android.material.materialswitch.MaterialSwitch switchDevMode = findViewById(R.id.switchDevMode);
         Shell.cmd("cat /data/local/tmp/zoron/dev_mode.txt 2>/dev/null || echo '0'").submit(out -> {
@@ -109,7 +126,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Clear Logs & Analytics
         findViewById(R.id.btnSettingsClearLogs).setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                 .setTitle("Clear Data")
                 .setMessage("Are you sure you want to delete all logs and analytics data? This cannot be undone.")
                 .setPositiveButton("Clear", (dialog, which) -> {
@@ -120,6 +137,9 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
         });
+
+        // Run entry animations
+        animateStaggeredEntry();
     }
 
     private void exportLogs(boolean zipIt) {
@@ -178,5 +198,40 @@ public class SettingsActivity extends AppCompatActivity {
                 new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
+    }
+
+    private void animateStaggeredEntry() {
+        View scrollView = findViewById(android.R.id.content);
+        if (scrollView == null) return;
+
+        ViewGroup rootContent = (ViewGroup) ((ViewGroup) scrollView).getChildAt(0); // CoordinatorLayout
+        if (rootContent == null || rootContent.getChildCount() < 2) return;
+
+        // The NestedScrollView is the second child (after AppBarLayout)
+        View nestedScroll = rootContent.getChildAt(1);
+        if (!(nestedScroll instanceof ViewGroup)) return;
+
+        ViewGroup scrollContent = (ViewGroup) nestedScroll;
+        if (scrollContent.getChildCount() == 0) return;
+
+        // The LinearLayout inside NestedScrollView
+        View innerLayout = scrollContent.getChildAt(0);
+        if (!(innerLayout instanceof ViewGroup)) return;
+
+        ViewGroup mainLayout = (ViewGroup) innerLayout;
+        int childCount = mainLayout.getChildCount();
+
+        for (int i = 0; i < childCount; i++) {
+            View child = mainLayout.getChildAt(i);
+            child.setAlpha(0f);
+            child.setTranslationY(60f);
+            child.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(500)
+                .setStartDelay(i * 60L)
+                .setInterpolator(new OvershootInterpolator(1.0f))
+                .start();
+        }
     }
 }

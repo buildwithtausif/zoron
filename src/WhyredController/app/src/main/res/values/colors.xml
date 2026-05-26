@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ==================== PRIMARY ==================== -->
+    <color name="purple_primary">#FFB388FF</color>
+    <color name="purple_primary_dark">#FF7C4DFF</color>
+    <color name="purple_primary_deeper">#FF651FFF</color>
+    <color name="purple_on_primary">#FF1A0038</color>
+    <color name="purple_primary_container">#FF2D1B69</color>
+    <color name="purple_on_primary_container">#FFE8DEF8</color>
+
+    <!-- ==================== SECONDARY ==================== -->
+    <color name="purple_secondary">#FFCE93D8</color>
+    <color name="purple_secondary_container">#FF3A1D5C</color>
+    <color name="purple_on_secondary">#FF1B0029</color>
+    <color name="purple_on_secondary_container">#FFF3E5F5</color>
+
+    <!-- ==================== TERTIARY ==================== -->
+    <color name="purple_tertiary">#FFF48FB1</color>
+    <color name="purple_tertiary_container">#FF4A1942</color>
+    <color name="purple_on_tertiary">#FF2E0014</color>
+    <color name="purple_on_tertiary_container">#FFFCE4EC</color>
+
+    <!-- ==================== SURFACES ==================== -->
+    <color name="purple_surface">#FF0D0D1A</color>
+    <color name="purple_surface_dim">#FF09091A</color>
+    <color name="purple_surface_container_lowest">#FF0A0A18</color>
+    <color name="purple_surface_container_low">#FF121225</color>
+    <color name="purple_surface_container">#FF1A1A2E</color>
+    <color name="purple_surface_container_high">#FF252542</color>
+    <color name="purple_surface_container_highest">#FF302F56</color>
+    <color name="purple_surface_variant">#FF2A2740</color>
+    <color name="purple_inverse_surface">#FFE8DEF8</color>
+    <color name="purple_inverse_on_surface">#FF1A1A2E</color>
+
+    <!-- ==================== ON-SURFACE ==================== -->
+    <color name="purple_on_surface">#FFE8DEF8</color>
+    <color name="purple_on_surface_variant">#FFCAC4D0</color>
+
+    <!-- ==================== OUTLINE ==================== -->
+    <color name="purple_outline">#FF49454F</color>
+    <color name="purple_outline_variant">#FF79747E</color>
+
+    <!-- ==================== GLASSMORPHISM ==================== -->
+    <color name="card_glass_bg">#CC1A1A2E</color>
+    <color name="card_glass_bg_elevated">#CC252542</color>
+    <color name="card_glass_stroke">#663D3456</color>
+    <color name="card_glass_stroke_bright">#885A4E8A</color>
+    <color name="glass_overlay">#1AB388FF</color>
+
+    <!-- ==================== MODE ACCENTS ==================== -->
+    <color name="balanced_accent">#FFB388FF</color>
+    <color name="balanced_accent_dark">#FF7C4DFF</color>
+    <color name="deep_accent">#FF7C4DFF</color>
+    <color name="deep_accent_dark">#FF4A148C</color>
+    <color name="hibernate_accent">#FF448AFF</color>
+    <color name="hibernate_accent_dark">#FF1A237E</color>
+    <color name="burst_accent">#FFFF80AB</color>
+    <color name="burst_accent_dark">#FFD81B60</color>
+    <color name="nightwatch_accent">#FF7986CB</color>
+    <color name="nightwatch_accent_dark">#FF0D0D2B</color>
+
+    <!-- ==================== POWER STATES ==================== -->
+    <color name="state_hyper">#FFFF4081</color>
+    <color name="state_interactive">#FFB388FF</color>
+    <color name="state_light_idle">#FF7C4DFF</color>
+    <color name="state_deep_idle">#FF536DFE</color>
+    <color name="state_sleep">#FF304FFE</color>
+    <color name="state_unknown">#FF79747E</color>
+
+    <!-- ==================== CHART COLORS ==================== -->
+    <color name="chart_line_1">#FFB388FF</color>
+    <color name="chart_line_2">#FF7C4DFF</color>
+    <color name="chart_line_3">#FFCE93D8</color>
+    <color name="chart_line_4">#FFF48FB1</color>
+    <color name="chart_line_5">#FF448AFF</color>
+    <color name="chart_line_6">#FF536DFE</color>
+    <color name="chart_fill_1">#33B388FF</color>
+    <color name="chart_fill_2">#337C4DFF</color>
+    <color name="chart_fill_3">#33CE93D8</color>
+    <color name="chart_fill_4">#33F48FB1</color>
+    <color name="chart_fill_5">#33448AFF</color>
+    <color name="chart_fill_6">#33536DFE</color>
+    <color name="chart_grid">#FF2A2740</color>
+    <color name="chart_axis_text">#FFCAC4D0</color>
+    <color name="chart_legend_text">#FFE8DEF8</color>
+
+    <!-- ==================== GRADIENTS ==================== -->
+    <color name="gradient_start">#FF7C4DFF</color>
+    <color name="gradient_mid">#FFB388FF</color>
+    <color name="gradient_end">#FFCE93D8</color>
+    <color name="gradient_bg_top">#FF0D0D1A</color>
+    <color name="gradient_bg_mid">#FF151528</color>
+    <color name="gradient_bg_bottom">#FF0D0D1A</color>
+
+    <!-- ==================== SEMANTIC ==================== -->
+    <color name="success_green">#FF69F0AE</color>
+    <color name="error_red">#FFFF5252</color>
+    <color name="warning_amber">#FFFFD740</color>
+    <color name="info_blue">#FF448AFF</color>
+
+    <!-- ==================== MISC ==================== -->
+    <color name="ripple_purple">#33B388FF</color>
+    <color name="divider_purple">#33B388FF</color>
+    <color name="splash_status_text">#FFCAC4D0</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+    <color name="white_30">#4DFFFFFF</color>
+    <color name="white_12">#1FFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

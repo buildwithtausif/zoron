@@ -1,26 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="@drawable/bg_gradient_main">
 
+    <!-- Radial glow behind brand name -->
+    <View
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/bg_splash_glow"
+        android:alpha="0.6" />
+
+    <!-- Brand name -->
     <TextView
+        android:id="@+id/tvSplashBrand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="zoron"
-        android:textColor="#00FF7F"
-        android:textSize="48sp"
-        android:textStyle="bold"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:text="ZORON"
+        android:textSize="56sp"
+        android:fontFamily="sans-serif-black"
+        android:textColor="@color/purple_primary"
+        android:letterSpacing="0.15"
+        android:alpha="0" />
 
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tvSplashSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvSplashBrand"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:text="Power Optimization Engine"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/purple_on_surface_variant"
+        android:letterSpacing="0.1"
+        android:alpha="0" />
+
+    <!-- Progress indicator -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/splashProgress"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvSplashSubtitle"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="32dp"
+        android:indeterminate="true"
+        app:indicatorColor="@color/purple_primary"
+        app:trackColor="@color/purple_surface_container"
+        app:trackCornerRadius="4dp"
+        app:trackThickness="4dp"
+        android:alpha="0" />
+
+    <!-- Status text -->
     <TextView
         android:id="@+id/tvSplashStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Requesting Root Access..."
-        android:textColor="#888888"
-        android:textSize="14sp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="48dp" />
+        android:layout_marginBottom="48dp"
+        android:text="Requesting Root Access..."
+        android:textSize="13sp"
+        android:fontFamily="sans-serif"
+        android:textColor="@color/splash_status_text"
+        android:alpha="0" />
+
 </RelativeLayout>

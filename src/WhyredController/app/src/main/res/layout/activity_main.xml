@@ -3,8 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground">
+    android:background="@drawable/bg_gradient_main"
+    android:fitsSystemWindows="true">
 
+    <!-- ==================== APP BAR ==================== -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,41 +17,38 @@
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent"
             app:title="ZORON-X"
-            app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-            app:titleTextColor="?attr/colorPrimary"
             app:titleCentered="true"
+            app:titleTextAppearance="@style/TextAppearance.Zoron.HeadlineLarge"
+            app:titleTextColor="@color/purple_primary"
             app:menu="@menu/menu_main" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- ==================== SCROLLABLE CONTENT ==================== -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="32dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="8dp">
 
-            <!-- ==================== POWER STATE INDICATOR ==================== -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Power State"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="28sp"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="16dp" />
-
+            <!-- ==================== POWER STATE HERO CARD ==================== -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPowerState"
+                style="@style/Widget.Zoron.Card.Glass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="20dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -57,106 +56,118 @@
                     android:orientation="vertical"
                     android:padding="24dp">
 
+                    <!-- Section label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="POWER STATE"
+                        style="@style/TextAppearance.Zoron.LabelLarge"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- State row: dot + state text -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-                        <!-- Pulse indicator dot -->
                         <View
                             android:id="@+id/powerStateDot"
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:background="@drawable/power_state_dot"
-                            android:layout_marginEnd="12dp" />
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:background="@drawable/power_state_dot" />
 
                         <TextView
                             android:id="@+id/tvPowerState"
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
                             android:text="DETECTING..."
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="22sp"
-                            android:fontFamily="sans-serif-black" />
+                            android:textSize="26sp"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="@color/purple_primary" />
                     </LinearLayout>
 
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@drawable/bg_section_divider"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Profile info -->
                     <TextView
                         android:id="@+id/tvCurrentProfile"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Mode: —"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="14sp"
-                        android:layout_marginTop="4dp" />
+                        style="@style/TextAppearance.Zoron.BodyMedium"
+                        android:drawablePadding="8dp"
+                        android:layout_marginBottom="4dp" />
 
+                    <!-- CPU info -->
                     <TextView
                         android:id="@+id/tvCpuInfo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="CPU Governor: —"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="14sp"
-                        android:layout_marginTop="2dp" />
+                        style="@style/TextAppearance.Zoron.BodyMedium" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ==================== AUTOPILOT ==================== -->
+            <!-- ==================== AUTOPILOT CARD ==================== -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAutopilot"
+                style="@style/Widget.Zoron.Card.Glass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="20dp"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginEnd="16dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Autopilot Mode"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            style="@style/TextAppearance.Zoron.TitleMedium"
+                            android:textColor="@color/purple_primary" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Automatically adapts to active apps and battery state"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="12sp"
-                            android:layout_marginTop="4dp" />
+                            android:layout_marginTop="4dp"
+                            android:text="Adapts to active apps and battery"
+                            style="@style/TextAppearance.Zoron.BodyMedium" />
                     </LinearLayout>
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAutopilot"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="false" />
+                        android:layout_height="wrap_content" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ==================== ZORON-X MODES ==================== -->
+            <!-- ==================== ZORON-X MODES SECTION ==================== -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ZORON-X Modes"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="28sp"
-                android:fontFamily="sans-serif-medium"
+                android:text="ZORON-X MODES"
+                style="@style/TextAppearance.Zoron.LabelLarge"
                 android:layout_marginBottom="16dp" />
 
             <!-- Row 1: Balanced + Deep -->
@@ -164,91 +175,110 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:baselineAligned="false"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="12dp">
 
                 <!-- Balanced Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardZoronBalanced"
                     android:layout_width="0dp"
+                    android:layout_height="160dp"
                     android:layout_weight="1"
-                    android:layout_height="140dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:shapeAppearance="@style/ShapeAppearance.Zoron.Medium"
+                    android:foreground="@drawable/ripple_card"
                     android:clickable="true"
-                    android:focusable="true"
-                    style="@style/Widget.Material3.CardView.Elevated"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⚡"
-                            android:textSize="28sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Balanced"
-                            android:textColor="?attr/colorOnPrimaryContainer"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Smart daily"
-                            android:textColor="?attr/colorOnPrimaryContainer"
-                            android:textSize="11sp"
-                            android:alpha="0.7" />
-                    </LinearLayout>
+                        android:background="@drawable/card_mode_balanced">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="bottom"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚡"
+                                android:textSize="36sp"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Balanced"
+                                android:textSize="20sp"
+                                android:fontFamily="sans-serif-black"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Smart daily"
+                                android:textSize="13sp"
+                                android:textColor="@color/white_70" />
+                        </LinearLayout>
+                    </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- Deep Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardZoronDeep"
                     android:layout_width="0dp"
+                    android:layout_height="160dp"
                     android:layout_weight="1"
-                    android:layout_height="140dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="6dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:shapeAppearance="@style/ShapeAppearance.Zoron.Medium"
+                    android:foreground="@drawable/ripple_card"
                     android:clickable="true"
-                    android:focusable="true"
-                    style="@style/Widget.Material3.CardView.Elevated"
-                    app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🔋"
-                            android:textSize="28sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Deep"
-                            android:textColor="?attr/colorOnSecondaryContainer"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Max battery"
-                            android:textColor="?attr/colorOnSecondaryContainer"
-                            android:textSize="11sp"
-                            android:alpha="0.7" />
-                    </LinearLayout>
+                        android:background="@drawable/card_mode_deep">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="bottom"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🔋"
+                                android:textSize="36sp"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Deep"
+                                android:textSize="20sp"
+                                android:fontFamily="sans-serif-black"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Max battery"
+                                android:textSize="13sp"
+                                android:textColor="@color/white_70" />
+                        </LinearLayout>
+                    </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
@@ -257,230 +287,261 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:baselineAligned="false"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="12dp">
 
                 <!-- Hibernation Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardZoronHibernation"
                     android:layout_width="0dp"
+                    android:layout_height="160dp"
                     android:layout_weight="1"
-                    android:layout_height="140dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:shapeAppearance="@style/ShapeAppearance.Zoron.Medium"
+                    android:foreground="@drawable/ripple_card"
                     android:clickable="true"
-                    android:focusable="true"
-                    style="@style/Widget.Material3.CardView.Elevated"
-                    app:cardBackgroundColor="?attr/colorTertiaryContainer"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="❄️"
-                            android:textSize="28sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hibernate"
-                            android:textColor="?attr/colorOnTertiaryContainer"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Extreme standby"
-                            android:textColor="?attr/colorOnTertiaryContainer"
-                            android:textSize="11sp"
-                            android:alpha="0.7" />
-                    </LinearLayout>
+                        android:background="@drawable/card_mode_hibernate">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="bottom"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="❄️"
+                                android:textSize="36sp"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Hibernate"
+                                android:textSize="20sp"
+                                android:fontFamily="sans-serif-black"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Extreme standby"
+                                android:textSize="13sp"
+                                android:textColor="@color/white_70" />
+                        </LinearLayout>
+                    </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- Burst Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardZoronBurst"
                     android:layout_width="0dp"
+                    android:layout_height="160dp"
                     android:layout_weight="1"
-                    android:layout_height="140dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="6dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:shapeAppearance="@style/ShapeAppearance.Zoron.Medium"
+                    android:foreground="@drawable/ripple_card"
                     android:clickable="true"
-                    android:focusable="true"
-                    style="@style/Widget.Material3.CardView.Elevated"
-                    app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                    android:focusable="true">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/card_mode_burst">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="bottom"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🚀"
+                                android:textSize="36sp"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Burst"
+                                android:textSize="20sp"
+                                android:fontFamily="sans-serif-black"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Race-to-idle"
+                                android:textSize="13sp"
+                                android:textColor="@color/white_70" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Nightwatch Card (full width) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardZoronNightwatch"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                app:shapeAppearance="@style/ShapeAppearance.Zoron.Medium"
+                android:foreground="@drawable/ripple_card"
+                android:clickable="true"
+                android:focusable="true">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/card_mode_nightwatch">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🚀"
-                            android:textSize="28sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Burst"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Race-to-idle"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="11sp"
-                            android:alpha="0.7" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="24dp">
 
-            <!-- Row 3: Nightwatch (full width) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardZoronNightwatch"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:layout_marginBottom="32dp"
-                android:clickable="true"
-                android:focusable="true"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="#1A1A2E"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌙"
+                            android:textSize="42sp"
+                            android:layout_marginEnd="20dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:padding="16dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🌙"
-                        android:textSize="28sp"
-                        android:layout_marginEnd="16dp" />
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-                        <TextView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Nightwatch"
-                            android:textColor="#E0E0FF"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ultra deep overnight preservation"
-                            android:textColor="#9090C0"
-                            android:textSize="12sp" />
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Nightwatch"
+                                android:textSize="22sp"
+                                android:fontFamily="sans-serif-black"
+                                android:textColor="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ultra deep overnight preservation"
+                                android:textSize="13sp"
+                                android:textColor="@color/white_50" />
+                        </LinearLayout>
                     </LinearLayout>
-                </LinearLayout>
+                </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ==================== TRANSITION PROGRESS BAR ==================== -->
+            <!-- ==================== TRANSITION PROGRESS ==================== -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardTransitionProgress"
+                style="@style/Widget.Zoron.Card.Glass.Elevated"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="20dp"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
+                    <!-- Header row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
                         <TextView
                             android:id="@+id/tvTransitionStatus"
                             android:layout_width="0dp"
-                            android:layout_weight="1"
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:text="Applying..."
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                            style="@style/TextAppearance.Zoron.TitleMedium"
+                            android:textColor="@color/purple_primary" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnHideProgress"
+                            style="@style/Widget.Zoron.Button.Pill.Text"
                             android:layout_width="wrap_content"
-                            android:layout_height="32dp"
+                            android:layout_height="36dp"
                             android:text="Hide"
-                            android:textSize="11sp"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            app:cornerRadius="16dp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
+                    <!-- Progress bar -->
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/transitionProgressBar"
+                        style="@style/Widget.Zoron.ProgressIndicator"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:indeterminate="false"
-                        app:trackThickness="6dp"
-                        app:trackCornerRadius="3dp" />
+                        android:layout_marginBottom="12dp" />
 
+                    <!-- Detail text -->
                     <TextView
                         android:id="@+id/tvTransitionDetail"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Initializing..."
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="12sp"
-                        android:fontFamily="monospace"
-                        android:layout_marginTop="4dp" />
+                        style="@style/TextAppearance.Zoron.Mono" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ==================== LEGACY PROFILES (Collapsible) ==================== -->
+            <!-- ==================== LEGACY PROFILES (COLLAPSIBLE) ==================== -->
             <LinearLayout
                 android:id="@+id/legacyHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="12dp"
+                android:paddingVertical="12dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <TextView
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Legacy Profiles"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="18sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:layout_weight="1"
+                    android:text="LEGACY PROFILES"
+                    style="@style/TextAppearance.Zoron.LabelLarge" />
 
+                <ImageView
+                    android:id="@+id/ivLegacyToggle"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_expand"
+                    android:contentDescription="Toggle legacy profiles" />
+
+                <!-- Hidden compat view -->
                 <TextView
                     android:id="@+id/tvLegacyToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="▶"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="14sp" />
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout
@@ -489,198 +550,200 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="24dp">
 
-                <!-- Legacy Row 1: Stock + Battery -->
+                <!-- Row 1: None + Battery -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:baselineAligned="false"
                     android:layout_marginBottom="12dp">
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardNone"
+                        style="@style/Widget.Zoron.Card.Glass"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="100dp"
-                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:foreground="@drawable/ripple_card"
                         android:clickable="true"
-                        android:focusable="true"
-                        style="@style/Widget.Material3.CardView.Outlined"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                        android:focusable="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="12dp">
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📱"
+                                android:textSize="28sp"
+                                android:layout_marginBottom="4dp" />
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Stock"
-                                android:textColor="?attr/colorOnSurface"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="No tweaks"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="11sp"
-                                android:alpha="0.5" />
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/purple_on_surface" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardBattery"
+                        style="@style/Widget.Zoron.Card.Glass"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="100dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:foreground="@drawable/ripple_card"
                         android:clickable="true"
-                        android:focusable="true"
-                        style="@style/Widget.Material3.CardView.Outlined"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                        android:focusable="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="12dp">
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🔋"
+                                android:textSize="28sp"
+                                android:layout_marginBottom="4dp" />
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Battery"
-                                android:textColor="?attr/colorOnSurface"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Legacy saver"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="11sp"
-                                android:alpha="0.5" />
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/purple_on_surface" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
-                <!-- Legacy Row 2: Balanced + Performance -->
+                <!-- Row 2: Balanced + Performance -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false">
+                    android:orientation="horizontal">
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardBalanced"
+                        style="@style/Widget.Zoron.Card.Glass"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="100dp"
-                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:foreground="@drawable/ripple_card"
                         android:clickable="true"
-                        android:focusable="true"
-                        style="@style/Widget.Material3.CardView.Outlined"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                        android:focusable="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="12dp">
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚖️"
+                                android:textSize="28sp"
+                                android:layout_marginBottom="4dp" />
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Balanced"
-                                android:textColor="?attr/colorOnSurface"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Legacy balanced"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="11sp"
-                                android:alpha="0.5" />
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/purple_on_surface" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardPerformance"
+                        style="@style/Widget.Zoron.Card.Glass"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="100dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:foreground="@drawable/ripple_card"
                         android:clickable="true"
-                        android:focusable="true"
-                        style="@style/Widget.Material3.CardView.Outlined"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium">
+                        android:focusable="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="12dp">
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚡"
+                                android:textSize="28sp"
+                                android:layout_marginBottom="4dp" />
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Perform"
-                                android:textColor="?attr/colorOnSurface"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Legacy max"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="11sp"
-                                android:alpha="0.5" />
+                                android:fontFamily="sans-serif-medium"
+                                android:textColor="@color/purple_on_surface" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ==================== ANALYTICS (Material Expressive) ==================== -->
+            <!-- ==================== ANALYTICS SECTION ==================== -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/bg_section_divider"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Analytics header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Analytics"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="28sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:layout_weight="1"
+                    android:text="ANALYTICS"
+                    style="@style/TextAppearance.Zoron.LabelLarge" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnExportCsv"
+                    style="@style/Widget.Zoron.Button.Pill"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:text="Export"
-                    android:textSize="12sp"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    app:icon="@android:drawable/ic_menu_share"
-                    app:iconSize="16dp"
-                    app:cornerRadius="18dp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Zoron.Card.Glass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -688,14 +751,12 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Chart legend info -->
                     <TextView
                         android:id="@+id/tvChartInfo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Battery drain over time"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="12sp"
+                        style="@style/TextAppearance.Zoron.BodyMedium"
                         android:layout_marginBottom="8dp" />
 
                     <com.github.mikephil.charting.charts.LineChart
@@ -711,112 +772,87 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Process Monitor"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="28sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:layout_weight="1"
+                    android:text="PROCESS MONITOR"
+                    style="@style/TextAppearance.Zoron.LabelLarge" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnExportProcesses"
+                    style="@style/Widget.Zoron.Button.Pill"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:text="Export"
-                    android:textSize="12sp"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    app:icon="@android:drawable/ic_menu_share"
-                    app:iconSize="16dp"
-                    app:cornerRadius="18dp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Zoron.Card.Glass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="24dp">
 
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="240dp"
-                    android:nestedScrollingEnabled="false"
-                    android:scrollbars="vertical"
-                    android:fadingEdge="vertical"
-                    android:requiresFadingEdge="vertical"
-                    android:fillViewport="true">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/tvProcessReport"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Waiting for process data..."
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:fontFamily="monospace"
-                        android:textSize="12sp"
-                        android:padding="20dp" />
+                        android:text="Loading process data..."
+                        style="@style/TextAppearance.Zoron.Mono" />
                 </ScrollView>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ==================== DIAGNOSTICS (Scrollable + Export) ==================== -->
+            <!-- ==================== DIAGNOSTICS ==================== -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Diagnostics"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="28sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:layout_weight="1"
+                    android:text="DIAGNOSTICS"
+                    style="@style/TextAppearance.Zoron.LabelLarge" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnExportLogs"
+                    style="@style/Widget.Zoron.Button.Pill"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:text="Export"
-                    android:textSize="12sp"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    app:icon="@android:drawable/ic_menu_share"
-                    app:iconSize="16dp"
-                    app:cornerRadius="18dp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Zoron.Card.Glass"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Large">
+                android:layout_marginBottom="16dp">
 
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="280dp"
-                    android:nestedScrollingEnabled="false"
-                    android:scrollbars="vertical"
-                    android:fadingEdge="vertical"
-                    android:requiresFadingEdge="vertical"
-                    android:fillViewport="true">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/tvLogs"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Loading diagnostics..."
-                        android:textColor="?attr/colorPrimary"
-                        android:fontFamily="monospace"
-                        android:textSize="13sp"
-                        android:padding="24dp" />
+                        android:text="Loading logs..."
+                        style="@style/TextAppearance.Zoron.Mono"
+                        android:textColor="@color/purple_primary"
+                        android:textSize="13sp" />
                 </ScrollView>
             </com.google.android.material.card.MaterialCardView>
 

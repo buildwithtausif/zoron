@@ -1,5 +1,11 @@
 # Zoron Changelog
 
+## v4.2.0
+- **UI Revamp**: Re-styled the entire controller app (Main, Settings, Splash, Mode Learn screens) using a premium purple/violet dark glassmorphism theme.
+- **Staggered Animations**: Introduced elegant staggered slide-up and fade-in entry transitions for all activity components.
+- **Micro-interactions**: Added interactive touch-scaling animations to ZORON-X cards and an animated radial pulse glow on the power state dot.
+- **System Integration**: Re-themed notification small icons to monochrome Z-orbit style with purple accents and customized the system launcher icon assets.
+
 ## v4.1.1
 - **Universal Legacy Modes**: Legacy profiles (None, Battery, Performance) now fully support all Android devices by utilizing the new `zoron_engine`, fixing the `whyred_opt` error.
 - **Battery Drain Fix**: Radically optimized parameter limits in Balanced and Deep modes. Balanced mode now severely restricts frequency scaling for background tasks, resolving the 14% drain issue.

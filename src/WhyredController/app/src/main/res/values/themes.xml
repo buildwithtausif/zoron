@@ -1,20 +1,185 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Zoron" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Let the system handle Day/Night and Dynamic Colors -->
+    <!-- ==================== MAIN APP THEME ==================== -->
+    <style name="Theme.Zoron" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary -->
+        <item name="colorPrimary">@color/purple_primary</item>
+        <item name="colorOnPrimary">@color/purple_on_primary</item>
+        <item name="colorPrimaryContainer">@color/purple_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/purple_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/purple_primary_dark</item>
+
+        <!-- Secondary -->
+        <item name="colorSecondary">@color/purple_secondary</item>
+        <item name="colorOnSecondary">@color/purple_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/purple_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/purple_on_secondary_container</item>
+
+        <!-- Tertiary -->
+        <item name="colorTertiary">@color/purple_tertiary</item>
+        <item name="colorOnTertiary">@color/purple_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/purple_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/purple_on_tertiary_container</item>
+
+        <!-- Surface -->
+        <item name="colorSurface">@color/purple_surface</item>
+        <item name="colorSurfaceVariant">@color/purple_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/purple_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/purple_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/purple_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/purple_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/purple_surface_container_highest</item>
+        <item name="colorSurfaceInverse">@color/purple_inverse_surface</item>
+        <item name="colorOnSurface">@color/purple_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/purple_on_surface_variant</item>
+        <item name="colorOnSurfaceInverse">@color/purple_inverse_on_surface</item>
+
+        <!-- Outline -->
+        <item name="colorOutline">@color/purple_outline</item>
+        <item name="colorOutlineVariant">@color/purple_outline_variant</item>
+
+        <!-- Error -->
+        <item name="colorError">@color/error_red</item>
+
+        <!-- System Bars -->
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
+        <item name="android:navigationBarColor">@color/purple_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Background -->
+        <item name="android:colorBackground">@color/purple_surface</item>
+        <item name="colorOnBackground">@color/purple_on_surface</item>
+
+        <!-- Ripple -->
+        <item name="colorControlHighlight">@color/ripple_purple</item>
+
+        <!-- Shape overrides -->
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Zoron.Large</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zoron.Medium</item>
     </style>
 
+    <!-- ==================== SHAPE APPEARANCES ==================== -->
     <style name="ShapeAppearance.Zoron.Large" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">32dp</item>
     </style>
-    
+
     <style name="ShapeAppearance.Zoron.Medium" parent="ShapeAppearance.Material3.MediumComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Zoron.Pill" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.Zoron.SmallCard" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- ==================== WIDGET STYLES ==================== -->
+    <style name="Widget.Zoron.Button.Pill" parent="Widget.Material3.Button.TonalButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.Zoron.Pill</item>
+        <item name="backgroundTint">@color/purple_primary_container</item>
+        <item name="android:textColor">@color/purple_on_primary_container</item>
+    </style>
+
+    <style name="Widget.Zoron.Button.Pill.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.Zoron.Pill</item>
+        <item name="strokeColor">@color/purple_outline</item>
+        <item name="android:textColor">@color/purple_primary</item>
+    </style>
+
+    <style name="Widget.Zoron.Button.Pill.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.Zoron.Pill</item>
+        <item name="android:textColor">@color/purple_primary</item>
+    </style>
+
+    <style name="Widget.Zoron.Card.Glass" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/card_glass_bg</item>
+        <item name="strokeColor">@color/card_glass_stroke</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zoron.Medium</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+
+    <style name="Widget.Zoron.Card.Glass.Elevated" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/card_glass_bg_elevated</item>
+        <item name="strokeColor">@color/card_glass_stroke_bright</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zoron.Medium</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+
+    <style name="Widget.Zoron.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/purple_primary</item>
+        <item name="trackTint">@color/purple_surface_container_high</item>
+    </style>
+
+    <style name="Widget.Zoron.ProgressIndicator" parent="Widget.Material3.LinearProgressIndicator">
+        <item name="indicatorColor">@color/purple_primary</item>
+        <item name="trackColor">@color/purple_surface_container_high</item>
+        <item name="trackCornerRadius">4dp</item>
+        <item name="trackThickness">6dp</item>
+    </style>
+
+    <!-- ==================== TEXT STYLES ==================== -->
+    <style name="TextAppearance.Zoron" parent="android:TextAppearance" />
+
+    <style name="TextAppearance.Zoron.HeadlineLarge">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:textColor">@color/purple_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.HeadlineMedium">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/purple_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.TitleLarge">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/purple_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.TitleMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/purple_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.BodyLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/purple_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.BodyMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/purple_on_surface_variant</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/purple_primary</item>
+        <item name="android:letterSpacing">0.05</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="TextAppearance.Zoron.Mono">
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">@color/purple_on_surface_variant</item>
     </style>
 </resources>

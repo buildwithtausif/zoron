@@ -12,13 +12,13 @@
                 android:centerX="54"
                 android:centerY="54"
                 android:gradientRadius="76">
-                <item android:offset="0.0" android:color="#003314" />
-                <item android:offset="0.7" android:color="#001A0A" />
-                <item android:offset="1.0" android:color="#000000" />
+                <item android:offset="0.0" android:color="#2D1B69" />
+                <item android:offset="0.7" android:color="#1A1A2E" />
+                <item android:offset="1.0" android:color="#0D0D1A" />
             </gradient>
         </aapt:attr>
     </path>
     <path
         android:pathData="M 54 54 m -40 0 a 40 40 0 1 1 80 0 a 40 40 0 1 1 -80 0"
-        android:fillColor="#1A00C853" />
+        android:fillColor="#1AB388FF" />
 </vector>

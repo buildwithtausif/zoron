@@ -13,7 +13,7 @@
         android:strokeLineCap="round">
         <aapt:attr name="android:strokeColor">
             <gradient android:type="linear" android:startX="18" android:startY="18" android:endX="90" android:endY="90">
-                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="0" android:color="#B388FF" />
                 <item android:offset="1" android:color="#00000000" />
             </gradient>
         </aapt:attr>
@@ -24,7 +24,7 @@
         android:strokeLineCap="round">
         <aapt:attr name="android:strokeColor">
             <gradient android:type="linear" android:startX="54" android:startY="90" android:endX="18" android:endY="54">
-                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="0" android:color="#B388FF" />
                 <item android:offset="1" android:color="#00000000" />
             </gradient>
         </aapt:attr>
@@ -38,7 +38,7 @@
         android:strokeLineCap="round">
         <aapt:attr name="android:strokeColor">
             <gradient android:type="linear" android:startX="26" android:startY="82" android:endX="82" android:endY="26">
-                <item android:offset="0" android:color="#00E676" />
+                <item android:offset="0" android:color="#B388FF" />
                 <item android:offset="1" android:color="#00000000" />
             </gradient>
         </aapt:attr>
@@ -47,13 +47,13 @@
     <!-- Planet dots -->
     <path
         android:pathData="M 79.5 28.5 A 3.5 3.5 0 1 1 79.4 28.5"
-        android:fillColor="#00C853" />
+        android:fillColor="#B388FF" />
     <path
         android:pathData="M 18 54 A 2 2 0 1 1 17.9 54"
-        android:fillColor="#69F0AE" />
+        android:fillColor="#CE93D8" />
     <path
         android:pathData="M 54 90 A 2.5 2.5 0 1 1 53.9 90"
-        android:fillColor="#00E676" />
+        android:fillColor="#B388FF" />
 
     <!-- Center 'Z' with Drop Shadow -->
     <path
@@ -65,9 +65,9 @@
         android:pathData="M 36 29 H 72 V 39 L 48 69 H 72 V 79 H 36 V 69 L 60 39 H 36 Z">
         <aapt:attr name="android:fillColor">
             <gradient android:type="linear" android:startX="36" android:startY="29" android:endX="72" android:endY="79">
-                <item android:offset="0" android:color="#69F0AE" />
-                <item android:offset="0.5" android:color="#00E676" />
-                <item android:offset="1" android:color="#00A859" />
+                <item android:offset="0" android:color="#CE93D8" />
+                <item android:offset="0.5" android:color="#B388FF" />
+                <item android:offset="1" android:color="#7C4DFF" />
             </gradient>
         </aapt:attr>
     </path>
@@ -83,17 +83,17 @@
         <!-- Base -->
         <path
             android:pathData="M 72 67 H 80 A 2 2 0 0 1 82 69 V 83 A 2 2 0 0 1 80 85 H 72 A 2 2 0 0 1 70 83 V 69 A 2 2 0 0 1 72 67 Z"
-            android:fillColor="#E8F5E9"
-            android:strokeColor="#00A859"
+            android:fillColor="#F3E5F5"
+            android:strokeColor="#7C4DFF"
             android:strokeWidth="1.5" />
         <!-- Cap -->
         <path
             android:pathData="M 74 65 H 78 A 1 1 0 0 1 79 66 V 67 H 73 V 66 A 1 1 0 0 1 74 65 Z"
-            android:fillColor="#00A859" />
+            android:fillColor="#7C4DFF" />
         <!-- Fill -->
         <path
             android:pathData="M 71 74 H 81 V 83 A 1 1 0 0 1 80 84 H 72 A 1 1 0 0 1 71 83 Z"
-            android:fillColor="#00E676" />
+            android:fillColor="#B388FF" />
         <!-- Bolt inside battery -->
         <path
             android:pathData="M 76.5 70 L 73.5 75 H 76 L 75 80 L 79 74 H 76.5 Z"

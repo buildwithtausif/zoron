@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground">
+    android:background="@drawable/bg_gradient_main">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -15,237 +15,372 @@
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent"
             app:title="Learn About Modes"
-            app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-            app:titleTextColor="?attr/colorPrimary"
-            app:navigationIcon="@android:drawable/ic_menu_revert" />
+            app:titleTextColor="@color/purple_on_surface"
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:navigationIconTint="@color/purple_primary" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:clipToPadding="false"
+        android:paddingBottom="32dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="20dp">
 
+            <!-- Section: ZORON-X Modes -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ZORON-X Runtime Optimization Framework"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="20sp"
-                android:fontFamily="sans-serif-medium"
+                android:text="ZORON-X MODES"
+                style="@style/TextAppearance.Zoron.LabelLarge"
                 android:layout_marginBottom="16dp" />
 
+            <!-- Balanced Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Accent strip -->
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/balanced_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡ Balanced"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Smart daily driver mode. Dynamically scales CPU frequencies based on load — big cores limited to 50-65% max, little cores allowed full range. Uses schedutil governor for responsive scaling. GPU set to moderate clocks. Ideal for messaging, browsing, and light multitasking with excellent battery life."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Deep Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/deep_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔋 Deep"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Maximum battery savings. CPU frequencies severely restricted — little cores to 35%, big cores offlined or locked to minimum. Uses powersave governor. GPU at minimum clocks. Aggressive wakelock blocking and doze timers. Perfect for when you need your phone to last through a long day with minimal interaction."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Hibernation Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/hibernate_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="❄️ Hibernate"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Extreme standby mode. Designed for when you put your phone down and want near-zero battery drain. All non-essential cores offlined, remaining cores locked to absolute minimum. Extreme doze parameters, maximum wakelock blocking, sync disabled. The phone stays alive for notifications but does almost nothing else."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Burst Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/burst_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🚀 Burst"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Race-to-idle performance mode. All CPU cores online at maximum frequency with performance governor. GPU clocked to max. Designed for short bursts of heavy workloads — gaming sessions, video rendering, app installations. Uses the race-to-idle philosophy: finish tasks faster so the CPU can return to sleep sooner."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Nightwatch Mode -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/nightwatch_accent" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌙 Nightwatch"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Ultra-deep overnight preservation. Activates when you sleep — restricts little cores to 25% max, offlines all big cores, uses powersave governor. Maximum doze aggressiveness, complete wakelock blocking, all syncs paused. Your phone loses perhaps 1-2% overnight instead of 10-15%."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/bg_section_divider"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Section: Legacy Profiles -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Every mode applies an adaptive baseline to device thermals, CPU governors, GPU limits, and I/O logic. Fastpath allows instant responsiveness while deep tuning runs asynchronously."
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp" />
+                android:text="LEGACY PROFILES"
+                style="@style/TextAppearance.Zoron.LabelLarge"
+                android:layout_marginBottom="16dp" />
 
-            <!-- Stock -->
+            <!-- Stock Mode -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Filled"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="16dp">
-                
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/purple_outline" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Stock Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorPrimary" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Behavior: No runtime modifications.\nCPU/GPU: OEM default scaling.\nBattery: Depends on ROM defaults.\nBest For: Maximum compatibility."
-                        android:textSize="14sp" />
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📱 Stock (None)"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Restores the device to its stock kernel parameters. Removes all Zoron optimizations and lets the kernel manage everything with its default settings. Use this to return to a clean baseline."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Balanced -->
+            <!-- Battery Profile -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="?attr/colorPrimaryContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="16dp">
-                
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/purple_outline" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="⚡ Balanced Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnPrimaryContainer" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textColor="?attr/colorOnPrimaryContainer"
-                        android:text="Behavior: Adaptive middle ground.\nCPU/GPU: Dynamic scaling with moderate limits.\nThermals: Stable sustained operation.\nBattery: Efficient daily usage.\nBest For: Daily driving."
-                        android:textSize="14sp" />
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔋 Battery"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Legacy battery saver profile. Applies basic frequency restrictions and governor changes. Less sophisticated than ZORON-X Deep mode but compatible with older configurations. Consider upgrading to Deep or Hibernation for better results."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Deep -->
+            <!-- Performance Profile -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="16dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🔋 Deep Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSecondaryContainer" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:text="Behavior: Aggressive power optimization.\nCPU/GPU: Lower sustained frequencies and restricted scaling.\nRAM: Aggressive cleanup.\nThermals: Cooler operation.\nBattery: Maximum longevity.\nBest For: Travel, low battery."
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_marginBottom="12dp">
 
-            <!-- Hibernation -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="?attr/colorTertiaryContainer"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="16dp">
-                
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="❄️ Hibernation Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnTertiaryContainer" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textColor="?attr/colorOnTertiaryContainer"
-                        android:text="Behavior: Extreme standby lock.\nCPU: Capped to absolute minimums.\nSensors/Wakelocks: Highly restricted.\nBattery: Bare minimum draw.\nBest For: Unused secondary devices or emergencies."
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    android:orientation="horizontal">
 
-            <!-- Burst -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="16dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🚀 Burst / Perform"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:text="Behavior: Responsiveness prioritized.\nCPU/GPU: High frequency availability, reduced throttling.\nRAM: Minimal cleanup.\nThermals: Higher heat output, mitigated by Thermal Daemon.\nBattery: Faster drain expected.\nBest For: Gaming, heavy multitasking."
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/purple_outline" />
 
-            <!-- Nightwatch -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                style="@style/Widget.Material3.CardView.Elevated"
-                app:cardBackgroundColor="#1A1A2E"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Zoron.Medium"
-                android:layout_marginBottom="32dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🌙 Nightwatch Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#E0E0FF" />
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textColor="#9090C0"
-                        android:text="Behavior: Overnight Deep Doze enforcement.\nCPU: Offline big cores, cap little cores.\nDoze: Forced deep idle.\nBest For: Leaving the phone unplugged while sleeping to prevent drain drops."
-                        android:textSize="14sp" />
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡ Performance"
+                            style="@style/TextAppearance.Zoron.TitleLarge" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Legacy performance profile. Unlocks all CPU cores to maximum frequencies with the performance governor. Less nuanced than ZORON-X Burst mode. Consider Burst for smarter race-to-idle behavior."
+                            style="@style/TextAppearance.Zoron.BodyMedium"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
