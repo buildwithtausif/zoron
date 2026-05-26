@@ -1,6 +1,6 @@
 {
-  "version": "v4.3.1",
-  "versionCode": 30,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.3.1/zoron_v4.3.1.zip",
-  "changelog": "v4.3.1:\n- Added Video Playback mode details to the Learn About Modes page.\n- Made all controller screens fully tablet-friendly using custom content container width constraints and horizontal/vertical spacing refinements."
+  "version": "v4.4.0",
+  "versionCode": 31,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.0/zoron_v4.4.0.zip",
+  "changelog": "v4.4.0:\n- Native fallback support for Non-Root devices with a fully simulated Java-based fallback optimization engine.\n- Expanded non-root techniques including Master Sync toggles, Haptic & sound control, screen off timeouts, auto brightness overrides, and AMOLED pure black layout styling.\n- Added developer attributions for Tausif Alam aka buildwithtausif linking directly to the Zoron GitHub repository."
 }

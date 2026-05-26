@@ -149,6 +149,35 @@ public class MainActivity extends AppCompatActivity {
         transitionProgressBar = findViewById(R.id.transitionProgressBar);
         findViewById(R.id.btnHideProgress).setOnClickListener(v -> cardTransitionProgress.setVisibility(View.GONE));
 
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+
+        // Setup Non-Root permission card buttons
+        if (!isRoot) {
+            findViewById(R.id.btnGrantUsage).setOnClickListener(v -> requestUsageStatsPermission());
+            findViewById(R.id.btnGrantWrite).setOnClickListener(v -> {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            });
+            findViewById(R.id.btnGrantBattery).setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Enable ignore battery optimization manually in system settings.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        // Developer attribution click listener
+        View devAttribution = findViewById(R.id.cardDeveloperAttribution);
+        if (devAttribution != null) {
+            devAttribution.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/buildwithtausif/zoron"));
+                startActivity(intent);
+            });
+        }
+
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
 
@@ -158,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
-        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
         boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
         switchAutopilot.setChecked(autopilotEnabled);
         
@@ -231,6 +259,30 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         handler.removeCallbacks(updateRunnable);
         handler.post(updateRunnable);
+
+        // Non-Root Permissions card management
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+        if (!isRoot) {
+            MaterialCardView cardPermissions = findViewById(R.id.cardNonRootPermissions);
+            if (cardPermissions != null) {
+                boolean hasUsage = hasUsageStatsPermission();
+                boolean hasWrite = Settings.System.canWrite(this);
+                boolean hasBattery = isIgnoringBatteryOptimizations();
+
+                if (hasUsage && hasWrite && hasBattery) {
+                    cardPermissions.setVisibility(View.GONE);
+                } else {
+                    cardPermissions.setVisibility(View.VISIBLE);
+                    View btnUsage = findViewById(R.id.btnGrantUsage);
+                    View btnWrite = findViewById(R.id.btnGrantWrite);
+                    View btnBattery = findViewById(R.id.btnGrantBattery);
+                    if (btnUsage != null) btnUsage.setVisibility(hasUsage ? View.GONE : View.VISIBLE);
+                    if (btnWrite != null) btnWrite.setVisibility(hasWrite ? View.GONE : View.VISIBLE);
+                    if (btnBattery != null) btnBattery.setVisibility(hasBattery ? View.GONE : View.VISIBLE);
+                }
+            }
+        }
     }
 
     @Override
@@ -309,70 +361,135 @@ public class MainActivity extends AppCompatActivity {
     // ==================== DASHBOARD REFRESH ====================
 
     private void refreshDashboard() {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+
         new Thread(() -> {
-            Shell.Result result = Shell.cmd(
-                    "cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo ''",
-                    "echo '---SEP---'",
-                    "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo ''",
-                    "echo '---SEP---'",
-                    "tail -n 50 /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
-                    "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''",
-                    "echo '---SEP---'",
-                    "cat /data/local/tmp/zoron/power_state.txt 2>/dev/null || echo 'UNKNOWN'",
-                    "echo '---SEP---'",
-                    "tail -n 40 /data/local/tmp/zoron/process_report.txt 2>/dev/null || echo 'No process data yet.'"
-            ).exec();
+            String profile = "";
+            String gov = "";
+            String logs = "";
+            String csvData = "";
+            String powerState = "UNKNOWN";
+            String processReport = "";
 
-            if (!result.isSuccess()) {
-                runOnUiThread(() -> {
-                    tvCurrentProfile.setText("Mode: ERROR (Magisk Access Denied)");
-                    tvLogs.setText("Error reading data. Make sure module is flashed and active.");
-                });
-                return;
+            if (isRoot) {
+                Shell.Result result = Shell.cmd(
+                        "cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo ''",
+                        "echo '---SEP---'",
+                        "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo ''",
+                        "echo '---SEP---'",
+                        "tail -n 50 /data/local/tmp/zoron/log.txt 2>/dev/null || echo 'No logs.'",
+                        "echo '---SEP---'",
+                        "cat /data/local/tmp/zoron/battery.csv 2>/dev/null || echo ''",
+                        "echo '---SEP---'",
+                        "cat /data/local/tmp/zoron/power_state.txt 2>/dev/null || echo 'UNKNOWN'",
+                        "echo '---SEP---'",
+                        "tail -n 40 /data/local/tmp/zoron/process_report.txt 2>/dev/null || echo 'No process data yet.'"
+                ).exec();
+
+                if (!result.isSuccess()) {
+                    runOnUiThread(() -> {
+                        tvCurrentProfile.setText("Mode: ERROR (Magisk Access Denied)");
+                        tvLogs.setText("Error reading data. Make sure module is flashed and active.");
+                    });
+                    return;
+                }
+
+                StringBuilder out = new StringBuilder();
+                for (String s : result.getOut()) {
+                    out.append(s).append("\n");
+                }
+                String outputStr = out.toString();
+
+                String[] parts = outputStr.split("---SEP---\n");
+                if (parts.length < 6) return;
+
+                profile = parts[0].trim();
+                gov = parts[1].trim();
+                logs = parts[2].trim();
+                csvData = parts[3].trim();
+                powerState = parts[4].trim();
+                processReport = parts[5].trim();
+            } else {
+                try {
+                    File zoronDir = new File(getFilesDir(), "zoron");
+                    if (!zoronDir.exists()) zoronDir.mkdirs();
+
+                    File profileFile = new File(zoronDir, "profile.txt");
+                    profile = profileFile.exists() ? readLocalFile(profileFile).trim() : "balanced";
+
+                    gov = "N/A (Non-Root Engine)";
+
+                    File logFile = new File(zoronDir, "log.txt");
+                    logs = logFile.exists() ? readLocalFile(logFile) : "No logs yet.";
+
+                    File csvFile = new File(zoronDir, "battery.csv");
+                    csvData = csvFile.exists() ? readLocalFile(csvFile) : "";
+
+                    File powerFile = new File(zoronDir, "power_state.txt");
+                    powerState = powerFile.exists() ? readLocalFile(powerFile).trim() : "UNKNOWN";
+
+                    File procFile = new File(zoronDir, "process_report.txt");
+                    processReport = procFile.exists() ? readLocalFile(procFile) : "No process data yet.";
+                } catch (Exception e) {
+                    logs = "Error reading files: " + e.getMessage();
+                }
             }
 
-            StringBuilder out = new StringBuilder();
-            for (String s : result.getOut()) {
-                out.append(s).append("\n");
-            }
-            String outputStr = out.toString();
-
-            String[] parts = outputStr.split("---SEP---\n");
-            if (parts.length < 6) return;
-
-            String profile = parts[0].trim();
-            String gov = parts[1].trim();
-            String logs = parts[2].trim();
-            String csvData = parts[3].trim();
-            String powerState = parts[4].trim();
-            String processReport = parts[5].trim();
+            final String finalProfile = profile;
+            final String finalGov = gov;
+            final String finalLogs = logs;
+            final String finalCsvData = csvData;
+            final String finalPowerState = powerState;
+            final String finalProcessReport = processReport;
 
             // Update chart only if data changed
-            if (!csvData.equals(lastCsvData)) {
-                runOnUiThread(() -> plotChart(csvData));
+            if (!finalCsvData.equals(lastCsvData)) {
+                runOnUiThread(() -> plotChart(finalCsvData));
             }
 
             // Cache for export
-            lastCsvData = csvData;
-            lastLogData = logs;
+            lastCsvData = finalCsvData;
+            lastLogData = finalLogs;
 
             runOnUiThread(() -> {
                 // Update profile display
-                String displayProfile = profile.isEmpty() ? "Unknown" : profile.toUpperCase();
+                String displayProfile = finalProfile.isEmpty() ? "Unknown" : finalProfile.toUpperCase();
                 tvCurrentProfile.setText("Mode: " + displayProfile);
-                tvCpuInfo.setText("CPU Governor: " + (gov.isEmpty() ? "Unknown" : gov));
+                tvCpuInfo.setText("CPU Governor: " + (finalGov.isEmpty() ? "Unknown" : finalGov));
 
                 // Update power state with color
-                updatePowerState(powerState);
+                updatePowerState(finalPowerState);
 
                 // Update logs
-                tvLogs.setText(logs);
+                tvLogs.setText(finalLogs);
 
                 // Update process report
-                tvProcessReport.setText(processReport);
+                tvProcessReport.setText(finalProcessReport);
+
+                // AMOLED Dark theme enforcement
+                boolean isDeepProfile = "deep".equals(finalProfile) || "hibernation".equals(finalProfile) || "nightwatch".equals(finalProfile);
+                applyAmoledTheme(isDeepProfile);
             });
         }).start();
+    }
+
+    private void applyAmoledTheme(boolean amoledActive) {
+        ViewGroup rootLayout = null;
+        ViewGroup content = findViewById(android.R.id.content);
+        if (content != null && content.getChildCount() > 0) {
+            View firstChild = content.getChildAt(0);
+            if (firstChild instanceof ViewGroup) {
+                rootLayout = (ViewGroup) firstChild;
+            }
+        }
+        if (rootLayout != null) {
+            if (amoledActive) {
+                rootLayout.setBackgroundColor(Color.BLACK);
+            } else {
+                rootLayout.setBackground(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_gradient_main));
+            }
+        }
     }
 
     // ==================== POWER STATE DISPLAY ====================
@@ -539,17 +656,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void exportCsv() {
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/battery.csv 2>/dev/null").exec();
-            if (!result.isSuccess() || result.getOut().isEmpty()) {
+            String csvData = getFileContent("/data/local/tmp/zoron/battery.csv", "");
+            if (csvData.trim().isEmpty()) {
                 runOnUiThread(() -> Toast.makeText(this, "No CSV data to export", Toast.LENGTH_SHORT).show());
                 return;
             }
 
             StringBuilder csvContent = new StringBuilder();
             csvContent.append("Timestamp,Battery Level,Profile,Power State,CPU Freq,Temperature\n");
-            for (String line : result.getOut()) {
-                csvContent.append(line).append("\n");
-            }
+            csvContent.append(csvData);
 
             try {
                 File exportFile = new File(getExternalCacheDir(), "zoron_battery_export.csv");
@@ -572,21 +687,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void exportLogs() {
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/log.txt 2>/dev/null").exec();
-            if (!result.isSuccess() || result.getOut().isEmpty()) {
+            String logData = getFileContent("/data/local/tmp/zoron/log.txt", "");
+            if (logData.trim().isEmpty()) {
                 runOnUiThread(() -> Toast.makeText(this, "No logs to export", Toast.LENGTH_SHORT).show());
                 return;
-            }
-
-            StringBuilder logContent = new StringBuilder();
-            for (String line : result.getOut()) {
-                logContent.append(line).append("\n");
             }
 
             try {
                 File exportFile = new File(getExternalCacheDir(), "zoron_diagnostics.txt");
                 FileWriter writer = new FileWriter(exportFile);
-                writer.write(logContent.toString());
+                writer.write(logData);
                 writer.close();
 
                 Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
@@ -623,6 +733,13 @@ public class MainActivity extends AppCompatActivity {
     // ==================== ZORON-X MODE APPLICATION ====================
 
     private void applyZoronMode(String mode) {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+        if (!isRoot) {
+            applyNonRootZoronModeInActivity(mode);
+            return;
+        }
+
         // Show progress bar
         cardTransitionProgress.setVisibility(View.VISIBLE);
         transitionProgressBar.setProgress(0);
@@ -714,6 +831,13 @@ public class MainActivity extends AppCompatActivity {
     // ==================== LEGACY PROFILE APPLICATION ====================
 
     private void applyLegacyProfile(String profile) {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+        if (!isRoot) {
+            applyLegacyProfileNonRoot(profile);
+            return;
+        }
+
         new Thread(() -> {
             // Search paths in priority order
             String scriptCmd = String.join("; ",
@@ -754,21 +878,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void exportProcessReport() {
         new Thread(() -> {
-            Shell.Result result = Shell.cmd("cat /data/local/tmp/zoron/process_report.txt 2>/dev/null").exec();
-            if (!result.isSuccess() || result.getOut().isEmpty()) {
+            String reportData = getFileContent("/data/local/tmp/zoron/process_report.txt", "");
+            if (reportData.trim().isEmpty()) {
                 runOnUiThread(() -> Toast.makeText(this, "No process data to export", Toast.LENGTH_SHORT).show());
                 return;
-            }
-
-            StringBuilder content = new StringBuilder();
-            for (String line : result.getOut()) {
-                content.append(line).append("\n");
             }
 
             try {
                 File exportFile = new File(getExternalCacheDir(), "zoron_process_report.txt");
                 FileWriter writer = new FileWriter(exportFile);
-                writer.write(content.toString());
+                writer.write(reportData);
                 writer.close();
 
                 Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
@@ -889,6 +1008,122 @@ public class MainActivity extends AppCompatActivity {
                 .setStartDelay(i * 60L)
                 .setInterpolator(new OvershootInterpolator(1.0f))
                 .start();
+        }
+    }
+
+    private boolean isIgnoringBatteryOptimizations() {
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        return pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+    }
+
+    private void applyNonRootZoronModeInActivity(String mode) {
+        cardTransitionProgress.setVisibility(View.VISIBLE);
+        transitionProgressBar.setProgress(30);
+        tvTransitionStatus.setText("Applying Non-Root Mode...");
+        tvTransitionDetail.setText("Configuring System settings: " + mode);
+        tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
+
+        new Thread(() -> {
+            try {
+                File zoronDir = new File(getFilesDir(), "zoron");
+                if (!zoronDir.exists()) zoronDir.mkdirs();
+                File profileFile = new File(zoronDir, "profile.txt");
+                java.io.FileWriter fw = new java.io.FileWriter(profileFile);
+                fw.write(mode);
+                fw.close();
+
+                File logFile = new File(zoronDir, "log.txt");
+                java.io.FileWriter logFw = new java.io.FileWriter(logFile, true);
+                String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
+                logFw.write("[" + timestamp + "] [USER] Changed mode to: " + mode.toUpperCase() + "\n");
+                logFw.close();
+
+                Intent serviceIntent = new Intent(MainActivity.this, ZoronAutopilotService.class);
+                serviceIntent.putExtra("apply_mode", mode);
+                startService(serviceIntent);
+
+                Thread.sleep(800);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                transitionProgressBar.setProgress(100);
+                tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
+                tvTransitionDetail.setText("Non-root optimizations applied");
+                handler.postDelayed(() -> {
+                    if (!isDestroyed()) cardTransitionProgress.setVisibility(View.GONE);
+                }, 2000);
+                refreshDashboard();
+            });
+        }).start();
+    }
+
+    private void applyLegacyProfileNonRoot(String profile) {
+        new Thread(() -> {
+            try {
+                File zoronDir = new File(getFilesDir(), "zoron");
+                if (!zoronDir.exists()) zoronDir.mkdirs();
+                File profileFile = new File(zoronDir, "profile.txt");
+                java.io.FileWriter fw = new java.io.FileWriter(profileFile);
+                fw.write(profile);
+                fw.close();
+
+                File logFile = new File(zoronDir, "log.txt");
+                java.io.FileWriter logFw = new java.io.FileWriter(logFile, true);
+                String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
+                logFw.write("[" + timestamp + "] [USER] Changed profile to legacy: " + profile.toUpperCase() + "\n");
+                logFw.close();
+
+                Intent serviceIntent = new Intent(MainActivity.this, ZoronAutopilotService.class);
+                serviceIntent.putExtra("apply_mode", profile);
+                startService(serviceIntent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                Toast.makeText(MainActivity.this, profile.toUpperCase() + " profile applied!", Toast.LENGTH_SHORT).show();
+                refreshDashboard();
+            });
+        }).start();
+    }
+
+    private String readLocalFile(File file) {
+        StringBuilder sb = new StringBuilder();
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+
+    private String getFileContent(String fileRootPath, String defaultContent) {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+        if (isRoot) {
+            Shell.Result result = Shell.cmd("cat " + fileRootPath + " 2>/dev/null").exec();
+            if (result.isSuccess() && !result.getOut().isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (String line : result.getOut()) {
+                    sb.append(line).append("\n");
+                }
+                return sb.toString();
+            }
+            return defaultContent;
+        } else {
+            String filename = fileRootPath.substring(fileRootPath.lastIndexOf('/') + 1);
+            File localFile = new File(new File(getFilesDir(), "zoron"), filename);
+            if (localFile.exists()) {
+                return readLocalFile(localFile);
+            }
+            return defaultContent;
         }
     }
 }

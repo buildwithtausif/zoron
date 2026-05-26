@@ -3,6 +3,7 @@ package com.zoron.whyred;
 import android.app.Service;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,13 +12,21 @@ import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.provider.Settings;
 import com.topjohnwu.superuser.Shell;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ZoronAutopilotService extends Service {
     private Handler handler;
     private Runnable autopilotTask;
     private String lastMode = "";
     private boolean isVideoBoostActive = false;
+    private long lastBatteryLogTime = 0;
+    private long lastProcessReportTime = 0;
 
     @Override
     public void onCreate() {
@@ -27,13 +36,37 @@ public class ZoronAutopilotService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.hasExtra("apply_mode")) {
+            String mode = intent.getStringExtra("apply_mode");
+            if (mode != null) {
+                applyZoronMode(mode);
+            }
+        }
         if (autopilotTask == null) {
             autopilotTask = new Runnable() {
                 @Override
                 public void run() {
                     evaluateAndSwitchMode();
-                    // Check every 2 seconds for high responsiveness (dynamic video scaling)
-                    handler.postDelayed(this, 2000);
+                    
+                    // Throttle polling interval when in battery saver modes on non-root
+                    int delay = 2000;
+                    SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+                    boolean isRoot = prefs.getBoolean("is_root", false);
+                    if (!isRoot) {
+                        File zoronDir = new File(getFilesDir(), "zoron");
+                        File profileFile = new File(zoronDir, "profile.txt");
+                        String mode = "balanced";
+                        if (profileFile.exists()) {
+                            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                                String m = br.readLine();
+                                if (m != null) mode = m.trim();
+                            } catch (Exception ignored) {}
+                        }
+                        if ("deep".equals(mode) || "hibernation".equals(mode) || "nightwatch".equals(mode)) {
+                            delay = 10000; // 10s evaluation loop during battery saving profiles
+                        }
+                    }
+                    handler.postDelayed(this, delay);
                 }
             };
             handler.post(autopilotTask);
@@ -45,6 +78,7 @@ public class ZoronAutopilotService extends Service {
         // 1. Read autopilot enabled state from preferences
         SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
         boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
+        boolean isRoot = prefs.getBoolean("is_root", false);
 
         // 2. Get Battery Level & Charging State
         BatteryManager bm = (BatteryManager) getSystemService(BATTERY_SERVICE);
@@ -59,8 +93,16 @@ public class ZoronAutopilotService extends Service {
         String fgApp = getForegroundApp();
         
         // 4. Universal Video Playback Detection
-        // Detects if the foreground app is a known video/social media app, OR if any audio output is active system-wide (covers unknown apps/players)
         boolean isVideoPlaying = isVideoPlaybackApp(fgApp) || isAudioActive();
+
+        // 5. Append battery logging if needed (every 10 minutes)
+        runLocalBatteryLogging(batteryLevel);
+
+        // 6. Write process report (every scan cycle or periodically)
+        runLocalProcessReport(fgApp);
+
+        // 7. Write power state
+        runLocalPowerStateUpdate(isVideoPlaying);
 
         if (autopilotEnabled) {
             // Autopilot Mode: Active dynamic mode management
@@ -85,25 +127,42 @@ public class ZoronAutopilotService extends Service {
             }
 
             // Turn off manual dynamic video boost if it was active
-            if (isVideoBoostActive) {
+            if (isVideoBoostActive && isRoot) {
                 Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
                 isVideoBoostActive = false;
             }
 
             if (!targetMode.equals(lastMode)) {
                 String finalTargetMode = targetMode;
-                Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
-                    if (out.isSuccess() && !out.getOut().isEmpty()) {
-                        String current = out.getOut().get(0).trim();
-                        if (!current.equals(finalTargetMode)) {
+                if (isRoot) {
+                    Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
+                        if (out.isSuccess() && !out.getOut().isEmpty()) {
+                            String current = out.getOut().get(0).trim();
+                            if (!current.equals(finalTargetMode)) {
+                                applyZoronMode(finalTargetMode);
+                            }
+                            lastMode = finalTargetMode;
+                        } else {
                             applyZoronMode(finalTargetMode);
+                            lastMode = finalTargetMode;
                         }
-                        lastMode = finalTargetMode;
-                    } else {
-                        applyZoronMode(finalTargetMode);
-                        lastMode = finalTargetMode;
+                    });
+                } else {
+                    // Non-Root logic
+                    File zoronDir = new File(getFilesDir(), "zoron");
+                    File profileFile = new File(zoronDir, "profile.txt");
+                    String current = "";
+                    if (profileFile.exists()) {
+                        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                            current = br.readLine();
+                            if (current != null) current = current.trim();
+                        } catch (Exception ignored) {}
                     }
-                });
+                    if (!finalTargetMode.equals(current)) {
+                        applyZoronMode(finalTargetMode);
+                    }
+                    lastMode = finalTargetMode;
+                }
             }
         } else {
             // Manual Mode: Keep manual profile active, but apply temporary dynamic video boost
@@ -111,12 +170,30 @@ public class ZoronAutopilotService extends Service {
 
             if (isVideoPlaying) {
                 if (!isVideoBoostActive) {
-                    Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_on").exec();
+                    if (isRoot) {
+                        Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_on").exec();
+                    } else {
+                        applyNonRootZoronMode("video");
+                    }
                     isVideoBoostActive = true;
                 }
             } else {
                 if (isVideoBoostActive) {
-                    Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+                    if (isRoot) {
+                        Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+                    } else {
+                        // Restore manual mode when video playback stops
+                        File zoronDir = new File(getFilesDir(), "zoron");
+                        File profileFile = new File(zoronDir, "profile.txt");
+                        String manualMode = "balanced";
+                        if (profileFile.exists()) {
+                            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                                String m = br.readLine();
+                                if (m != null) manualMode = m.trim();
+                            } catch (Exception ignored) {}
+                        }
+                        applyNonRootZoronMode(manualMode);
+                    }
                     isVideoBoostActive = false;
                 }
             }
@@ -176,10 +253,315 @@ public class ZoronAutopilotService extends Service {
     }
 
     private void applyZoronMode(String mode) {
-        Shell.cmd(
-            "sh /system/bin/zoron_fastpath.sh set_mode " + mode,
-            "sh /system/bin/zoron_engine " + mode + " &"
-        ).exec();
+        SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+        if (isRoot) {
+            Shell.cmd(
+                "sh /system/bin/zoron_fastpath.sh set_mode " + mode,
+                "sh /system/bin/zoron_engine " + mode + " &"
+            ).exec();
+        } else {
+            applyNonRootZoronMode(mode);
+        }
+    }
+
+    private void applyNonRootZoronMode(String mode) {
+        // Save current mode to local profile.txt
+        try {
+            File zoronDir = new File(getFilesDir(), "zoron");
+            if (!zoronDir.exists()) zoronDir.mkdirs();
+            File profileFile = new File(zoronDir, "profile.txt");
+            try (FileWriter fw = new FileWriter(profileFile)) {
+                fw.write(mode);
+            }
+            
+            // Log the change
+            File logFile = new File(zoronDir, "log.txt");
+            try (FileWriter logFw = new FileWriter(logFile, true)) {
+                String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
+                logFw.write("[" + timestamp + "] [ENGINE] Non-Root applied mode: " + mode.toUpperCase() + "\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Apply optimizations based on mode
+        boolean hasWriteSettings = Settings.System.canWrite(this);
+
+        switch (mode.toLowerCase()) {
+            case "balanced":
+                // 1. Sync: Enabled
+                setSystemSyncEnabled(true);
+                // 2. Brightness & Timeout & Haptics & Touch sounds
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 30000);
+                        Settings.System.putInt(getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SOUND_EFFECTS_ENABLED, 1);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+
+            case "deep":
+                // 1. Sync: Disabled
+                setSystemSyncEnabled(false);
+                // 2. Brightness & Timeout & Haptics & Touch sounds
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 76); // 30%
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 15000);
+                        Settings.System.putInt(getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SOUND_EFFECTS_ENABLED, 0);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+
+            case "hibernation":
+                // 1. Sync: Disabled
+                setSystemSyncEnabled(false);
+                // 2. Brightness & Timeout & Haptics & Touch sounds
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 51); // 20%
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 15000);
+                        Settings.System.putInt(getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SOUND_EFFECTS_ENABLED, 0);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+
+            case "burst":
+                // 1. Sync: Enabled
+                setSystemSyncEnabled(true);
+                // 2. Brightness & Timeout & Haptics & Touch sounds
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 300000); // 5m
+                        Settings.System.putInt(getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SOUND_EFFECTS_ENABLED, 1);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+
+            case "nightwatch":
+                // 1. Sync: Disabled
+                setSystemSyncEnabled(false);
+                // 2. Brightness & Timeout & Haptics & Touch sounds
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 25); // 10%
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 15000);
+                        Settings.System.putInt(getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SOUND_EFFECTS_ENABLED, 0);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+
+            case "video":
+                // 1. Sync: Disable during video playback to reduce background CPU cycles
+                setSystemSyncEnabled(false);
+                // 2. Brightness & Timeout
+                if (hasWriteSettings) {
+                    try {
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
+                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 600000); // 10m
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                break;
+        }
+    }
+
+    private void setSystemSyncEnabled(boolean enabled) {
+        try {
+            ContentResolver.setMasterSyncAutomatically(enabled);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void runLocalBatteryLogging(int batteryLevel) {
+        long now = System.currentTimeMillis();
+        // Log every 10 minutes (600,000 ms)
+        if (now - lastBatteryLogTime >= 600000 || lastBatteryLogTime == 0) {
+            lastBatteryLogTime = now;
+            try {
+                File zoronDir = new File(getFilesDir(), "zoron");
+                if (!zoronDir.exists()) zoronDir.mkdirs();
+                File csvFile = new File(zoronDir, "battery.csv");
+                File profileFile = new File(zoronDir, "profile.txt");
+                String mode = "balanced";
+                if (profileFile.exists()) {
+                    try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                        String m = br.readLine();
+                        if (m != null) mode = m.trim();
+                    }
+                }
+                
+                try (FileWriter fw = new FileWriter(csvFile, true)) {
+                    fw.write((now / 1000) + "," + batteryLevel + "," + mode + ",NORMAL,1.8GHz,35.0\n");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void runLocalPowerStateUpdate(boolean isVideoPlaying) {
+        try {
+            File zoronDir = new File(getFilesDir(), "zoron");
+            if (!zoronDir.exists()) zoronDir.mkdirs();
+            File powerFile = new File(zoronDir, "power_state.txt");
+            File profileFile = new File(zoronDir, "profile.txt");
+            String mode = "balanced";
+            if (profileFile.exists()) {
+                try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                    String m = br.readLine();
+                    if (m != null) mode = m.trim();
+                }
+            }
+
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+            boolean isScreenOn = pm != null && pm.isInteractive();
+
+            String state;
+            if (!isScreenOn) {
+                if ("nightwatch".equals(mode)) {
+                    state = "SLEEP_IDLE";
+                } else if ("hibernation".equals(mode) || "deep".equals(mode)) {
+                    state = "DEEP_IDLE";
+                } else {
+                    state = "LIGHT_IDLE";
+                }
+            } else {
+                if (isVideoPlaying || "burst".equals(mode) || "video".equals(mode)) {
+                    state = "HYPER_ACTIVE";
+                } else {
+                    state = "INTERACTIVE";
+                }
+            }
+
+            try (FileWriter fw = new FileWriter(powerFile)) {
+                fw.write(state + "\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void runLocalProcessReport(String fgApp) {
+        long now = System.currentTimeMillis();
+        if (now - lastProcessReportTime >= 60000 || lastProcessReportTime == 0) {
+            lastProcessReportTime = now;
+            new Thread(() -> {
+                try {
+                    File zoronDir = new File(getFilesDir(), "zoron");
+                    if (!zoronDir.exists()) zoronDir.mkdirs();
+                    File reportFile = new File(zoronDir, "process_report.txt");
+                    
+                    File profileFile = new File(zoronDir, "profile.txt");
+                    String mode = "balanced";
+                    if (profileFile.exists()) {
+                        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                            String m = br.readLine();
+                            if (m != null) mode = m.trim();
+                        }
+                    }
+
+                    File powerFile = new File(zoronDir, "power_state.txt");
+                    String state = "UNKNOWN";
+                    if (powerFile.exists()) {
+                        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(powerFile))) {
+                            String s = br.readLine();
+                            if (s != null) state = s.trim();
+                        }
+                    }
+
+                    UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
+                    if (usm == null) return;
+                    
+                    List<android.app.usage.UsageStats> stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 24 * 3600 * 1000, now);
+                    
+                    int tierS = 0, tierA = 0, tierB = 0, tierC = 0, tierD = 0;
+                    StringBuilder listBuilder = new StringBuilder();
+
+                    if (stats != null) {
+                        List<android.app.usage.UsageStats> recentStats = new ArrayList<>();
+                        for (android.app.usage.UsageStats s : stats) {
+                            if (s.getLastTimeUsed() > 0 && s.getPackageName().contains(".")) {
+                                recentStats.add(s);
+                            }
+                        }
+
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                            recentStats.sort((s1, s2) -> Long.compare(s2.getLastTimeUsed(), s1.getLastTimeUsed()));
+                        }
+
+                        int count = 0;
+                        for (android.app.usage.UsageStats s : recentStats) {
+                            String pkg = s.getPackageName();
+                            String tier = "C";
+                            String restriction = "Monitored";
+
+                            if (pkg.equals("com.android.systemui") || pkg.contains("launcher") || pkg.contains("inputmethod")) {
+                                tier = "S";
+                                restriction = "Unrestricted";
+                                tierS++;
+                            } else if (pkg.contains("whatsapp") || pkg.contains("telegram") || pkg.contains("discord") || pkg.contains("messaging") || pkg.contains("dialer") || pkg.contains("gmail")) {
+                                tier = "A";
+                                restriction = "Batched";
+                                tierA++;
+                            } else if (pkg.contains("gms") || pkg.contains("vending") || pkg.contains("maps") || pkg.contains("calendar")) {
+                                tier = "B";
+                                restriction = "Grouped";
+                                tierB++;
+                            } else if (now - s.getLastTimeUsed() > 4 * 3600 * 1000) {
+                                tier = "D";
+                                restriction = "Denied";
+                                tierD++;
+                            } else {
+                                tierC++;
+                                if ("deep".equals(mode) || "hibernation".equals(mode) || "nightwatch".equals(mode)) {
+                                    restriction = "Restricted";
+                                }
+                            }
+
+                            if (count < 20) {
+                                listBuilder.append("[TIER ").append(tier).append("] ").append(pkg)
+                                           .append(" - Score: ").append(pkg.equals(fgApp) ? "95" : "40")
+                                           .append(" - ").append(restriction).append("\n");
+                                count++;
+                            }
+                        }
+                    }
+
+                    String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date());
+                    try (FileWriter fw = new FileWriter(reportFile)) {
+                        fw.write("=== ZORON-X Process Report ===\n");
+                        fw.write("Last updated: " + timestamp + "\n");
+                        fw.write("Current Mode: " + mode.toUpperCase() + "\n");
+                        fw.write("Current State: " + state + "\n");
+                        fw.write("\n");
+                        fw.write("--- Process Tiers ---\n");
+                        fw.write("Tier S (critical):    " + tierS + "\n");
+                        fw.write("Tier A (messaging):   " + tierA + "\n");
+                        fw.write("Tier B (services):    " + tierB + "\n");
+                        fw.write("Tier C (cached):      " + tierC + "\n");
+                        fw.write("Tier D (dormant):     " + tierD + "\n");
+                        fw.write("\n");
+                        fw.write("--- Detailed Process List ---\n");
+                        fw.write(listBuilder.toString());
+                        fw.write("=== End Report ===\n");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
     }
 
     @Override
@@ -188,9 +570,24 @@ public class ZoronAutopilotService extends Service {
         if (handler != null && autopilotTask != null) {
             handler.removeCallbacks(autopilotTask);
         }
-        // If the service is destroyed, ensure video boost is cleaned up
         if (isVideoBoostActive) {
-            Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+            SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+            boolean isRoot = prefs.getBoolean("is_root", false);
+            if (isRoot) {
+                Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+            } else {
+                // Restore manual mode
+                File zoronDir = new File(getFilesDir(), "zoron");
+                File profileFile = new File(zoronDir, "profile.txt");
+                String manualMode = "balanced";
+                if (profileFile.exists()) {
+                    try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                        String m = br.readLine();
+                        if (m != null) manualMode = m.trim();
+                    } catch (Exception ignored) {}
+                }
+                applyNonRootZoronMode(manualMode);
+            }
         }
     }
 
@@ -199,3 +596,4 @@ public class ZoronAutopilotService extends Service {
         return null;
     }
 }
+

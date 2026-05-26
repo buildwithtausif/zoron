@@ -40,6 +40,61 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- ==================== NON-ROOT PERMISSIONS CARD ==================== -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNonRootPermissions"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔧 NON-ROOT CONFIGURATION"
+                        style="@style/TextAppearance.Zoron.LabelLarge"
+                        android:textColor="@color/warning_amber"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Grant these permissions to allow Zoron-X to simulate battery saving profiles, toggle System Sync, and adjust display timeout/brightness offsets."
+                        style="@style/TextAppearance.Zoron.BodyMedium"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGrantUsage"
+                        style="@style/Widget.Zoron.Button.Pill.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:text="Grant Usage stats access"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGrantWrite"
+                        style="@style/Widget.Zoron.Button.Pill.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:text="Grant Write System Settings"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGrantBattery"
+                        style="@style/Widget.Zoron.Button.Pill.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:text="Disable Battery Optimization" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ==================== POWER STATE HERO CARD ==================== -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPowerState"
@@ -852,6 +907,48 @@
                         android:textColor="@color/purple_primary"
                         android:textSize="13sp" />
                 </ScrollView>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ==================== DEVELOPER ATTRIBUTION ==================== -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardDeveloperAttribution"
+                style="@style/Widget.Zoron.Card.Glass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Developed with ❤️ by Tausif Alam"
+                        style="@style/TextAppearance.Zoron.TitleMedium"
+                        android:textColor="@color/purple_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="aka buildwithtausif"
+                        style="@style/TextAppearance.Zoron.BodyMedium"
+                        android:layout_marginTop="2dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="GitHub: github.com/buildwithtausif/zoron"
+                        style="@style/TextAppearance.Zoron.Mono"
+                        android:textColor="@color/info_blue"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>

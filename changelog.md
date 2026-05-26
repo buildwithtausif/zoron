@@ -1,5 +1,12 @@
 # Zoron Changelog
 
+## v4.4.0
+- **Non-Root Device Fallback**: Introduced native fallback support for non-root devices. The app runs a sandboxed optimization daemon when root is missing, preventing blocking the user.
+- **Simulated Sandbox Diagnostics**: Simulated `profile.txt`, `log.txt`, `battery.csv`, and `process_report.txt` in the local app directory (`context.getFilesDir()`) for seamless dashboard and chart updates on non-root.
+- **Java Fallback Engine**: Configured custom system-level optimizations using Android APIs (Master Sync, screen off timeout, screen brightness, haptics overrides, and touch sound management).
+- **AMOLED Pure Black Mode**: Dynamically switches the app background to solid black (`#000000`) instead of gradient dark purple when a deep battery saving profile is active to save extra OLED display power.
+- **Developer Attributions**: Added developer attribution card acknowledging **Tausif Alam aka buildwithtausif** with a direct repository link in both the main dashboard and settings pages.
+
 ## v4.3.1
 - **Tablet Friendly UI**: Overhauled all pages (`Main`, `Settings`, `Learn About Modes`) to restrict width to a centered 720dp maximum width on screens with width >= 600dp (tablets). This prevents awkward content stretching and ensures a premium, readable, and balanced layout on large displays.
 - **Learn About Modes Documentation**: Added detailed description card for the new **📹 Video Playback** mode explaining dynamic hardware boost behavior.

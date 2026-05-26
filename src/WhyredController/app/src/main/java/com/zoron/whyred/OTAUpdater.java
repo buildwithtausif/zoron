@@ -48,14 +48,27 @@ public class OTAUpdater {
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (latestVersionCode != BuildConfig.VERSION_CODE) {
-                        new AlertDialog.Builder(activity)
-                            .setTitle("Update Available: " + latestVersionName)
-                            .setMessage("A new Magisk Module update is available!\n\n" + changelogText + "\n\nThis will automatically download and flash the module, including the latest app update.")
-                            .setPositiveButton("Download & Install", (dialog, which) -> {
-                                downloadAndFlashUpdate(activity, zipUrl);
-                            })
-                            .setNegativeButton("Later", null)
-                            .show();
+                        boolean isRoot = activity.getSharedPreferences("ZoronSettings", android.content.Context.MODE_PRIVATE).getBoolean("is_root", false);
+                        if (isRoot) {
+                            new AlertDialog.Builder(activity)
+                                .setTitle("Update Available: " + latestVersionName)
+                                .setMessage("A new Magisk Module update is available!\n\n" + changelogText + "\n\nThis will automatically download and flash the module, including the latest app update.")
+                                .setPositiveButton("Download & Install", (dialog, which) -> {
+                                    downloadAndFlashUpdate(activity, zipUrl);
+                                })
+                                .setNegativeButton("Later", null)
+                                .show();
+                        } else {
+                            new AlertDialog.Builder(activity)
+                                .setTitle("Update Available: " + latestVersionName)
+                                .setMessage("A new Zoron update is available!\n\n" + changelogText + "\n\nSince this device is non-root, you can download the latest APK from the GitHub releases page.")
+                                .setPositiveButton("Open GitHub Releases", (dialog, which) -> {
+                                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/buildwithtausif/zoron/releases"));
+                                    activity.startActivity(intent);
+                                })
+                                .setNegativeButton("Later", null)
+                                .show();
+                        }
                     } else if (manualCheck) {
                         Toast.makeText(activity, "Zoron is up to date! (" + latestVersionName + ")", Toast.LENGTH_SHORT).show();
                     }

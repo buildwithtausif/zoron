@@ -62,20 +62,20 @@ public class SplashActivity extends AppCompatActivity {
             }
 
             runOnUiThread(() -> {
+                android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("is_root", success).apply();
+
                 if (success) {
                     tvStatus.setText("Root Granted!");
-                    Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-                    startActivity(intent);
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                    finish();
                 } else {
-                    if (err != null) {
-                        tvStatus.setText("Error: " + err);
-                    } else {
-                        tvStatus.setText("Root Access Denied!");
-                    }
-                    Toast.makeText(SplashActivity.this, "This app requires Root (Magisk).", Toast.LENGTH_LONG).show();
+                    tvStatus.setText("Non-Root Mode");
+                    Toast.makeText(SplashActivity.this, "Running in Non-Root Fallback Mode", Toast.LENGTH_LONG).show();
                 }
+
+                Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
             });
         }).start();
     }
