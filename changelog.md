@@ -1,5 +1,12 @@
 # Zoron Changelog
 
+## v4.5.1
+- **UI/UX Modernization**: Completely migrated the UI layer to Jetpack Compose for a fluid, modern experience.
+- **Premium Dark Aesthetic**: Introduced a dark-first design system with custom bento-style elevated cards and vibrant accent colors.
+- **Navigation Redesign**: Replaced legacy overflow menus with an expressive, auto-hiding floating bottom navigation bar.
+- **Modern Analytics**: Upgraded MPAndroidChart visuals to feature smooth bezier curves and rich gradients.
+- **Global Dialogs**: Standardized all app prompts, settings toggles, and alerts to match the new Compose design language.
+
 ## v4.5.0
 - **Intelligent Rule Engine**: Added `ZoronAutopilotService` to continuously evaluate user-defined hardware conditional rules (e.g., `IF BATTERY_BELOW (15) THEN SET_MODE (NIGHTWATCH)`).
 - **Rule Editor UI**: Built a native Android activity allowing users to easily configure custom conditionals directly in the app.
