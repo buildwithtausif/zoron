@@ -1304,7 +1304,8 @@ public class MainActivity extends AppCompatActivity {
                 java.util.List<com.zoron.whyred.data.RecommendationEntity> recs = db.recommendationDao().getActiveRecommendations();
                 java.util.List<com.zoron.whyred.data.RuleEntity> rules = db.ruleDao().getEnabledRules();
                 
-                int totalCycles = db.cycleDao().getTotalCycles();
+                Float totalWear = db.cycleDao().getTotalAccumulatedWear();
+                int totalCycles = totalWear != null ? Math.round(totalWear) : 0;
                 int healthScore = Math.max(0, 100 - (int)(totalCycles * 0.05));
                 
                 runOnUiThread(() -> {
@@ -1337,7 +1338,7 @@ public class MainActivity extends AppCompatActivity {
                             recommendationsContainer.setVisibility(View.VISIBLE);
                             for (com.zoron.whyred.data.RecommendationEntity rec : recs) {
                                 TextView tv = new TextView(this);
-                                tv.setText("• " + rec.actionType + " on " + rec.targetPackage + " (Confidence: " + rec.confidenceScore + "%)");
+                                tv.setText("• " + rec.action + " on " + rec.title + " (Confidence: " + rec.confidence + "%)");
                                 tv.setTextColor(0xFFFFAA00);
                                 tv.setPadding(0, 10, 0, 10);
                                 recommendationsList.addView(tv);
