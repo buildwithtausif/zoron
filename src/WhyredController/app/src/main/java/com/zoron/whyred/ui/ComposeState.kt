@@ -33,5 +33,7 @@ interface MainActions {
     fun setPreferenceBoolean(key: String, value: Boolean)
     fun setPreferenceString(key: String, value: String)
     fun exportLogs(zipIt: Boolean)
+    fun exportCsv()
+    fun exportProcessReport()
     fun clearLogs()
 }

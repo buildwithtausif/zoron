@@ -124,14 +124,6 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> MainActivity.this.exportLogs());
                 }
                 @Override
-                public void exportCsv() {
-                    runOnUiThread(() -> MainActivity.this.exportCsv());
-                }
-                @Override
-                public void exportProcessReport() {
-                    runOnUiThread(() -> MainActivity.this.exportProcessReport());
-                }
-                @Override
                 public void clearLogs() {
                     new Thread(() -> {
                         com.topjohnwu.superuser.Shell.cmd("rm -f /data/local/tmp/zoron/*.txt", "rm -f /data/local/tmp/zoron/*.csv").exec();
@@ -141,11 +133,116 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Toolbar toolbar = findViewById(R.id.topAppBar);
-        // setSupportActionBar(toolbar);
+        Toolbar toolbar = findViewById(R.id.topAppBar);
+        setSupportActionBar(toolbar);
 
-        // UI Initialization Removed
-        // (tvLogs, etc. are now null, but all uses of them later are protected by null checks)
+        // Core views
+        tvLogs = findViewById(R.id.tvLogs);
+        tvCurrentProfile = findViewById(R.id.tvCurrentProfile);
+        tvCpuInfo = findViewById(R.id.tvCpuInfo);
+        tvPowerState = findViewById(R.id.tvPowerState);
+        tvProcessReport = findViewById(R.id.tvProcessReport);
+        powerStateDot = findViewById(R.id.powerStateDot);
+        batteryChart = findViewById(R.id.batteryChart);
+
+        // Legacy section toggle
+        legacyContainer = findViewById(R.id.legacyContainer);
+        tvLegacyToggle = findViewById(R.id.tvLegacyToggle);
+        ivLegacyToggle = findViewById(R.id.ivLegacyToggle);
+        findViewById(R.id.legacyHeader).setOnClickListener(v -> toggleLegacy());
+
+        recommendationsContainer = findViewById(R.id.recommendationsContainer);
+        recommendationsList = findViewById(R.id.recommendationsList);
+        rulesListContainer = findViewById(R.id.rulesListContainer);
+        tvBatteryHealthScore = findViewById(R.id.tvBatteryHealthScore);
+        tvBatteryCycles = findViewById(R.id.tvBatteryCycles);
+
+        View btnAddRule = findViewById(R.id.btnAddRule);
+        if (btnAddRule != null) {
+            btnAddRule.setOnClickListener(v -> {
+                startActivity(new Intent(this, RuleEditorActivity.class));
+            });
+        }
+
+        // Card press animations for ZORON-X mode cards
+        setupCardPressAnimation(findViewById(R.id.cardZoronBalanced));
+        setupCardPressAnimation(findViewById(R.id.cardZoronDeep));
+        setupCardPressAnimation(findViewById(R.id.cardZoronHibernation));
+        setupCardPressAnimation(findViewById(R.id.cardZoronBurst));
+        setupCardPressAnimation(findViewById(R.id.cardZoronNightwatch));
+
+        setupChart();
+
+        // ZORON-X Mode Cards
+        findViewById(R.id.cardZoronBalanced).setOnClickListener(v -> applyZoronMode("balanced"));
+        findViewById(R.id.cardZoronDeep).setOnClickListener(v -> applyZoronMode("deep"));
+        findViewById(R.id.cardZoronHibernation).setOnClickListener(v -> applyZoronMode("hibernation"));
+        findViewById(R.id.cardZoronBurst).setOnClickListener(v -> applyZoronMode("burst"));
+        findViewById(R.id.cardZoronNightwatch).setOnClickListener(v -> applyZoronMode("nightwatch"));
+
+        // Legacy Profile Cards
+        findViewById(R.id.cardNone).setOnClickListener(v -> applyLegacyProfile("none"));
+        findViewById(R.id.cardBattery).setOnClickListener(v -> applyLegacyProfile("battery"));
+        
+        findViewById(R.id.cardBalanced).setOnClickListener(v -> {
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Legacy Mode Warning")
+                .setMessage("This is a legacy profile. ZORON-X 'Balanced' offers superior thermal awareness and responsiveness. Would you like to try the ZORON-X version instead?")
+                .setPositiveButton("Use ZORON-X", (dialog, which) -> applyZoronMode("balanced"))
+                .setNegativeButton("Continue Legacy", (dialog, which) -> applyLegacyProfile("balanced"))
+                .show();
+        });
+        
+        findViewById(R.id.cardPerformance).setOnClickListener(v -> {
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Legacy Mode Warning")
+                .setMessage("This is a legacy profile. ZORON-X 'Burst' provides better touch boosting and microburst engine support. Would you like to try ZORON-X Burst instead?")
+                .setPositiveButton("Use ZORON-X Burst", (dialog, which) -> applyZoronMode("burst"))
+                .setNegativeButton("Continue Legacy", (dialog, which) -> applyLegacyProfile("performance"))
+                .show();
+        });
+
+        // Export buttons
+        findViewById(R.id.btnExportCsv).setOnClickListener(v -> exportCsv());
+        findViewById(R.id.btnExportLogs).setOnClickListener(v -> exportLogs());
+        findViewById(R.id.btnExportProcesses).setOnClickListener(v -> exportProcessReport());
+
+        // Transition progress bar
+        cardTransitionProgress = findViewById(R.id.cardTransitionProgress);
+        tvTransitionStatus = findViewById(R.id.tvTransitionStatus);
+        tvTransitionDetail = findViewById(R.id.tvTransitionDetail);
+        transitionProgressBar = findViewById(R.id.transitionProgressBar);
+        findViewById(R.id.btnHideProgress).setOnClickListener(v -> cardTransitionProgress.setVisibility(View.GONE));
+
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = prefs.getBoolean("is_root", false);
+
+        // Setup Non-Root permission card buttons
+        if (!isRoot) {
+            findViewById(R.id.btnGrantUsage).setOnClickListener(v -> requestUsageStatsPermission());
+            findViewById(R.id.btnGrantWrite).setOnClickListener(v -> {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            });
+            findViewById(R.id.btnGrantBattery).setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Enable ignore battery optimization manually in system settings.", Toast.LENGTH_LONG).show();
+                }
+            });
+            showNonRootAdvisoryDialog();
+        }
+
+        // Developer attribution click listener
+        View devAttribution = findViewById(R.id.cardDeveloperAttribution);
+        if (devAttribution != null) {
+            devAttribution.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/buildwithtausif/zoron"));
+                startActivity(intent);
+            });
+        }
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
@@ -156,12 +253,11 @@ public class MainActivity extends AppCompatActivity {
             startService(new Intent(this, ZoronAutopilotService.class));
         }
 
-        // com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
-        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
-        // boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
-        // switchAutopilot.setChecked(autopilotEnabled);
+        com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
+        boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
+        switchAutopilot.setChecked(autopilotEnabled);
         
-        /* switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 if (!hasUsageStatsPermission()) {
                     buttonView.setChecked(false);
@@ -176,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
                 // Do NOT stop the service, let it run in background to detect video playback and boost manual modes
                 Toast.makeText(MainActivity.this, "Autopilot Disabled (Dynamic Video Boost active)", Toast.LENGTH_SHORT).show();
             }
-        }); */
+        });
 
         // Start foreground service for persistent notification
         startZoronService();
@@ -235,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
         android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
         boolean isRoot = prefs.getBoolean("is_root", false);
         if (!isRoot) {
-            /* MaterialCardView cardPermissions = findViewById(R.id.cardNonRootPermissions);
+            MaterialCardView cardPermissions = findViewById(R.id.cardNonRootPermissions);
             if (cardPermissions != null) {
                 boolean hasUsage = hasUsageStatsPermission();
                 boolean hasWrite = Settings.System.canWrite(this);
@@ -252,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
                     if (btnWrite != null) btnWrite.setVisibility(hasWrite ? View.GONE : View.VISIBLE);
                     if (btnBattery != null) btnBattery.setVisibility(hasBattery ? View.GONE : View.VISIBLE);
                 }
-            } */
+            }
         }
         updateV45UI();
     }
@@ -429,7 +525,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Update chart only if data changed
             if (!finalCsvData.equals(lastCsvData)) {
-                if (batteryChart != null) runOnUiThread(() -> plotChart(finalCsvData));
+                runOnUiThread(() -> plotChart(finalCsvData));
             }
 
             // Cache for export
@@ -439,8 +535,8 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 // Update profile display
                 String displayProfile = finalProfile.isEmpty() ? "Unknown" : finalProfile.toUpperCase();
-                if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: " + displayProfile);
-                if (tvCpuInfo != null) tvCpuInfo.setText("CPU Governor: " + (finalGov.isEmpty() ? "Unknown" : finalGov));
+                tvCurrentProfile.setText("Mode: " + displayProfile);
+                tvCpuInfo.setText("CPU Governor: " + (finalGov.isEmpty() ? "Unknown" : finalGov));
 
                 com.zoron.whyred.ui.ComposeState.INSTANCE.getProfile().setValue(displayProfile);
                 com.zoron.whyred.ui.ComposeState.INSTANCE.getCpuGovernor().setValue(finalGov);
@@ -465,10 +561,10 @@ public class MainActivity extends AppCompatActivity {
                 com.zoron.whyred.ui.ComposeState.INSTANCE.getBatteryCsvData().setValue(finalCsvData);
 
                 // Update logs
-                if (tvLogs != null) tvLogs.setText(finalLogs);
+                tvLogs.setText(finalLogs);
 
                 // Update process report
-                if (tvProcessReport != null) tvProcessReport.setText(finalProcessReport);
+                tvProcessReport.setText(finalProcessReport);
 
                 // AMOLED Dark theme enforcement
                 boolean isDeepProfile = "deep".equals(finalProfile) || "hibernation".equals(finalProfile) || "nightwatch".equals(finalProfile);
@@ -521,18 +617,15 @@ public class MainActivity extends AppCompatActivity {
             dotColor = getColor(R.color.state_unknown);
         }
 
-        if (tvPowerState != null) tvPowerState.setText(displayState);
+        tvPowerState.setText(displayState);
         com.zoron.whyred.ui.ComposeState.INSTANCE.getPowerState().setValue(displayState);
 
         // Update dot color
-        if (powerStateDot != null) {
-            GradientDrawable dot = (GradientDrawable) powerStateDot.getBackground();
-            dot.setColor(dotColor);
-        }
+        GradientDrawable dot = (GradientDrawable) powerStateDot.getBackground();
+        dot.setColor(dotColor);
     }
 
     private void startPulseAnimation() {
-        if (powerStateDot == null) return;
         // Enhanced pulse: combined alpha + scale animation
         ObjectAnimator alpha = ObjectAnimator.ofFloat(powerStateDot, "alpha", 1.0f, 0.4f);
         alpha.setDuration(1200);

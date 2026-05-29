@@ -44,8 +44,8 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
 
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             when (selectedTab) {
-                0 -> BatteryChartTab()
-                1 -> ProcessReportTab()
+                0 -> BatteryChartTab(mainActions)
+                1 -> ProcessReportTab(mainActions)
                 2 -> DiagnosticsTab(mainActions, showSnackbar)
             }
         }
@@ -53,7 +53,7 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
 }
 
 @Composable
-fun BatteryChartTab() {
+fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
     val chartEntryModelProducer = remember { ChartEntryModelProducer() }
 
@@ -81,18 +81,48 @@ fun BatteryChartTab() {
     }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("BATTERY DISCHARGE TREND", style = MaterialTheme.typography.labelSmall)
+            Button(onClick = { 
+                mainActions.exportCsv()
+            }) {
+                Text("Export CSV")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         BentoCard(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-                Text("BATTERY DISCHARGE TREND", style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(16.dp))
                 if (csvData.isEmpty()) {
                     Text("No battery data available. Wait for a few minutes.", color = Color.Gray)
                 } else {
+                    val marker = com.patrykandpatrick.vico.compose.component.shapeComponent(
+                        shape = com.patrykandpatrick.vico.core.component.shape.Shapes.pillShape,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                     Chart(
-                        chart = lineChart(),
+                        chart = lineChart(
+                            lines = listOf(
+                                com.patrykandpatrick.vico.compose.chart.line.lineSpec(
+                                    lineColor = MaterialTheme.colorScheme.primary,
+                                    lineBackgroundShader = com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient(
+                                        arrayOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), Color.Transparent)
+                                    )
+                                )
+                            )
+                        ),
                         chartModelProducer = chartEntryModelProducer,
-                        startAxis = rememberStartAxis(),
-                        bottomAxis = rememberBottomAxis(),
+                        startAxis = rememberStartAxis(
+                            label = com.patrykandpatrick.vico.compose.component.textComponent(color = MaterialTheme.colorScheme.onSurface),
+                            axis = null,
+                            tick = null,
+                            guideline = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                        ),
+                        bottomAxis = rememberBottomAxis(
+                            label = com.patrykandpatrick.vico.compose.component.textComponent(color = MaterialTheme.colorScheme.onSurface),
+                            axis = null,
+                            tick = null,
+                            guideline = null
+                        ),
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -102,13 +132,20 @@ fun BatteryChartTab() {
 }
 
 @Composable
-fun ProcessReportTab() {
+fun ProcessReportTab(mainActions: MainActions) {
     val processReport by ComposeState.currentProcessReport
     Column(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("TOP RUNNING PROCESSES", style = MaterialTheme.typography.labelSmall)
+            Button(onClick = { 
+                mainActions.exportProcessReport()
+            }) {
+                Text("Export")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         BentoCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
             Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-                Text("TOP RUNNING PROCESSES", style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = processReport,
                     fontFamily = FontFamily.Monospace,

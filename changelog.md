@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v4.5.3
+- **Compose UI Cleanup**: Finalized the Compose migration by completely removing legacy XML dependencies and Views from the app host.
+- **Analytics UI**: Redesigned Analytics using Vico charts with Material You styling and added data export capabilities.
+- **Rules Dashboard**: Replaced the legacy Rule Activity with a pure Compose-based Rules dashboard and dialog.
+- **Modern Dialogs**: Migrated mode transitions from Termux-style popups to native Material 3 alert dialogs.
 ## v4.5.2
 - **UI/UX Fixes**: Restored Analytics Page (Charts, Process Monitor, Diagnostics) entirely in Compose using Vico charts.
 - **Rules**: Rebuilt Rules dashboard in Compose.

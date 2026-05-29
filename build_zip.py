@@ -13,6 +13,6 @@ def zip_dir(source_dir, zip_filepath):
 
 if __name__ == "__main__":
     source = r"d:\Projects\zoron\src\whyred_module"
-    dest = r"d:\Projects\zoron\releases\zoron_v4.5.2.zip"
+    dest = r"d:\Projects\zoron\releases\zoron_v4.5.3.zip"
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     zip_dir(source, dest)

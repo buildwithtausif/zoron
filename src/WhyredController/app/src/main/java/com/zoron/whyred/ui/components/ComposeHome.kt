@@ -35,28 +35,25 @@ fun ComposeHome(mainActions: MainActions, showSnackbar: (String) -> Unit) {
     val transitionLog by ComposeState.transitionLog
 
     if (isTransitioning) {
-        Dialog(onDismissRequest = { }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Black),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("ZORON-X TERMINAL", color = Color.Green, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("> $transitionLog", color = Color.White, style = MaterialTheme.typography.bodySmall, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Applying Mode") },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(text = transitionLog, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(16.dp))
                     LinearProgressIndicator(
                         progress = { transitionProgress },
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color.Green,
-                        trackColor = Color.DarkGray
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("${(transitionProgress * 100).toInt()}%", color = Color.Green, style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.End))
+                    Text("${(transitionProgress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.End))
                 }
-            }
-        }
+            },
+            confirmButton = {}
+        )
     }
 
     if (showOptimizationDialog) {

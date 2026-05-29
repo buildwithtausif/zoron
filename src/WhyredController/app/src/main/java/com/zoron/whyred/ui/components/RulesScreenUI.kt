@@ -22,6 +22,8 @@ import kotlinx.coroutines.withContext
 fun RulesScreenUI(showSnackbar: (String) -> Unit) {
     val context = LocalContext.current
     var rulesList by remember { mutableStateOf<List<RuleEntity>>(emptyList()) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -33,7 +35,7 @@ fun RulesScreenUI(showSnackbar: (String) -> Unit) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showSnackbar("Rule editing requires the legacy Activity for now.") },
+                onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Rule")
@@ -72,6 +74,23 @@ fun RulesScreenUI(showSnackbar: (String) -> Unit) {
             }
         }
     }
+
+    if (showAddDialog) {
+        AddRuleDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { rule ->
+                showAddDialog = false
+                coroutineScope.launch(Dispatchers.IO) {
+                    val db = ZoronDatabase.getDatabase(context)
+                    db.ruleDao().insertRule(rule)
+                    rulesList = db.ruleDao().getAllRules()
+                    withContext(Dispatchers.Main) {
+                        showSnackbar("Rule Added Successfully")
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -93,4 +112,100 @@ fun RuleCard(rule: RuleEntity, onToggle: (Boolean) -> Unit) {
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddRuleDialog(
+    onDismiss: () -> Unit,
+    onSave: (RuleEntity) -> Unit
+) {
+    var conditionType by remember { mutableStateOf("battery_level") }
+    var conditionValue by remember { mutableStateOf("20") }
+    var actionType by remember { mutableStateOf("set_profile") }
+    var actionValue by remember { mutableStateOf("battery") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Rule") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Condition", style = MaterialTheme.typography.labelSmall)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    var conditionExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = conditionExpanded,
+                        onExpandedChange = { conditionExpanded = !conditionExpanded },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = conditionType,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = conditionExpanded) },
+                            modifier = Modifier.menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = conditionExpanded, onDismissRequest = { conditionExpanded = false }) {
+                            DropdownMenuItem(text = { Text("battery_level") }, onClick = { conditionType = "battery_level"; conditionExpanded = false })
+                            DropdownMenuItem(text = { Text("app_launched") }, onClick = { conditionType = "app_launched"; conditionExpanded = false })
+                        }
+                    }
+                    OutlinedTextField(
+                        value = conditionValue,
+                        onValueChange = { conditionValue = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Value") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Action", style = MaterialTheme.typography.labelSmall)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    var actionExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = actionExpanded,
+                        onExpandedChange = { actionExpanded = !actionExpanded },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = actionType,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionExpanded) },
+                            modifier = Modifier.menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = actionExpanded, onDismissRequest = { actionExpanded = false }) {
+                            DropdownMenuItem(text = { Text("set_profile") }, onClick = { actionType = "set_profile"; actionExpanded = false })
+                        }
+                    }
+                    OutlinedTextField(
+                        value = actionValue,
+                        onValueChange = { actionValue = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Value") }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val rule = RuleEntity()
+                rule.ruleId = java.util.UUID.randomUUID().toString()
+                rule.conditionType = conditionType
+                rule.conditionValue = conditionValue
+                rule.actionType = actionType
+                rule.actionValue = actionValue
+                rule.isEnabled = true
+                
+                onSave(rule)
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
