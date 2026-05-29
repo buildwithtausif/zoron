@@ -1,5 +1,13 @@
 # Zoron Changelog
 
+## v4.5.0
+- **Intelligent Rule Engine**: Added `ZoronAutopilotService` to continuously evaluate user-defined hardware conditional rules (e.g., `IF BATTERY_BELOW (15) THEN SET_MODE (NIGHTWATCH)`).
+- **Rule Editor UI**: Built a native Android activity allowing users to easily configure custom conditionals directly in the app.
+- **Battery Health Dashboard**: Integrated an on-device Battery Health tracking module, actively estimating `healthScore` based on cumulative charge cycles mapped against a 500-cycle degradation baseline.
+- **Audit & Recommendation Engine**: Added passive telemetry analysis that scans raw system data (`process_report.txt`, `power_state.txt`) to surface high-confidence actionable optimization recommendations to the user (e.g., "Restrict background battery for com.android.chrome").
+- **Room Database Migration**: Fully migrated all legacy CSV-based file logging into a highly performant local SQLite Room Database (`ZoronDatabase`).
+
+
 ## v4.4.2
 - **CRITICAL FIX — Infinite Update Loop**: The `module.prop` was never bumped from v4.4.0 (versionCode 31) in the v4.4.1 release. This caused Magisk Manager and the in-app OTA to perpetually detect an "update available" — downloading and flashing the zip would reinstall the same module with versionCode 31, while `update.json` advertised versionCode 32. The loop repeated infinitely.
 - **Improved Update Comparison**: Changed the OTA version check from `!=` to `>` so the app only prompts for updates when the server has a *strictly newer* version. Previously, any version mismatch (including accidental downgrades) would trigger the update dialog.
