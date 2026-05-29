@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v4.5.2
+- **UI/UX Fixes**: Restored Analytics Page (Charts, Process Monitor, Diagnostics) entirely in Compose using Vico charts.
+- **Rules**: Rebuilt Rules dashboard in Compose.
+- **Modes & Navigation**: Restored Mode transition dialog with a modern Termux-style console, replaced navigation emojis with Material icons, and restored Legacy & Video Mode explanations.
+- **Core Integration**: Fixed dynamic reading of sysfs battery cycles and optimization calculations on the Home dashboard.
 ## v4.5.1-fix
 - Fixed Compose interoperability bugs and UI scaling issues.
 - Restored missing engine settings toggles to Compose UI.

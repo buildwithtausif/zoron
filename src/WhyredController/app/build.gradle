@@ -27,8 +27,8 @@ android {
         applicationId "com.zoron.whyred"
         minSdk 24
         targetSdk 34
-        versionCode 35
-        versionName "v4.5.1"
+        versionCode 36
+        versionName "v4.5.2"
     }
 
     buildTypes {
@@ -80,4 +80,7 @@ dependencies {
     implementation 'androidx.activity:activity-compose:1.8.2'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0'
     implementation 'androidx.navigation:navigation-compose:2.7.7'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation("com.patrykandpatrick.vico:compose:1.14.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
 }

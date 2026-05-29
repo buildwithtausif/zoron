@@ -478,6 +478,18 @@ public class MainActivity extends AppCompatActivity {
                 csvData = parts[3].trim();
                 powerState = parts[4].trim();
                 processReport = parts[5].trim();
+                
+                Shell.Result cycleResult = Shell.cmd("cat /sys/class/power_supply/battery/cycle_count 2>/dev/null || echo '-1'").exec();
+                if (cycleResult.isSuccess() && !cycleResult.getOut().isEmpty()) {
+                    String cycleCountStr = cycleResult.getOut().get(0).trim();
+                    try {
+                        int cycles = Integer.parseInt(cycleCountStr);
+                        if (cycles > 0) {
+                            int calculatedHealth = Math.max(1, 100 - (int)((cycles / 800.0) * 20));
+                            com.zoron.whyred.ui.ComposeState.INSTANCE.getBatteryHealth().setValue(calculatedHealth + "%");
+                        }
+                    } catch (Exception e) {}
+                }
             } else {
                 try {
                     File zoronDir = new File(getFilesDir(), "zoron");
@@ -528,9 +540,25 @@ public class MainActivity extends AppCompatActivity {
 
                 com.zoron.whyred.ui.ComposeState.INSTANCE.getProfile().setValue(displayProfile);
                 com.zoron.whyred.ui.ComposeState.INSTANCE.getCpuGovernor().setValue(finalGov);
+                
+                int score = 85;
+                if ("performance".equalsIgnoreCase(finalProfile) || "burst".equalsIgnoreCase(finalProfile)) {
+                     score = 95; 
+                } else if ("battery".equalsIgnoreCase(finalProfile) || "deep".equalsIgnoreCase(finalProfile)) {
+                     score = 98;
+                } else if ("hibernation".equalsIgnoreCase(finalProfile) || "nightwatch".equalsIgnoreCase(finalProfile)) {
+                     score = 100;
+                } else if ("balanced".equalsIgnoreCase(finalProfile) || "balanced_legacy".equalsIgnoreCase(finalProfile)) {
+                     score = 92;
+                }
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getOptimizationScore().setValue(score);
 
                 // Update power state with color
                 updatePowerState(finalPowerState);
+
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getCurrentLogs().setValue(finalLogs);
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getCurrentProcessReport().setValue(finalProcessReport);
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getBatteryCsvData().setValue(finalCsvData);
 
                 // Update logs
                 tvLogs.setText(finalLogs);
@@ -863,10 +891,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Show progress bar
-        cardTransitionProgress.setVisibility(View.VISIBLE);
-        transitionProgressBar.setProgress(0);
-        tvTransitionStatus.setText("⚡ Applying " + mode.toUpperCase() + "...");
-        tvTransitionDetail.setText("Running zoron_fastpath.sh");
+        com.zoron.whyred.ui.ComposeState.INSTANCE.isTransitioning().setValue(true);
+        com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0f);
+        com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Applying " + mode.toUpperCase() + "...");
 
         // Optimistic UI Update
         tvCurrentProfile.setText("Mode: APPLYING...");
@@ -882,33 +909,31 @@ public class MainActivity extends AppCompatActivity {
             if (fastpathEnabled) {
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
-                    transitionProgressBar.setProgress(20);
-                    tvTransitionDetail.setText("Fastpath: CPU governor + frequencies");
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0.2f);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Fastpath: CPU governor + frequencies");
                 });
 
                 Shell.cmd("sh /system/bin/zoron_fastpath.sh set_mode " + mode + " || sh /data/adb/modules/zoron_x_optimizer/system/bin/zoron_fastpath.sh set_mode " + mode).exec();
 
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
-                    transitionProgressBar.setProgress(40);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0.4f);
                     tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
-                    tvTransitionStatus.setText("⚡ Fastpath applied");
-                    tvTransitionDetail.setText("Running zoron_engine " + mode);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Fastpath applied. Running zoron_engine " + mode);
                 });
             } else {
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
-                    transitionProgressBar.setProgress(40);
-                    tvTransitionStatus.setText("Fastpath disabled — running engine directly");
-                    tvTransitionDetail.setText("Running zoron_engine " + mode);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0.4f);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Fastpath disabled. Running zoron_engine " + mode);
                 });
             }
 
             // 2. Heavy Engine processing
             runOnUiThread(() -> {
                 if (isDestroyed()) return;
-                transitionProgressBar.setProgress(50);
-                tvTransitionDetail.setText("Engine: Thermal + I/O + zRAM tuning");
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0.5f);
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Engine: Thermal + I/O + zRAM tuning");
             });
 
             String scriptCmd = String.join("; ",
@@ -925,19 +950,18 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 if (isDestroyed()) return;
                 if (result.isSuccess()) {
-                    transitionProgressBar.setProgress(100);
-                    tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
-                    tvTransitionDetail.setText("All optimizations applied successfully");
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(1f);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("✅ " + mode.toUpperCase() + " complete");
                     tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
                     // Auto-hide after 3 seconds
                     handler.postDelayed(() -> {
-                        if (!isDestroyed()) cardTransitionProgress.setVisibility(View.GONE);
+                        if (!isDestroyed()) com.zoron.whyred.ui.ComposeState.INSTANCE.isTransitioning().setValue(false);
                     }, 3000);
                     refreshDashboard();
                 } else {
-                    transitionProgressBar.setProgress(100);
-                    tvTransitionStatus.setText("❌ Error applying " + mode.toUpperCase());
-                    tvTransitionDetail.setText("Tap to view error details");
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(1f);
+                    com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("❌ Error applying " + mode.toUpperCase());
+                    
                     StringBuilder err = new StringBuilder("Error applying ZORON-X " + mode + " mode:\n");
                     err.append("Exit Code: ").append(result.getCode()).append("\n\n");
                     err.append("--- stdout ---\n");
@@ -945,6 +969,10 @@ public class MainActivity extends AppCompatActivity {
                     err.append("\n--- stderr ---\n");
                     for (String e : result.getErr()) err.append(e).append("\n");
                     showErrorDialog(err.toString());
+                    
+                    handler.postDelayed(() -> {
+                        if (!isDestroyed()) com.zoron.whyred.ui.ComposeState.INSTANCE.isTransitioning().setValue(false);
+                    }, 3000);
                 }
             });
         }).start();

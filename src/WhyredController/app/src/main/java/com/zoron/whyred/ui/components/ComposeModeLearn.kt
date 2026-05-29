@@ -45,6 +45,35 @@ fun ModeLearnScreenUI() {
                     icon = "🌙", title = "Nightwatch",
                     desc = "Ultra-low power state designed strictly for overnight preservation. Triggers extreme doze instantly."
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Dynamic & Legacy Profiles",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                InfoBentoCard(
+                    icon = "🎬", title = "Video Mode",
+                    desc = "Automatically triggered by Autopilot Service when video playback is detected. Prevents frame drops while minimizing CPU clocks to reduce heat."
+                )
+                InfoBentoCard(
+                    icon = "📱", title = "Legacy: Stock",
+                    desc = "Reverts to original OEM kernel settings. Useful for testing baseline behavior."
+                )
+                InfoBentoCard(
+                    icon = "🔋", title = "Legacy: Battery",
+                    desc = "Standard legacy battery saver, forces conservative governor."
+                )
+                InfoBentoCard(
+                    icon = "⚖️", title = "Legacy: Balanced",
+                    desc = "Standard legacy balanced profile. Inferior to ZORON-X Balanced."
+                )
+                InfoBentoCard(
+                    icon = "⚡", title = "Legacy: Perform",
+                    desc = "Standard legacy performance profile. High heat output."
+                )
             }
         }
     }
