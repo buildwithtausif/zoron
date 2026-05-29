@@ -159,9 +159,9 @@ public class MainActivity extends AppCompatActivity {
         // com.google.android.material.materialswitch.MaterialSwitch switchAutopilot = findViewById(R.id.switchAutopilot);
         android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
         // boolean autopilotEnabled = prefs.getBoolean("autopilot_enabled", false);
-        // switchAutopilot.setChecked(autopilotEnabled);
+        // if (switchAutopilot != null) switchAutopilot.setChecked(autopilotEnabled);
         
-        /* switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        /* if (switchAutopilot != null) switchAutopilot.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 if (!hasUsageStatsPermission()) {
                     buttonView.setChecked(false);
@@ -361,8 +361,8 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!result.isSuccess()) {
                     runOnUiThread(() -> {
-                        tvCurrentProfile.setText("Mode: ERROR (Magisk Access Denied)");
-                        tvLogs.setText("Error reading data. Make sure module is flashed and active.");
+                        if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: ERROR (Magisk Access Denied)");
+                        if (tvLogs != null) tvLogs.setText("Error reading data. Make sure module is flashed and active.");
                     });
                     return;
                 }
@@ -803,7 +803,7 @@ public class MainActivity extends AppCompatActivity {
         com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Applying " + mode.toUpperCase() + "...");
 
         // Optimistic UI Update
-        tvCurrentProfile.setText("Mode: APPLYING...");
+        if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: APPLYING...");
 
         new Thread(() -> {
             // 1. Check if Fastpath is enabled
@@ -825,7 +825,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
                     com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(0.4f);
-                    tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
+                    if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: FASTPATH ACTIVE");
                     com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("Fastpath applied. Running zoron_engine " + mode);
                 });
             } else {
@@ -859,7 +859,7 @@ public class MainActivity extends AppCompatActivity {
                 if (result.isSuccess()) {
                     com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionProgress().setValue(1f);
                     com.zoron.whyred.ui.ComposeState.INSTANCE.getTransitionLog().setValue("✅ " + mode.toUpperCase() + " complete");
-                    tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
+                    if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
                     // Auto-hide after 3 seconds
                     handler.postDelayed(() -> {
                         if (!isDestroyed()) com.zoron.whyred.ui.ComposeState.INSTANCE.isTransitioning().setValue(false);
@@ -1076,9 +1076,9 @@ public class MainActivity extends AppCompatActivity {
     private void applyNonRootZoronModeInActivity(String mode) {
         cardTransitionProgress.setVisibility(View.VISIBLE);
         transitionProgressBar.setProgress(30);
-        tvTransitionStatus.setText("Applying Non-Root Mode...");
-        tvTransitionDetail.setText("Configuring System settings: " + mode);
-        tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
+        if (tvTransitionStatus != null) tvTransitionStatus.setText("Applying Non-Root Mode...");
+        if (tvTransitionDetail != null) tvTransitionDetail.setText("Configuring System settings: " + mode);
+        if (tvCurrentProfile != null) tvCurrentProfile.setText("Mode: " + mode.toUpperCase());
 
         new Thread(() -> {
             try {
@@ -1107,8 +1107,8 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 if (isDestroyed()) return;
                 transitionProgressBar.setProgress(100);
-                tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
-                tvTransitionDetail.setText("Non-root optimizations applied");
+                if (tvTransitionStatus != null) tvTransitionStatus.setText("✅ " + mode.toUpperCase() + " complete");
+                if (tvTransitionDetail != null) tvTransitionDetail.setText("Non-root optimizations applied");
                 handler.postDelayed(() -> {
                     if (!isDestroyed()) cardTransitionProgress.setVisibility(View.GONE);
                 }, 2000);
@@ -1196,7 +1196,7 @@ public class MainActivity extends AppCompatActivity {
         layout.setPadding(padding, padding, padding, padding);
 
         android.widget.TextView tvMessage = new android.widget.TextView(this);
-        tvMessage.setText(
+        if (tvMessage != null) tvMessage.setText(
             "ZORON-X is designed and optimized primarily for Rooted devices (custom ROMs/kernels) " +
             "where standard OEM power management has been bypassed. Custom setups often disable core parking, " +
             "use aggressive scaling governors, and allow unmanaged background wakelocks, requiring an explicit saver.\n\n" +
@@ -1207,13 +1207,13 @@ public class MainActivity extends AppCompatActivity {
             "brightness/timeouts, disabling haptics) to stretch the remaining capacity."
         );
         tvMessage.setTextSize(14f);
-        tvMessage.setTextColor(getColor(R.color.purple_on_surface_variant));
+        if (tvMessage != null) tvMessage.setTextColor(getColor(R.color.purple_on_surface_variant));
         tvMessage.setLineSpacing(4f, 1f);
         layout.addView(tvMessage);
 
         android.widget.CheckBox cbDontShow = new android.widget.CheckBox(this);
-        cbDontShow.setText("Don't show this advisory again");
-        cbDontShow.setTextColor(getColor(R.color.purple_on_surface));
+        if (cbDontShow != null) cbDontShow.setText("Don't show this advisory again");
+        if (cbDontShow != null) cbDontShow.setTextColor(getColor(R.color.purple_on_surface));
         cbDontShow.setTextSize(14f);
         android.widget.LinearLayout.LayoutParams cbParams = new android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1295,8 +1295,8 @@ public class MainActivity extends AppCompatActivity {
                 
                 runOnUiThread(() -> {
                     if (tvBatteryCycles != null) {
-                        tvBatteryCycles.setText(String.valueOf(totalCycles));
-                        tvBatteryHealthScore.setText(healthScore + "%");
+                        if (tvBatteryCycles != null) tvBatteryCycles.setText(String.valueOf(totalCycles));
+                        if (tvBatteryHealthScore != null) tvBatteryHealthScore.setText(healthScore + "%");
                     }
                     
                     if (rulesListContainer != null) {
@@ -1304,15 +1304,15 @@ public class MainActivity extends AppCompatActivity {
                         if (rules != null && !rules.isEmpty()) {
                             for (com.zoron.whyred.data.RuleEntity r : rules) {
                                 TextView tv = new TextView(this);
-                                tv.setText("IF " + r.conditionType + " (" + r.conditionValue + ") THEN " + r.actionType + " (" + r.actionValue + ")");
-                                tv.setTextColor(0xFFFFFFFF);
+                                if (tv != null) tv.setText("IF " + r.conditionType + " (" + r.conditionValue + ") THEN " + r.actionType + " (" + r.actionValue + ")");
+                                if (tv != null) tv.setTextColor(0xFFFFFFFF);
                                 tv.setPadding(0, 10, 0, 10);
                                 rulesListContainer.addView(tv);
                             }
                         } else {
                             TextView tv = new TextView(this);
-                            tv.setText("No custom rules active.");
-                            tv.setTextColor(0xFF888888);
+                            if (tv != null) tv.setText("No custom rules active.");
+                            if (tv != null) tv.setTextColor(0xFF888888);
                             rulesListContainer.addView(tv);
                         }
                     }
@@ -1323,8 +1323,8 @@ public class MainActivity extends AppCompatActivity {
                             recommendationsContainer.setVisibility(View.VISIBLE);
                             for (com.zoron.whyred.data.RecommendationEntity rec : recs) {
                                 TextView tv = new TextView(this);
-                                tv.setText("• " + rec.action + " on " + rec.title + " (Confidence: " + rec.confidence + "%)");
-                                tv.setTextColor(0xFFFFAA00);
+                                if (tv != null) tv.setText("• " + rec.action + " on " + rec.title + " (Confidence: " + rec.confidence + "%)");
+                                if (tv != null) tv.setTextColor(0xFFFFAA00);
                                 tv.setPadding(0, 10, 0, 10);
                                 recommendationsList.addView(tv);
                             }
