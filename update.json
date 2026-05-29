@@ -1,6 +1,6 @@
 {
-  "version": "v4.4.2",
-  "versionCode": 33,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.2/zoron_v4.4.2.zip",
-  "changelog": "v4.4.2:\n- CRITICAL FIX: Fixed infinite update loop — module.prop was not bumped in v4.4.1, causing Magisk to perpetually detect an available update.\n- Improved update check: now only prompts when a strictly newer version is available (was using != comparison).\n- Synced all version strings across module.prop, build.gradle, customize.sh, and service.sh."
+  "version": "v4.5.0",
+  "versionCode": 34,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.0/zoron_v4.5.0.zip",
+  "changelog": "v4.5.0:\n- Major Feature: Intelligent Rule Engine added.\n- Major Feature: Battery Health tracking & optimization Audit Engine.\n- Built-in UI to view recommendations and customize hardware rules natively."
 }
