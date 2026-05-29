@@ -905,7 +905,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/white_20"
+                        android:background="#33FFFFFF"
                         android:layout_marginTop="16dp"
                         android:layout_marginBottom="16dp" />
 
