@@ -2,5 +2,5 @@
   "version": "v4.5.1",
   "versionCode": 35,
   "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.1/zoron_v4.5.1.zip",
-  "changelog": "v4.5.0:\n- Major Feature: Intelligent Rule Engine added.\n- Major Feature: Battery Health tracking & optimization Audit Engine.\n- Built-in UI to view recommendations and customize hardware rules natively."
+  "changelog": "v4.5.1:\n- Major UI/UX overhaul using Jetpack Compose interoperability.\n- Modern dark-first bento aesthetic.\n- Floating responsive bottom navigation."
 }
