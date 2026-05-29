@@ -105,65 +105,95 @@ public class ZoronAutopilotService extends Service {
         runLocalPowerStateUpdate(isVideoPlaying);
 
         if (autopilotEnabled) {
-            // Autopilot Mode: Active dynamic mode management
-            String targetMode = "balanced";
+            final int finalBatteryLevel = batteryLevel;
+            final boolean finalIsCharging = isCharging;
+            final String finalFgApp = fgApp;
+            final boolean finalIsVideoPlaying = isVideoPlaying;
+            final boolean finalIsRoot = isRoot;
 
-            if (fgApp == null || fgApp.isEmpty()) {
-                targetMode = "deep"; // Screen likely off or idle
-            } else {
-                if (isVideoPlaying) {
-                    targetMode = "video"; // Video playback optimization mode
-                } else if (fgApp.contains("pubg") || fgApp.contains("mihoyo") || fgApp.contains("game") || fgApp.contains("roblox") || fgApp.contains("epicgames")) {
-                    targetMode = "burst"; // Heavy gaming
-                } else if (fgApp.contains("launcher") || fgApp.contains("systemui")) {
-                    targetMode = "deep"; // Idle at home screen
-                } else if (batteryLevel < 20 && !isCharging) {
-                    targetMode = "nightwatch"; // Low battery preservation
-                } else if (isCharging) {
-                    targetMode = "balanced"; // Allow cleanup operations
-                } else {
-                    targetMode = "balanced"; // Default social media / web
-                }
-            }
-
-            // Turn off manual dynamic video boost if it was active
-            if (isVideoBoostActive && isRoot) {
-                Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
-                isVideoBoostActive = false;
-            }
-
-            if (!targetMode.equals(lastMode)) {
-                String finalTargetMode = targetMode;
-                if (isRoot) {
-                    Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
-                        if (out.isSuccess() && !out.getOut().isEmpty()) {
-                            String current = out.getOut().get(0).trim();
-                            if (!current.equals(finalTargetMode)) {
-                                applyZoronMode(finalTargetMode);
+            new Thread(() -> {
+                String targetMode = "balanced";
+                boolean ruleMatched = false;
+                
+                try {
+                    com.zoron.whyred.data.ZoronDatabase db = com.zoron.whyred.data.ZoronDatabase.getDatabase(ZoronAutopilotService.this);
+                    java.util.List<com.zoron.whyred.data.RuleEntity> rules = db.ruleDao().getEnabledRules();
+                    
+                    if (rules != null) {
+                        for (com.zoron.whyred.data.RuleEntity rule : rules) {
+                            boolean conditionMet = false;
+                            if ("BATTERY_BELOW".equals(rule.conditionType)) {
+                                if (finalBatteryLevel < Integer.parseInt(rule.conditionValue)) conditionMet = true;
+                            } else if ("CHARGING".equals(rule.conditionType)) {
+                                if (finalIsCharging) conditionMet = true;
+                            } else if ("APP_FOREGROUND".equals(rule.conditionType) && finalFgApp != null) {
+                                if (finalFgApp.contains(rule.conditionValue.toLowerCase())) conditionMet = true;
                             }
-                            lastMode = finalTargetMode;
-                        } else {
-                            applyZoronMode(finalTargetMode);
-                            lastMode = finalTargetMode;
+                            
+                            if (conditionMet && "SET_MODE".equals(rule.actionType)) {
+                                targetMode = rule.actionValue;
+                                ruleMatched = true;
+                                break;
+                            }
                         }
-                    });
-                } else {
-                    // Non-Root logic
-                    File zoronDir = new File(getFilesDir(), "zoron");
-                    File profileFile = new File(zoronDir, "profile.txt");
-                    String current = "";
-                    if (profileFile.exists()) {
-                        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
-                            current = br.readLine();
-                            if (current != null) current = current.trim();
-                        } catch (Exception ignored) {}
                     }
-                    if (!finalTargetMode.equals(current)) {
-                        applyZoronMode(finalTargetMode);
+                } catch (Exception e) {}
+
+                if (!ruleMatched) {
+                    if (finalFgApp == null || finalFgApp.isEmpty()) {
+                        targetMode = "deep";
+                    } else if (finalIsVideoPlaying) {
+                        targetMode = "video";
+                    } else if (finalFgApp.contains("pubg") || finalFgApp.contains("mihoyo") || finalFgApp.contains("game") || finalFgApp.contains("roblox") || finalFgApp.contains("epicgames")) {
+                        targetMode = "burst";
+                    } else if (finalFgApp.contains("launcher") || finalFgApp.contains("systemui")) {
+                        targetMode = "deep";
+                    } else if (finalBatteryLevel < 20 && !finalIsCharging) {
+                        targetMode = "nightwatch";
+                    } else if (finalIsCharging) {
+                        targetMode = "balanced";
+                    } else {
+                        targetMode = "balanced";
                     }
-                    lastMode = finalTargetMode;
                 }
-            }
+
+                if (isVideoBoostActive && finalIsRoot) {
+                    Shell.cmd("sh /system/bin/zoron_fastpath.sh video_boost_off").exec();
+                    isVideoBoostActive = false;
+                }
+
+                if (!targetMode.equals(lastMode)) {
+                    String finalTargetMode = targetMode;
+                    if (finalIsRoot) {
+                        Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
+                            if (out.isSuccess() && !out.getOut().isEmpty()) {
+                                String current = out.getOut().get(0).trim();
+                                if (!current.equals(finalTargetMode)) {
+                                    applyZoronMode(finalTargetMode);
+                                }
+                                lastMode = finalTargetMode;
+                            } else {
+                                applyZoronMode(finalTargetMode);
+                                lastMode = finalTargetMode;
+                            }
+                        });
+                    } else {
+                        File zoronDir = new File(getFilesDir(), "zoron");
+                        File profileFile = new File(zoronDir, "profile.txt");
+                        String current = "";
+                        if (profileFile.exists()) {
+                            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                                current = br.readLine();
+                                if (current != null) current = current.trim();
+                            } catch (Exception ignored) {}
+                        }
+                        if (!finalTargetMode.equals(current)) {
+                            applyZoronMode(finalTargetMode);
+                        }
+                        lastMode = finalTargetMode;
+                    }
+                }
+            }).start();
         } else {
             // Manual Mode: Keep manual profile active, but apply temporary dynamic video boost
             lastMode = ""; // Reset autopilot state

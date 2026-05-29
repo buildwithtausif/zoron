@@ -27,7 +27,7 @@ log "Boot completed, proceeding with initialization"
 # This is necessary because PowerShell's Compress-Archive uses backslash paths
 # in the zip, which can prevent Magisk's magic mount from working correctly.
 # Also strip any Windows CRLF line endings.
-for script in whyred_opt zoron_tracker.sh zoron_engine zoron_intent_engine zoron_process_monitor zoron_fastpath.sh thermal_safety_daemon.sh idle_confidence.sh; do
+for script in whyred_opt zoron_tracker.sh zoron_engine zoron_intent_engine zoron_process_monitor zoron_fastpath.sh thermal_safety_daemon.sh idle_confidence.sh zoron_rule_engine; do
     if [ -f "$MODDIR/system/bin/$script" ]; then
         sed 's/\r$//' "$MODDIR/system/bin/$script" > "$SCRIPT_DIR/$script"
         chmod 755 "$SCRIPT_DIR/$script"
@@ -163,4 +163,19 @@ else
     fi
 fi
 
-log "ZORON-X v4.4.2 service.sh initialization complete"
+# Stagger again before rule engine
+sleep 5
+
+# Start the rule engine daemon (with PID file check)
+RULE_PID_FILE="$SCRIPT_DIR/zoron_rule_engine.pid"
+if [ -f "$RULE_PID_FILE" ] && kill -0 "$(cat $RULE_PID_FILE)" 2>/dev/null; then
+    log "Rule engine already running (PID: $(cat $RULE_PID_FILE)), skipping"
+else
+    if [ -x "$SCRIPT_DIR/zoron_rule_engine" ]; then
+        nohup sh $SCRIPT_DIR/zoron_rule_engine >/dev/null 2>&1 &
+        echo $! > "$RULE_PID_FILE"
+        log "Rule engine daemon started (PID: $!)"
+    fi
+fi
+
+log "ZORON-X v4.5.0 service.sh initialization complete"

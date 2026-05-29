@@ -280,6 +280,8 @@ public class SettingsActivity extends AppCompatActivity {
                         Shell.cmd("cp /data/local/tmp/zoron/* " + tempDir.getAbsolutePath() + "/").exec();
                         Shell.cmd("chmod 666 " + tempDir.getAbsolutePath() + "/*").exec();
                         
+                        com.zoron.whyred.data.DatabaseExporter.exportDatabaseToCsv(SettingsActivity.this, tempDir);
+                        
                         File[] files = tempDir.listFiles();
                         if (files != null) {
                             for (File file : files) {
@@ -301,6 +303,7 @@ public class SettingsActivity extends AppCompatActivity {
                     } else {
                         // Zip directly from local sandbox
                         File zoronDir = new File(getFilesDir(), "zoron");
+                        com.zoron.whyred.data.DatabaseExporter.exportDatabaseToCsv(SettingsActivity.this, zoronDir);
                         if (zoronDir.exists()) {
                             File[] files = zoronDir.listFiles();
                             if (files != null) {
@@ -312,10 +315,13 @@ public class SettingsActivity extends AppCompatActivity {
                                     byte[] bytes = new byte[1024];
                                     int length;
                                     while ((length = fis.read(bytes)) >= 0) {
-                                        zos.write(bytes, 0, length);
+                                    zos.write(bytes, 0, length);
                                     }
                                     zos.closeEntry();
                                     fis.close();
+                                    if (file.getName().startsWith("db_export_")) {
+                                        file.delete();
+                                    }
                                 }
                             }
                         }

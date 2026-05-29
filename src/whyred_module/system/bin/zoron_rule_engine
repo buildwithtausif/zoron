@@ -1,0 +1,49 @@
+#!/system/bin/sh
+# Zoron Rule Engine Daemon
+
+SCRIPT_DIR="/data/local/tmp/zoron"
+RULES_FILE="$SCRIPT_DIR/rules.csv"
+LOG_FILE="$SCRIPT_DIR/log.txt"
+PROFILE_FILE="$SCRIPT_DIR/profile.txt"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [rule-engine] $1" >> $LOG_FILE 2>/dev/null
+}
+
+apply_action() {
+    action_type=$1
+    action_val=$2
+    if [ "$action_type" = "SET_MODE" ]; then
+        current=$(cat $PROFILE_FILE 2>/dev/null)
+        if [ "$current" != "$action_val" ]; then
+            log "Rule triggered: SET_MODE $action_val"
+            echo "$action_val" > $PROFILE_FILE
+            sh $SCRIPT_DIR/zoron_fastpath.sh set_mode "$action_val"
+            sh $SCRIPT_DIR/zoron_engine "$action_val" &
+        fi
+    fi
+}
+
+while true; do
+    if [ -f "$RULES_FILE" ]; then
+        # Read system state
+        battery_level=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo 50)
+        charging_state=$(cat /sys/class/power_supply/battery/status 2>/dev/null || echo "Unknown")
+        
+        # Read rules sequentially (already sorted by priority descending by Java)
+        while IFS=, read -r priority cond_type cond_val action_type action_val; do
+            matched=0
+            if [ "$cond_type" = "BATTERY_BELOW" ] && [ "$battery_level" -lt "$cond_val" ]; then
+                matched=1
+            elif [ "$cond_type" = "CHARGING" ] && [ "$charging_state" = "Charging" ]; then
+                matched=1
+            fi
+            
+            if [ "$matched" = "1" ]; then
+                apply_action "$action_type" "$action_val"
+                break # Highest priority rule matched, break to avoid conflicts
+            fi
+        done < "$RULES_FILE"
+    fi
+    sleep 30 # Poll every 30s for power efficiency
+done

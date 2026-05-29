@@ -44,6 +44,10 @@ import com.topjohnwu.superuser.Shell;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -75,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
     private MaterialCardView cardTransitionProgress;
     private TextView tvTransitionStatus, tvTransitionDetail;
     private LinearProgressIndicator transitionProgressBar;
+    private LinearLayout recommendationsContainer, recommendationsList, rulesListContainer;
+    private TextView tvBatteryHealthScore, tvBatteryCycles;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +104,19 @@ public class MainActivity extends AppCompatActivity {
         tvLegacyToggle = findViewById(R.id.tvLegacyToggle);
         ivLegacyToggle = findViewById(R.id.ivLegacyToggle);
         findViewById(R.id.legacyHeader).setOnClickListener(v -> toggleLegacy());
+
+        recommendationsContainer = findViewById(R.id.recommendationsContainer);
+        recommendationsList = findViewById(R.id.recommendationsList);
+        rulesListContainer = findViewById(R.id.rulesListContainer);
+        tvBatteryHealthScore = findViewById(R.id.tvBatteryHealthScore);
+        tvBatteryCycles = findViewById(R.id.tvBatteryCycles);
+
+        View btnAddRule = findViewById(R.id.btnAddRule);
+        if (btnAddRule != null) {
+            btnAddRule.setOnClickListener(v -> {
+                startActivity(new Intent(this, RuleEditorActivity.class));
+            });
+        }
 
         // Card press animations for ZORON-X mode cards
         setupCardPressAnimation(findViewById(R.id.cardZoronBalanced));
@@ -181,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
+        migrateLegacyBatteryData();
 
         // Autopilot Service runs persistently to handle dynamic video boosts
         if (hasUsageStatsPermission()) {
@@ -284,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+        updateV45UI();
     }
 
     @Override
@@ -687,22 +708,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void exportLogs() {
-        new Thread(() -> {
-            String logData = getFileContent("/data/local/tmp/zoron/log.txt", "");
-            if (logData.trim().isEmpty()) {
-                runOnUiThread(() -> Toast.makeText(this, "No logs to export", Toast.LENGTH_SHORT).show());
-                return;
-            }
+        android.content.SharedPreferences preferences = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        boolean isRoot = preferences.getBoolean("is_root", false);
 
+        new Thread(() -> {
             try {
-                File exportFile = new File(getExternalCacheDir(), "zoron_diagnostics.txt");
-                FileWriter writer = new FileWriter(exportFile);
-                writer.write(logData);
-                writer.close();
+                File exportFile = new File(getExternalCacheDir(), "zoron_logs.zip");
+                String mimeType = "application/zip";
+                
+                FileOutputStream fos = new FileOutputStream(exportFile);
+                ZipOutputStream zos = new ZipOutputStream(fos);
+
+                if (isRoot) {
+                    File tempDir = new File(getExternalCacheDir(), "temp_logs");
+                    tempDir.mkdirs();
+                    Shell.cmd("cp /data/local/tmp/zoron/* " + tempDir.getAbsolutePath() + "/").exec();
+                    Shell.cmd("chmod 666 " + tempDir.getAbsolutePath() + "/*").exec();
+                    
+                    com.zoron.whyred.data.DatabaseExporter.exportDatabaseToCsv(MainActivity.this, tempDir);
+                    
+                    File[] files = tempDir.listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            if (!file.isFile()) continue;
+                            FileInputStream fis = new FileInputStream(file);
+                            ZipEntry zipEntry = new ZipEntry(file.getName());
+                            zos.putNextEntry(zipEntry);
+                            byte[] bytes = new byte[1024];
+                            int length;
+                            while ((length = fis.read(bytes)) >= 0) {
+                                zos.write(bytes, 0, length);
+                            }
+                            zos.closeEntry();
+                            fis.close();
+                            if (file.getName().startsWith("db_export_")) file.delete();
+                        }
+                    }
+                    tempDir.delete();
+                } else {
+                    File zoronDir = new File(getFilesDir(), "zoron");
+                    com.zoron.whyred.data.DatabaseExporter.exportDatabaseToCsv(MainActivity.this, zoronDir);
+                    if (zoronDir.exists()) {
+                        File[] files = zoronDir.listFiles();
+                        if (files != null) {
+                            for (File file : files) {
+                                if (!file.isFile()) continue;
+                                FileInputStream fis = new FileInputStream(file);
+                                ZipEntry zipEntry = new ZipEntry(file.getName());
+                                zos.putNextEntry(zipEntry);
+                                byte[] bytes = new byte[1024];
+                                int length;
+                                while ((length = fis.read(bytes)) >= 0) {
+                                    zos.write(bytes, 0, length);
+                                }
+                                zos.closeEntry();
+                                fis.close();
+                                if (file.getName().startsWith("db_export_")) file.delete();
+                            }
+                        }
+                    }
+                }
+                zos.close();
+                fos.close();
 
                 Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
                 Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("text/plain");
+                shareIntent.setType(mimeType);
                 shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
                 shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Diagnostics Export");
                 shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -1190,5 +1261,93 @@ public class MainActivity extends AppCompatActivity {
             })
             .setCancelable(false)
             .show();
+    }
+
+    private void migrateLegacyBatteryData() {
+        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+        if (prefs.getBoolean("battery_migrated_v45", false)) return;
+        
+        new Thread(() -> {
+            try {
+                File zoronDir = new File(getFilesDir(), "zoron");
+                File csvFile = new File(zoronDir, "battery.csv");
+                if (csvFile.exists()) {
+                    com.zoron.whyred.data.ZoronDatabase db = com.zoron.whyred.data.ZoronDatabase.getDatabase(this);
+                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(csvFile));
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 6) {
+                            try {
+                                long time = Long.parseLong(parts[0]) * 1000;
+                                int temp = (int)Float.parseFloat(parts[5]);
+                                com.zoron.whyred.data.CycleEntity cycle = new com.zoron.whyred.data.CycleEntity();
+                                cycle.timestamp = time;
+                                cycle.partialCycle = 0.01f;
+                                cycle.wearMultiplier = 1.0f;
+                                cycle.tempAtCharge = temp;
+                                db.cycleDao().insertCycle(cycle);
+                            } catch (Exception e) {}
+                        }
+                    }
+                    br.close();
+                }
+                prefs.edit().putBoolean("battery_migrated_v45", true).apply();
+            } catch (Exception e) {}
+        }).start();
+    }
+
+    private void updateV45UI() {
+        new Thread(() -> {
+            try {
+                com.zoron.whyred.data.ZoronDatabase db = com.zoron.whyred.data.ZoronDatabase.getDatabase(this);
+                java.util.List<com.zoron.whyred.data.RecommendationEntity> recs = db.recommendationDao().getActiveRecommendations();
+                java.util.List<com.zoron.whyred.data.RuleEntity> rules = db.ruleDao().getEnabledRules();
+                
+                int totalCycles = db.cycleDao().getTotalCycles();
+                int healthScore = Math.max(0, 100 - (int)(totalCycles * 0.05));
+                
+                runOnUiThread(() -> {
+                    if (tvBatteryCycles != null) {
+                        tvBatteryCycles.setText(String.valueOf(totalCycles));
+                        tvBatteryHealthScore.setText(healthScore + "%");
+                    }
+                    
+                    if (rulesListContainer != null) {
+                        rulesListContainer.removeAllViews();
+                        if (rules != null && !rules.isEmpty()) {
+                            for (com.zoron.whyred.data.RuleEntity r : rules) {
+                                TextView tv = new TextView(this);
+                                tv.setText("IF " + r.conditionType + " (" + r.conditionValue + ") THEN " + r.actionType + " (" + r.actionValue + ")");
+                                tv.setTextColor(0xFFFFFFFF);
+                                tv.setPadding(0, 10, 0, 10);
+                                rulesListContainer.addView(tv);
+                            }
+                        } else {
+                            TextView tv = new TextView(this);
+                            tv.setText("No custom rules active.");
+                            tv.setTextColor(0xFF888888);
+                            rulesListContainer.addView(tv);
+                        }
+                    }
+                    
+                    if (recommendationsContainer != null && recommendationsList != null) {
+                        recommendationsList.removeAllViews();
+                        if (recs != null && !recs.isEmpty()) {
+                            recommendationsContainer.setVisibility(View.VISIBLE);
+                            for (com.zoron.whyred.data.RecommendationEntity rec : recs) {
+                                TextView tv = new TextView(this);
+                                tv.setText("• " + rec.actionType + " on " + rec.targetPackage + " (Confidence: " + rec.confidenceScore + "%)");
+                                tv.setTextColor(0xFFFFAA00);
+                                tv.setPadding(0, 10, 0, 10);
+                                recommendationsList.addView(tv);
+                            }
+                        } else {
+                            recommendationsContainer.setVisibility(View.GONE);
+                        }
+                    }
+                });
+            } catch (Exception e) {}
+        }).start();
     }
 }
