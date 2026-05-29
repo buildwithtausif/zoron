@@ -87,6 +87,52 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        androidx.compose.ui.platform.ComposeView composeRoot = findViewById(R.id.composeRoot);
+        if (composeRoot != null) {
+            com.zoron.whyred.ui.ComposeInterop.setMainNavigation(composeRoot, new com.zoron.whyred.ui.MainActions() {
+                @Override
+                public void applyMode(String mode) {
+                    runOnUiThread(() -> applyZoronMode(mode));
+                }
+                @Override
+                public void checkUpdates() {
+                    runOnUiThread(() -> OTAUpdater.checkUpdates(MainActivity.this, true));
+                }
+                @Override
+                public void toggleAutopilot(boolean enabled) {
+                    runOnUiThread(() -> {
+                        android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+                        prefs.edit().putBoolean("autopilot_enabled", enabled).apply();
+                        if (enabled) {
+                            startService(new Intent(MainActivity.this, ZoronAutopilotService.class));
+                        }
+                        com.zoron.whyred.ui.ComposeState.INSTANCE.getAutopilotEnabled().setValue(enabled);
+                    });
+                }
+                @Override
+                public void setPreferenceBoolean(String key, boolean value) {
+                    android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+                    prefs.edit().putBoolean(key, value).apply();
+                }
+                @Override
+                public void setPreferenceString(String key, String value) {
+                    android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
+                    prefs.edit().putString(key, value).apply();
+                }
+                @Override
+                public void exportLogs(boolean zipIt) {
+                    runOnUiThread(() -> MainActivity.this.exportLogs());
+                }
+                @Override
+                public void clearLogs() {
+                    new Thread(() -> {
+                        com.topjohnwu.superuser.Shell.cmd("rm -f /data/local/tmp/zoron/*.txt", "rm -f /data/local/tmp/zoron/*.csv").exec();
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Logs cleared", Toast.LENGTH_SHORT).show());
+                    }).start();
+                }
+            });
+        }
+
         Toolbar toolbar = findViewById(R.id.topAppBar);
         setSupportActionBar(toolbar);
 
@@ -480,6 +526,9 @@ public class MainActivity extends AppCompatActivity {
                 tvCurrentProfile.setText("Mode: " + displayProfile);
                 tvCpuInfo.setText("CPU Governor: " + (finalGov.isEmpty() ? "Unknown" : finalGov));
 
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getProfile().setValue(displayProfile);
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getCpuGovernor().setValue(finalGov);
+
                 // Update power state with color
                 updatePowerState(finalPowerState);
 
@@ -541,6 +590,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         tvPowerState.setText(displayState);
+        com.zoron.whyred.ui.ComposeState.INSTANCE.getPowerState().setValue(displayState);
 
         // Update dot color
         GradientDrawable dot = (GradientDrawable) powerStateDot.getBackground();

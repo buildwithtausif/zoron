@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.1",
+  "version": "v4.5.1-fix",
   "versionCode": 35,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.1/zoron_v4.5.1.zip",
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.1-fix/zoron_v4.5.1-fix.zip",
   "changelog": "v4.5.1:\n- UI/UX Modernization: Completely migrated the UI layer to Jetpack Compose for a fluid, modern experience.\n- Premium Dark Aesthetic: Introduced a dark-first design system with custom bento-style elevated cards and vibrant accent colors.\n- Navigation Redesign: Replaced legacy overflow menus with an expressive, auto-hiding floating bottom navigation bar.\n- Modern Analytics: Upgraded MPAndroidChart visuals to feature smooth bezier curves and rich gradients.\n- Global Dialogs: Standardized all app prompts, settings toggles, and alerts to match the new Compose design language."
 }

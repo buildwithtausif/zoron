@@ -1,6 +1,12 @@
 # Zoron Changelog
 
-## v4.5.1
+## v4.5.1-fix
+- Fixed Compose interoperability bugs and UI scaling issues.
+- Restored missing engine settings toggles to Compose UI.
+- Rewired legacy Java diagnostic export flows into the new dashboard navigation.
+- Fixed layout structure to prevent null pointers on MainActivity inflation.
+
+# v4.5.1
 - **UI/UX Modernization**: Completely migrated the UI layer to Jetpack Compose for a fluid, modern experience.
 - **Premium Dark Aesthetic**: Introduced a dark-first design system with custom bento-style elevated cards and vibrant accent colors.
 - **Navigation Redesign**: Replaced legacy overflow menus with an expressive, auto-hiding floating bottom navigation bar.

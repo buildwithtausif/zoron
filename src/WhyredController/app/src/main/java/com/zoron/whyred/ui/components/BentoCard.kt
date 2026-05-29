@@ -15,12 +15,12 @@ fun BentoCard(
     content: @Composable () -> Unit
 ) {
     Card(
-        modifier = modifier.padding(8.dp),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.padding(4.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         content()
     }
