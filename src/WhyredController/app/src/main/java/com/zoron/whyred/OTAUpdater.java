@@ -47,7 +47,7 @@ public class OTAUpdater {
                 String changelogText = json.has("changelog") ? json.getString("changelog") : "New update available.";
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (latestVersionCode != BuildConfig.VERSION_CODE) {
+                    if (latestVersionCode > BuildConfig.VERSION_CODE) {
                         boolean isRoot = activity.getSharedPreferences("ZoronSettings", android.content.Context.MODE_PRIVATE).getBoolean("is_root", false);
                         if (isRoot) {
                             new AlertDialog.Builder(activity)

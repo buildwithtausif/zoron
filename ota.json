@@ -1,6 +1,6 @@
 {
-  "versionCode": 32,
-  "versionName": "v4.4.1",
-  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.1/Zoron.apk",
-  "changelog": "v4.4.1:\n- Added in-app Non-Root advisory dialog with 'Learn More' and 'Don't show again' options.\n- Minor UI and documentation updates.\n- Packaging update: module zip (zoron_v4.4.1.zip) and APK published."
+  "versionCode": 33,
+  "versionName": "v4.4.2",
+  "apkUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.4.2/Zoron.apk",
+  "changelog": "v4.4.2:\n- CRITICAL FIX: Fixed infinite update loop — module.prop was not bumped in v4.4.1, causing Magisk to perpetually detect an available update.\n- Improved update check: now only prompts when a strictly newer version is available (was using != comparison).\n- Synced all version strings across module.prop, build.gradle, customize.sh, and service.sh."
 }

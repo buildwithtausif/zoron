@@ -1,5 +1,15 @@
 # Zoron Changelog
 
+## v4.4.2
+- **CRITICAL FIX — Infinite Update Loop**: The `module.prop` was never bumped from v4.4.0 (versionCode 31) in the v4.4.1 release. This caused Magisk Manager and the in-app OTA to perpetually detect an "update available" — downloading and flashing the zip would reinstall the same module with versionCode 31, while `update.json` advertised versionCode 32. The loop repeated infinitely.
+- **Improved Update Comparison**: Changed the OTA version check from `!=` to `>` so the app only prompts for updates when the server has a *strictly newer* version. Previously, any version mismatch (including accidental downgrades) would trigger the update dialog.
+- **Version String Sync**: Synchronized all hardcoded version strings across `customize.sh` (was stuck at v3.5.0) and `service.sh` (was stuck at v4.0.0) to reflect the current release.
+
+## v4.4.1
+- Added in-app Non-Root advisory dialog with 'Learn More' and 'Don't show again' options.
+- Minor UI and documentation updates.
+- **Known Issue**: Module zip shipped with stale `module.prop` (v4.4.0/versionCode 31), causing infinite update loop. Fixed in v4.4.2.
+
 ## v4.4.0
 - **Non-Root Device Fallback**: Introduced native fallback support for non-root devices. The app runs a sandboxed optimization daemon when root is missing, preventing blocking the user.
 - **Simulated Sandbox Diagnostics**: Simulated `profile.txt`, `log.txt`, `battery.csv`, and `process_report.txt` in the local app directory (`context.getFilesDir()`) for seamless dashboard and chart updates on non-root.
