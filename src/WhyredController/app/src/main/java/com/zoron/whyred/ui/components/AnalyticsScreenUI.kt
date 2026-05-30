@@ -171,42 +171,68 @@ fun BatteryChartTab(mainActions: MainActions) {
             }
 
             if (rawEntries.size >= 2) {
-                // Compression & Aggregation
-                val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
-                val maxBuckets = 50
-                if (rawEntries.size > maxBuckets) {
-                    val bucketSize = rawEntries.size / maxBuckets.toFloat()
-                    var currentBucket = 0f
+                try {
+                    // Equispaced Time Bucketing
+                    val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
+                    val durationMins = rawEntries.last().x - rawEntries.first().x
+                    val bucketMin = when {
+                        durationMins > 24 * 60 -> 60f
+                        durationMins > 12 * 60 -> 30f
+                        durationMins > 6 * 60 -> 15f
+                        durationMins > 2 * 60 -> 10f
+                        durationMins > 60 -> 5f
+                        else -> Math.max(1f, (durationMins / 50f).toInt().toFloat())
+                    }
+                    
+                    var currentBucketLimit = rawEntries.first().x + bucketMin
                     var sumLevel = 0f
                     var count = 0
-                    var bucketStartIndex = 0
                     
-                    for (i in rawEntries.indices) {
-                        sumLevel += rawEntries[i].level
-                        count++
-                        if (i >= currentBucket + bucketSize || i == rawEntries.size - 1) {
-                            val avgLevel = sumLevel / count
-                            val avgX = rawEntries[bucketStartIndex].x
-                            entries.add(entryOf(avgX, avgLevel))
-                            sumLevel = 0f
-                            count = 0
-                            bucketStartIndex = i + 1
-                            currentBucket += bucketSize
+                    for (entry in rawEntries) {
+                        if (entry.x <= currentBucketLimit) {
+                            sumLevel += entry.level
+                            count++
+                        } else {
+                            if (count > 0) {
+                                entries.add(entryOf(Math.round(currentBucketLimit).toFloat(), sumLevel / count))
+                            }
+                            while (currentBucketLimit < entry.x) {
+                                currentBucketLimit += bucketMin
+                            }
+                            sumLevel = entry.level
+                            count = 1
                         }
                     }
-                } else {
-                    entries.addAll(rawEntries.map { entryOf(it.x, it.level) })
+                    if (count > 0) {
+                        val finalX = if (entries.isEmpty()) currentBucketLimit else maxOf(currentBucketLimit, entries.last().x + bucketMin)
+                        entries.add(entryOf(Math.round(finalX).toFloat(), sumLevel / count))
+                    }
+
+                    // Mathematical stats
+                    val levels = rawEntries.map { it.level }
+                    val mean = levels.average().toFloat()
+                    val variance = levels.map { (it - mean) * (it - mean) }.average().toFloat()
+                    val stdDev = sqrt(variance)
+                    stats = MathStats(mean, variance, stdDev)
+
+                    if (entries.size >= 2) {
+                        chartModel = entryModelOf(entries)
+                    } else if (rawEntries.size >= 2) {
+                        // Safe map ensuring monotonic integers
+                        val safeEntries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
+                        var lastX = -1f
+                        for (raw in rawEntries) {
+                            val nextX = maxOf(lastX + 1f, Math.round(raw.x).toFloat())
+                            safeEntries.add(entryOf(nextX, raw.level))
+                            lastX = nextX
+                        }
+                        chartModel = entryModelOf(safeEntries)
+                    } else {
+                        chartModel = null
+                    }
+                } catch (e: Exception) {
+                    chartModel = null // Never crash analytics
                 }
-
-                // Mathematical stats
-                val levels = rawEntries.map { it.level }
-                val mean = levels.average().toFloat()
-                val variance = levels.map { (it - mean) * (it - mean) }.average().toFloat()
-                val stdDev = sqrt(variance)
-                stats = MathStats(mean, variance, stdDev)
-
-                val minL = levels.minOrNull() ?: 0f
-                chartModel = entryModelOf(entries)
             } else {
                 chartModel = null
             }
@@ -230,6 +256,17 @@ fun BatteryChartTab(mainActions: MainActions) {
                         Text(if (csvData.isEmpty()) "Loading battery data..." else "Insufficient data available for analysis. Waiting for more data...", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 } else {
+                    val meanColor = Color(0xFFF44336)
+                    val meanLineComponent = com.patrykandpatrick.vico.compose.component.lineComponent(color = meanColor.copy(alpha = 0.5f), thickness = 1.dp)
+                    val meanLabelComponent = com.patrykandpatrick.vico.compose.component.textComponent(color = meanColor, textSize = 10.sp)
+                    val meanLine = remember(stats.mean, meanLineComponent, meanLabelComponent) {
+                        com.patrykandpatrick.vico.core.chart.decoration.ThresholdLine(
+                            thresholdValue = stats.mean,
+                            thresholdLabel = "Mean: ${String.format("%.1f", stats.mean)}%",
+                            lineComponent = meanLineComponent,
+                            labelComponent = meanLabelComponent
+                        )
+                    }
                     Chart(
                         chart = lineChart(
                             lines = listOf(
@@ -239,7 +276,8 @@ fun BatteryChartTab(mainActions: MainActions) {
                                         arrayOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), Color.Transparent)
                                     )
                                 )
-                            )
+                            ),
+                            decorations = listOf(meanLine)
                         ),
                         model = chartModel!!,
                         chartScrollSpec = rememberChartScrollSpec(isScrollEnabled = false),

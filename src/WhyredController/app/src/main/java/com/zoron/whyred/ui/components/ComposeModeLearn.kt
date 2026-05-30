@@ -160,24 +160,6 @@ val documentationTopics = listOf(
         benefits = "Identifies rogue apps by classifying them into Tiers S (System) through D (Denied).",
         tradeoffs = "Process monitor adds minor overhead when active.",
         recommended = "Review weekly to identify battery abusers."
-    ),
-    DocTopic(
-        title = "FAQs",
-        whatItIs = "Frequently Asked Questions regarding engine behavior.",
-        whyExists = "To address common user misunderstandings.",
-        whenToUse = "If you encounter unexpected behavior.",
-        benefits = "Quick resolutions without needing to export logs.",
-        tradeoffs = "None.",
-        recommended = "Read before reporting issues on GitHub."
-    ),
-    DocTopic(
-        title = "Troubleshooting",
-        whatItIs = "Steps to resolve engine conflicts or failures.",
-        whyExists = "To recover from corrupt configurations or kernel panics.",
-        whenToUse = "If profiles fail to apply or the device overheats.",
-        benefits = "Restores system stability safely.",
-        tradeoffs = "Requires exporting logs for deeper analysis if these steps fail.",
-        recommended = "Re-initialize the daemon using the UI toggle before reinstalling."
     )
 )
 

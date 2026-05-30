@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,7 +19,20 @@ import com.zoron.whyred.ui.ComposeState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WhatsNewScreenUI(onNavigateBack: () -> Unit) {
-    val changelog by ComposeState.otaChangelog
+    val otaChangelog by ComposeState.otaChangelog
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    val changelog = remember(otaChangelog) {
+        if (otaChangelog.isNotEmpty()) {
+            otaChangelog
+        } else {
+            try {
+                context.assets.open("changelog.md").bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+    }
     
     Scaffold(
         topBar = {

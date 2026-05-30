@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.13",
-  "versionCode": 47,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.13/zoron_v4.5.13.zip",
-  "changelog": "v4.5.13 (2026-05-30):\n- Analytics Hotfix: Removed dynamic Vico viewport overriders. The graph now perfectly matches the exact Y-bounds of the real battery data."
+  "version": "v4.5.14",
+  "versionCode": 48,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.14/zoron_v4.5.14.zip",
+  "changelog": "v4.5.14 (2026-05-30):\n- Analytics: Implemented strict X-axis bucketing to permanently resolve Vico chart crashes and visualized statistical guidelines (Mean) directly on the trend chart.\n- Documentation: Removed deprecated FAQs and Troubleshooting sections from the Learn page.\n- What's New: Implemented robust fallback to bundled changelog.md when OTA metadata is unreachable."
 }
