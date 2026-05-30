@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.16
+- **Analytics**: Fixed missing X-axis labels on battery chart with human-readable time formatting (5m, 1h, 2h30m).
+- **What's New**: Fixed changelog parser to correctly handle markdown `##` headers, fully populating release history.
+
 ## v4.5.15
 - **Documentation**: Corrected mode naming, replacing legacy 'Gaming Mode' references with 'Burst Mode'.
 

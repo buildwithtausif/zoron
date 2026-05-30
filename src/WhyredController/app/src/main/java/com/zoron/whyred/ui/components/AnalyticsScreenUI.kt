@@ -148,6 +148,7 @@ fun BatteryChartTab(mainActions: MainActions) {
     val processReport by ComposeState.currentProcessReport
     var chartModel by remember { mutableStateOf<ChartEntryModel?>(null) }
     var stats by remember { mutableStateOf(MathStats()) }
+    var bucketSize by remember { mutableStateOf(5f) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
@@ -183,6 +184,7 @@ fun BatteryChartTab(mainActions: MainActions) {
                         durationMins > 60 -> 5f
                         else -> Math.max(1f, (durationMins / 50f).toInt().toFloat())
                     }
+                    bucketSize = bucketMin
                     
                     var currentBucketLimit = rawEntries.first().x + bucketMin
                     var sumLevel = 0f
@@ -297,12 +299,20 @@ fun BatteryChartTab(mainActions: MainActions) {
                         bottomAxis = rememberBottomAxis(
                             label = com.patrykandpatrick.vico.compose.component.textComponent(
                                 color = MaterialTheme.colorScheme.onSurface,
-                                textSize = 10.sp
+                                textSize = 9.sp
                             ),
                             axis = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
                             tick = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
                             guideline = null,
-                            valueFormatter = { value, _ -> "${value.toInt()}m" }
+                            valueFormatter = { value, _ ->
+                                val totalMins = value.toInt()
+                                if (totalMins < 60) "${totalMins}m"
+                                else {
+                                    val h = totalMins / 60
+                                    val m = totalMins % 60
+                                    if (m == 0) "${h}h" else "${h}h${m}m"
+                                }
+                            }
                         ),
                         modifier = Modifier.fillMaxSize()
                     )

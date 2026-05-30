@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.15",
-  "versionCode": 49,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.15/zoron_v4.5.15.zip",
-  "changelog": "v4.5.15 (2026-05-30):\n- Documentation: Corrected mode naming, replacing legacy 'Gaming Mode' references with 'Burst Mode'."
+  "version": "v4.5.16",
+  "versionCode": 50,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.16/zoron_v4.5.16.zip",
+  "changelog": "v4.5.16 (2026-05-30):\n- Analytics: Fixed missing X-axis labels on battery chart with human-readable time formatting (5m, 1h, 2h30m).\n- What's New: Fixed changelog parser to correctly handle markdown ## headers, fully populating release history."
 }

@@ -81,6 +81,7 @@ fun SettingsScreenUI(
                         onOptionSelected = {
                             ComposeState.cpuGovernor.value = it
                             mainActions?.setPreferenceString("cpu_governor", it)
+                            mainActions?.applyCpuGovernor(it)
                             showSnackbar("CPU Governor set to $it")
                         }
                     )
@@ -97,7 +98,12 @@ fun SettingsScreenUI(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 
                 val gpuGovernors = ComposeState.availableGpuGovernors.value
-                var selectedGpuGovernor by remember { mutableStateOf(if (gpuGovernors.isNotEmpty()) gpuGovernors[0] else "") }
+                val selectedGpuGovernor by ComposeState.selectedGpuGovernor
+                
+                // Initialize GPU governor from list if not yet set
+                if (selectedGpuGovernor.isEmpty() && gpuGovernors.isNotEmpty()) {
+                    ComposeState.selectedGpuGovernor.value = gpuGovernors[0]
+                }
                 
                 if (gpuGovernors.isNotEmpty()) {
                     SettingDropdown(
@@ -106,8 +112,9 @@ fun SettingsScreenUI(
                         options = gpuGovernors,
                         selectedOption = if (selectedGpuGovernor.isNotEmpty() && gpuGovernors.contains(selectedGpuGovernor)) selectedGpuGovernor else gpuGovernors[0],
                         onOptionSelected = {
-                            selectedGpuGovernor = it
+                            ComposeState.selectedGpuGovernor.value = it
                             mainActions?.setPreferenceString("gpu_governor", it)
+                            mainActions?.applyGpuGovernor(it)
                             showSnackbar("GPU Governor set to $it")
                         }
                     )

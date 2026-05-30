@@ -6,6 +6,7 @@ object ComposeState {
     val powerState = mutableStateOf("DETECTING...")
     val profile = mutableStateOf("Unknown")
     val cpuGovernor = mutableStateOf("Unknown")
+    val selectedGpuGovernor = mutableStateOf("")
     val availableCpuGovernors = mutableStateOf(listOf<String>())
     val availableGpuGovernors = mutableStateOf(listOf<String>())
     val batteryHealth = mutableStateOf("98%")
@@ -51,4 +52,6 @@ interface MainActions {
     fun exportCsv()
     fun exportProcessReport()
     fun clearLogs()
+    fun applyCpuGovernor(governor: String)
+    fun applyGpuGovernor(governor: String)
 }

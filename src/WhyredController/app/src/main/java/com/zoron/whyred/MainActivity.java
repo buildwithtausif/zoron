@@ -142,6 +142,34 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(() -> Toast.makeText(MainActivity.this, "Logs cleared", Toast.LENGTH_SHORT).show());
                     }).start();
                 }
+                @Override
+                public void applyCpuGovernor(String governor) {
+                    new Thread(() -> {
+                        Shell.Result r = Shell.cmd(
+                            "for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo '" + governor + "' > \"$cpu\" 2>/dev/null; done"
+                        ).exec();
+                        runOnUiThread(() -> {
+                            if (r.isSuccess()) {
+                                com.zoron.whyred.ui.ComposeState.INSTANCE.getCpuGovernor().setValue(governor);
+                            }
+                        });
+                    }).start();
+                }
+                @Override
+                public void applyGpuGovernor(String governor) {
+                    new Thread(() -> {
+                        Shell.cmd(
+                            "if [ -f /sys/class/kgsl/kgsl-3d0/devfreq/governor ]; then",
+                            "  echo '" + governor + "' > /sys/class/kgsl/kgsl-3d0/devfreq/governor 2>/dev/null",
+                            "else",
+                            "  for g in /sys/class/devfreq/*/governor; do echo '" + governor + "' > \"$g\" 2>/dev/null; done",
+                            "fi"
+                        ).exec();
+                        runOnUiThread(() -> {
+                            com.zoron.whyred.ui.ComposeState.INSTANCE.getSelectedGpuGovernor().setValue(governor);
+                        });
+                    }).start();
+                }
             });
         }
 
