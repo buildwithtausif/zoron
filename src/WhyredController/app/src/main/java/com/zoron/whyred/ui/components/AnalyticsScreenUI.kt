@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -23,6 +24,77 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.zoron.whyred.ui.ComposeState
 import com.zoron.whyred.ui.MainActions
+import kotlin.math.abs
+
+data class TrendInsights(
+    val summary: String,
+    val direction: String, // Improving, Stable, Declining
+    val contributors: List<String>,
+    val recommendations: List<String>,
+    val confidence: String
+)
+
+fun generateTrendRead(csvData: String, processReport: String): TrendInsights {
+    val lines = csvData.trim().split("\n")
+    var slope = 0f
+    var conf = "Low"
+    
+    if (lines.size > 2) {
+        try {
+            val first = lines.first().split(",")
+            val last = lines.last().split(",")
+            if (first.size >= 2 && last.size >= 2) {
+                val t1 = first[0].toLong()
+                val l1 = first[1].toFloat()
+                val t2 = last[0].toLong()
+                val l2 = last[1].toFloat()
+                
+                val dt = (t2 - t1) / 60f // minutes
+                if (dt > 0) {
+                    slope = (l1 - l2) / dt // drop per minute
+                    conf = if (lines.size > 10 && dt > 5) "High" else "Medium"
+                }
+            }
+        } catch (e: Exception) {}
+    }
+
+    val direction = when {
+        slope > 0.5f -> "Declining"
+        slope < 0.1f -> "Improving"
+        else -> "Stable"
+    }
+
+    val summary = when (direction) {
+        "Declining" -> "Battery is discharging rapidly. High background activity detected."
+        "Improving" -> "Battery drain is minimal. Device is in an optimal state."
+        else -> "Battery drain is at a normal, stable rate."
+    }
+
+    val topContributors = mutableListOf<String>()
+    if (processReport.isNotBlank()) {
+        val pLines = processReport.split("\n")
+        var count = 0
+        for (p in pLines) {
+            if (p.contains(Regex("\\d+%"))) { // very basic heuristic for CPU/Mem line
+                val clean = p.trim().replace(Regex("\\s+"), " ")
+                topContributors.add(clean)
+                count++
+                if (count >= 3) break
+            }
+        }
+    }
+    if (topContributors.isEmpty()) topContributors.add("No significant background drains detected.")
+
+    val recommendations = mutableListOf<String>()
+    if (direction == "Declining") {
+        recommendations.add("Switch to PowerSave or Battery profile.")
+        recommendations.add("Clear background apps.")
+    } else {
+        recommendations.add("Continue normal usage.")
+    }
+
+    return TrendInsights(summary, direction, topContributors, recommendations, conf)
+}
 
 @Composable
 fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) {
@@ -55,7 +127,9 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
 @Composable
 fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
+    val processReport by ComposeState.currentProcessReport
     val chartEntryModelProducer = remember { ChartEntryModelProducer() }
+    var showTrendReads by remember { mutableStateOf(false) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
@@ -83,22 +157,23 @@ fun BatteryChartTab(mainActions: MainActions) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("BATTERY DISCHARGE TREND", style = MaterialTheme.typography.labelSmall)
-            Button(onClick = { 
-                mainActions.exportCsv()
-            }) {
-                Text("Export CSV")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { showTrendReads = true }) {
+                    Text("Trend Reads")
+                }
+                OutlinedButton(onClick = { mainActions.exportCsv() }) {
+                    Text("Export")
+                }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
         BentoCard(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
                 if (csvData.isEmpty()) {
-                    Text("No battery data available. Wait for a few minutes.", color = Color.Gray)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text("No battery data available. Wait for a few minutes.", color = Color.Gray)
+                    }
                 } else {
-                    val marker = com.patrykandpatrick.vico.compose.component.shapeComponent(
-                        shape = com.patrykandpatrick.vico.core.component.shape.Shapes.pillShape,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                     Chart(
                         chart = lineChart(
                             lines = listOf(
@@ -112,22 +187,75 @@ fun BatteryChartTab(mainActions: MainActions) {
                         ),
                         chartModelProducer = chartEntryModelProducer,
                         startAxis = rememberStartAxis(
-                            label = com.patrykandpatrick.vico.compose.component.textComponent(color = MaterialTheme.colorScheme.onSurface),
-                            axis = null,
-                            tick = null,
-                            guideline = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                            label = com.patrykandpatrick.vico.compose.component.textComponent(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textSize = 10.sp
+                            ),
+                            axis = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
+                            tick = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
+                            guideline = com.patrykandpatrick.vico.compose.component.lineComponent(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), 
+                                thickness = 1.dp
+                            ),
+                            valueFormatter = { value, _ -> "${value.toInt()}%" }
                         ),
                         bottomAxis = rememberBottomAxis(
-                            label = com.patrykandpatrick.vico.compose.component.textComponent(color = MaterialTheme.colorScheme.onSurface),
-                            axis = null,
-                            tick = null,
-                            guideline = null
+                            label = com.patrykandpatrick.vico.compose.component.textComponent(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textSize = 10.sp
+                            ),
+                            axis = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
+                            tick = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
+                            guideline = null,
+                            valueFormatter = { value, _ -> "${value.toInt()}m" }
                         ),
                         modifier = Modifier.fillMaxSize()
                     )
                 }
             }
         }
+    }
+
+    if (showTrendReads) {
+        val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
+        AlertDialog(
+            onDismissRequest = { showTrendReads = false },
+            title = { Text("Trend Reads Insights") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TrendSection("Summary", insights.summary)
+                    TrendSection("Direction", insights.direction, color = when(insights.direction) {
+                        "Improving" -> Color(0xFF4CAF50)
+                        "Declining" -> Color(0xFFF44336)
+                        else -> MaterialTheme.colorScheme.onSurface
+                    })
+                    TrendSection("Confidence", insights.confidence)
+                    
+                    Text("Key Contributors", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    insights.contributors.forEach { c ->
+                        Text("• $c", style = MaterialTheme.typography.bodySmall)
+                    }
+                    
+                    Text("Recommendations", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    insights.recommendations.forEach { r ->
+                        Text("• $r", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTrendReads = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun TrendSection(title: String, content: String, color: Color = MaterialTheme.colorScheme.onSurface) {
+    Column {
+        Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+        Text(content, style = MaterialTheme.typography.bodyMedium, color = color)
     }
 }
 

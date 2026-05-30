@@ -95,6 +95,15 @@ fun RulesScreenUI(showSnackbar: (String) -> Unit) {
 
 @Composable
 fun RuleCard(rule: RuleEntity, onToggle: (Boolean) -> Unit) {
+    val displayCond = when(rule.conditionType) {
+        "battery_level" -> "Battery Level (%)"
+        "app_launched" -> "App Launched"
+        else -> rule.conditionType
+    }
+    val displayAction = when(rule.actionType) {
+        "set_profile" -> "Switch Profile"
+        else -> rule.actionType
+    }
     BentoCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -102,9 +111,9 @@ fun RuleCard(rule: RuleEntity, onToggle: (Boolean) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("IF ${rule.conditionType.uppercase()} = ${rule.conditionValue}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text("IF ${displayCond.uppercase()} = ${rule.conditionValue}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("THEN ${rule.actionType.uppercase()} = ${rule.actionValue}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Text("THEN ${displayAction.uppercase()} = ${rule.actionValue}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
             }
             Switch(
                 checked = rule.isEnabled,
@@ -125,65 +134,94 @@ fun AddRuleDialog(
     var actionType by remember { mutableStateOf("set_profile") }
     var actionValue by remember { mutableStateOf("battery") }
 
+    val conditionDisplay = when(conditionType) {
+        "battery_level" -> "Battery Level (%)"
+        "app_launched" -> "App Launched"
+        else -> conditionType
+    }
+
+    val actionDisplay = when(actionType) {
+        "set_profile" -> "Switch Profile"
+        else -> actionType
+    }
+
+    val conditionInfo = when(conditionType) {
+        "battery_level" -> "What: Triggers when your battery drops below the set percentage.\nWhy: Automate battery savings.\nExample: 20"
+        "app_launched" -> "What: Triggers when a specific app is opened.\nWhy: Boost performance for games.\nExample: com.tencent.ig"
+        else -> ""
+    }
+
+    val actionInfo = when(actionType) {
+        "set_profile" -> "What: Changes the system performance mode.\nWhy: Adapts to your usage.\nExample: battery, performance, balanced"
+        else -> ""
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Rule") },
+        title = { Text("Create Automation Rule") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Condition", style = MaterialTheme.typography.labelSmall)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    var conditionExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = conditionExpanded,
-                        onExpandedChange = { conditionExpanded = !conditionExpanded },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        OutlinedTextField(
-                            value = conditionType,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = conditionExpanded) },
-                            modifier = Modifier.menuAnchor()
-                        )
-                        ExposedDropdownMenu(expanded = conditionExpanded, onDismissRequest = { conditionExpanded = false }) {
-                            DropdownMenuItem(text = { Text("battery_level") }, onClick = { conditionType = "battery_level"; conditionExpanded = false })
-                            DropdownMenuItem(text = { Text("app_launched") }, onClick = { conditionType = "app_launched"; conditionExpanded = false })
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("WHEN (Condition)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        var conditionExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = conditionExpanded,
+                            onExpandedChange = { conditionExpanded = !conditionExpanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = conditionDisplay,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = conditionExpanded) },
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(expanded = conditionExpanded, onDismissRequest = { conditionExpanded = false }) {
+                                DropdownMenuItem(text = { Text("Battery Level (%)") }, onClick = { conditionType = "battery_level"; conditionExpanded = false })
+                                DropdownMenuItem(text = { Text("App Launched") }, onClick = { conditionType = "app_launched"; conditionExpanded = false })
+                            }
                         }
+                        OutlinedTextField(
+                            value = conditionValue,
+                            onValueChange = { conditionValue = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Value") }
+                        )
                     }
-                    OutlinedTextField(
-                        value = conditionValue,
-                        onValueChange = { conditionValue = it },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Value") }
-                    )
+                    Text(conditionInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                
+                HorizontalDivider()
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Action", style = MaterialTheme.typography.labelSmall)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    var actionExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = actionExpanded,
-                        onExpandedChange = { actionExpanded = !actionExpanded },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        OutlinedTextField(
-                            value = actionType,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionExpanded) },
-                            modifier = Modifier.menuAnchor()
-                        )
-                        ExposedDropdownMenu(expanded = actionExpanded, onDismissRequest = { actionExpanded = false }) {
-                            DropdownMenuItem(text = { Text("set_profile") }, onClick = { actionType = "set_profile"; actionExpanded = false })
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("THEN (Action)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        var actionExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = actionExpanded,
+                            onExpandedChange = { actionExpanded = !actionExpanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = actionDisplay,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionExpanded) },
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(expanded = actionExpanded, onDismissRequest = { actionExpanded = false }) {
+                                DropdownMenuItem(text = { Text("Switch Profile") }, onClick = { actionType = "set_profile"; actionExpanded = false })
+                            }
                         }
+                        OutlinedTextField(
+                            value = actionValue,
+                            onValueChange = { actionValue = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Value") }
+                        )
                     }
-                    OutlinedTextField(
-                        value = actionValue,
-                        onValueChange = { actionValue = it },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Value") }
-                    )
+                    Text(actionInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         },

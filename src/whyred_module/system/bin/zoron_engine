@@ -776,7 +776,7 @@ kill_background() {
             cmdline=$(cat "$pid_dir/cmdline" 2>/dev/null | tr '\0' ' ')
             # Skip essential processes
             case "$cmdline" in
-                *systemui*|*launcher*|*inputmethod*|*system_server*|*zygote*|*servicemanager*) continue ;;
+                *systemui*|*launcher*|*inputmethod*|*system_server*|*zygote*|*servicemanager*|*com.zoron.whyred*) continue ;;
             esac
             # Skip foreground app
             if [ -n "$fg_pkg" ]; then

@@ -1,5 +1,11 @@
 # Zoron Changelog
 
+## v4.5.5
+- **UX Enhancements**: Redesigned Rule Creation Dialog with human-readable labels, contextual hints, and examples.
+- **Trend Reads (Analytics)**: Introduced a dynamic algorithmic parser for Battery and Process analytics that generates human-readable insights, summaries, and recommendations directly within the app.
+- **Analytics Charts**: Fixed blank chart rendering issues and added contextual markers/axes for Battery Discharge Trends.
+- **Backend Optimization**: Exempted the Zoron Controller app (`com.zoron.whyred`) from the engine's aggressive background killer in extreme and restricted modes, ensuring stable operation.
+
 ## v4.5.4
 - **Backend Optimizations**: Fixed engine validation logic to prevent false FAILs for zRAM and I/O schedulers. Added support for fallback schedulers (`mq-deadline`, `kyber`, `bfq`).
 - **Engine FastPath**: Reduced redundant engine reapplication loops by utilizing FastPath for burst optimizations.
