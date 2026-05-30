@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.6",
-  "versionCode": 40,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.6/zoron_v4.5.6.zip",
-  "changelog": "v4.5.6:\n- UI: Decluttered the Analytics header by rendering smart insights inline.\n- Analytics: Implemented dynamic chart axis scaling for improved trend visibility."
+  "version": "v4.5.7",
+  "versionCode": 41,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.7/zoron_v4.5.7.zip",
+  "changelog": "v4.5.7:\n- UI: Redesigned Learn -> Modes into a Lottie-powered blog-style documentation experience.\n- UI: Integrated Floating Navigation bar.\n- Settings: Added in-app Changelog viewer with OTA metadata integration."
 }

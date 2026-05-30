@@ -27,8 +27,8 @@ android {
         applicationId "com.zoron.whyred"
         minSdk 24
         targetSdk 34
-        versionCode 40
-        versionName "v4.5.6"
+        versionCode 41
+        versionName "v4.5.7"
     }
 
     buildTypes {
@@ -83,4 +83,5 @@ dependencies {
     implementation 'androidx.compose.material:material-icons-extended'
     implementation("com.patrykandpatrick.vico:compose:1.14.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
 }

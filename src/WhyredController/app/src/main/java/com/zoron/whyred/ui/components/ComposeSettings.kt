@@ -132,6 +132,23 @@ fun SettingsScreenUI(
                 }
             }
         }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("WHAT'S NEW", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
+
+        BentoCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val changelog by ComposeState.otaChangelog
+                if (changelog.isNotEmpty()) {
+                    Text(text = "Release Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = changelog, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text(text = "Tap 'Check for Updates' to fetch the latest release notes.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(100.dp)) // Floating nav padding
     }
 }
 
@@ -152,7 +169,7 @@ fun SettingToggle(title: String, subtitle: String, checked: Boolean, onCheckedCh
 
 @Composable
 fun SettingDropdown(title: String, subtitle: String, options: List<String>, selectedOption: String, onOptionSelected: (String) -> Unit) {
-    var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
