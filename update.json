@@ -2,5 +2,5 @@
   "version": "v4.5.6",
   "versionCode": 40,
   "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.6/zoron_v4.5.6.zip",
-  "changelog": "v4.5.6:\n- Backend: Fixed engine validation false FAILs, scheduler fallbacks, and fastpath reapplication loops.\n- UI: Migrated Rule Management and OTA Updater completely to Compose Material You.\n- Features: Added GPU Governor selection and detailed impact explanations.\n- Analytics: Implemented Export actions (CSV, Logs, Process Report) directly to the Downloads folder."
+  "changelog": "v4.5.6:\n- UI: Decluttered the Analytics header by rendering smart insights inline.\n- Analytics: Implemented dynamic chart axis scaling for improved trend visibility."
 }
