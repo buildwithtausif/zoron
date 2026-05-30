@@ -154,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
         // Check for OTA updates automatically on start
         OTAUpdater.checkUpdates(this, false);
         migrateLegacyBatteryData();
+        fetchAvailableGovernors();
 
         // Autopilot Service runs persistently to handle dynamic video boosts
         if (hasUsageStatsPermission()) {
@@ -200,6 +201,32 @@ public class MainActivity extends AppCompatActivity {
 
         // Staggered entry animations
         animateStaggeredEntry();
+    }
+
+    private void fetchAvailableGovernors() {
+        new Thread(() -> {
+            // CPU Governors
+            Shell.Result cpuGovResult = Shell.cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors").exec();
+            if (cpuGovResult.isSuccess() && !cpuGovResult.getOut().isEmpty()) {
+                String out = cpuGovResult.getOut().get(0);
+                List<String> govs = java.util.Arrays.asList(out.split(" "));
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getAvailableCpuGovernors().setValue(govs);
+            }
+
+            // GPU Governors (check kgsl-3d0 first, fallback to wildcard devfreq if empty)
+            Shell.Result gpuGovResult = Shell.cmd(
+                "if [ -f /sys/class/kgsl/kgsl-3d0/devfreq/available_governors ]; then",
+                "  cat /sys/class/kgsl/kgsl-3d0/devfreq/available_governors",
+                "else",
+                "  cat /sys/class/devfreq/*/available_governors 2>/dev/null | head -n 1",
+                "fi"
+            ).exec();
+            if (gpuGovResult.isSuccess() && !gpuGovResult.getOut().isEmpty()) {
+                String out = gpuGovResult.getOut().get(0);
+                List<String> govs = java.util.Arrays.asList(out.split(" "));
+                com.zoron.whyred.ui.ComposeState.INSTANCE.getAvailableGpuGovernors().setValue(govs);
+            }
+        }).start();
     }
 
     @Override

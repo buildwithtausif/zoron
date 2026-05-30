@@ -36,27 +36,35 @@ data class TrendInsights(
 
 fun generateTrendRead(csvData: String, processReport: String): TrendInsights {
     val lines = csvData.trim().split("\n")
+    if (lines.size < 2 || csvData.isEmpty()) {
+        return TrendInsights(
+            summary = "Insufficient data available for analysis.",
+            direction = "N/A",
+            contributors = listOf("Not enough data to determine contributors."),
+            recommendations = listOf("Please wait for more data to be collected."),
+            confidence = "Low"
+        )
+    }
+
     var slope = 0f
     var conf = "Low"
     
-    if (lines.size > 2) {
-        try {
-            val first = lines.first().split(",")
-            val last = lines.last().split(",")
-            if (first.size >= 2 && last.size >= 2) {
-                val t1 = first[0].toLong()
-                val l1 = first[1].toFloat()
-                val t2 = last[0].toLong()
-                val l2 = last[1].toFloat()
-                
-                val dt = (t2 - t1) / 60f // minutes
-                if (dt > 0) {
-                    slope = (l1 - l2) / dt // drop per minute
-                    conf = if (lines.size > 10 && dt > 5) "High" else "Medium"
-                }
+    try {
+        val first = lines.first().split(",")
+        val last = lines.last().split(",")
+        if (first.size >= 2 && last.size >= 2) {
+            val t1 = first[0].toLong()
+            val l1 = first[1].toFloat()
+            val t2 = last[0].toLong()
+            val l2 = last[1].toFloat()
+            
+            val dt = (t2 - t1) / 60f // minutes
+            if (dt > 0) {
+                slope = (l1 - l2) / dt // drop per minute
+                conf = if (lines.size > 10 && dt > 5) "High" else "Medium"
             }
-        } catch (e: Exception) {}
-    }
+        }
+    } catch (e: Exception) {}
 
     val direction = when {
         slope > 0.5f -> "Declining"
@@ -131,6 +139,7 @@ fun BatteryChartTab(mainActions: MainActions) {
     val chartEntryModelProducer = remember { ChartEntryModelProducer() }
     var minY by remember { mutableStateOf(0f) }
     var maxY by remember { mutableStateOf(100f) }
+    var validEntriesCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
@@ -153,11 +162,14 @@ fun BatteryChartTab(mainActions: MainActions) {
                     } catch (e: Exception) {}
                 }
             }
-            if (entries.isNotEmpty()) {
+            validEntriesCount = entries.size
+            if (entries.size >= 2) {
                 chartEntryModelProducer.setEntries(entries)
                 minY = (minL - 2f).coerceAtLeast(0f)
                 maxY = (maxL + 2f).coerceAtMost(100f)
             }
+        } else {
+            validEntriesCount = 0
         }
     }
 
@@ -171,9 +183,9 @@ fun BatteryChartTab(mainActions: MainActions) {
         Spacer(modifier = Modifier.height(8.dp))
         BentoCard(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-                if (csvData.isEmpty()) {
+                if (validEntriesCount < 2) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text("No battery data available. Wait for a few minutes.", color = Color.Gray)
+                        Text(if (csvData.isEmpty()) "Loading battery data..." else "Insufficient data available for analysis. Waiting for more data...", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 } else {
                     Chart(
@@ -219,32 +231,30 @@ fun BatteryChartTab(mainActions: MainActions) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         
-        if (csvData.isNotEmpty()) {
-            val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
-            Text("TREND INSIGHTS", style = MaterialTheme.typography.labelSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            BentoCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TrendSection("Summary", insights.summary)
-                    TrendSection("Direction", insights.direction, color = when(insights.direction) {
-                        "Improving" -> Color(0xFF4CAF50)
-                        "Declining" -> Color(0xFFF44336)
-                        else -> MaterialTheme.colorScheme.onSurface
-                    })
-                    TrendSection("Confidence", insights.confidence)
-                    
-                    Text("Key Contributors", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Column {
-                        insights.contributors.forEach { c ->
-                            Text("• $c", style = MaterialTheme.typography.bodySmall)
-                        }
+        val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
+        Text("TREND INSIGHTS", style = MaterialTheme.typography.labelSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        BentoCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TrendSection("Summary", insights.summary)
+                TrendSection("Direction", insights.direction, color = when(insights.direction) {
+                    "Improving" -> Color(0xFF4CAF50)
+                    "Declining" -> Color(0xFFF44336)
+                    else -> MaterialTheme.colorScheme.onSurface
+                })
+                TrendSection("Confidence", insights.confidence)
+                
+                Text("Key Contributors", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Column {
+                    insights.contributors.forEach { c ->
+                        Text("• $c", style = MaterialTheme.typography.bodySmall)
                     }
-                    
-                    Text("Recommendations", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Column {
-                        insights.recommendations.forEach { r ->
-                            Text("• $r", style = MaterialTheme.typography.bodySmall)
-                        }
+                }
+                
+                Text("Recommendations", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Column {
+                    insights.recommendations.forEach { r ->
+                        Text("• $r", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

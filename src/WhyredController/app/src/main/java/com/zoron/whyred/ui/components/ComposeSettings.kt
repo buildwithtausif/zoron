@@ -25,9 +25,7 @@ fun SettingsScreenUI(
     var adaptive by remember { mutableStateOf(ComposeState.adaptiveLearningEnabled.value) }
     var devMode by remember { mutableStateOf(ComposeState.developerModeEnabled.value) }
     var zipExport by remember { mutableStateOf(ComposeState.zipExportEnabled.value) }
-    
-    val gpuGovernors = listOf("msm-adreno-tz", "performance", "simple_ondemand", "powersave")
-    var selectedGpuGovernor by remember { mutableStateOf(gpuGovernors[0]) } // You would load from SharedPreferences ideally
+    val rulesActive by ComposeState.rulesActive
 
     Column(
         modifier = Modifier
@@ -68,17 +66,57 @@ fun SettingsScreenUI(
                     }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                SettingDropdown(
-                    title = "GPU Governor",
-                    subtitle = "Select default GPU governor",
-                    options = gpuGovernors,
-                    selectedOption = selectedGpuGovernor,
-                    onOptionSelected = {
-                        selectedGpuGovernor = it
-                        mainActions?.setPreferenceString("gpu_governor", it)
-                        showSnackbar("GPU Governor set to $it")
-                    }
-                )
+                
+                val cpuGovernors = ComposeState.availableCpuGovernors.value
+                val selectedCpuGovernor by ComposeState.cpuGovernor
+                if (cpuGovernors.isNotEmpty()) {
+                    SettingDropdown(
+                        title = "CPU Governor",
+                        subtitle = "Select default CPU governor",
+                        options = cpuGovernors,
+                        selectedOption = if (cpuGovernors.contains(selectedCpuGovernor)) selectedCpuGovernor else cpuGovernors[0],
+                        onOptionSelected = {
+                            ComposeState.cpuGovernor.value = it
+                            mainActions?.setPreferenceString("cpu_governor", it)
+                            showSnackbar("CPU Governor set to $it")
+                        }
+                    )
+                } else {
+                    SettingDropdown(
+                        title = "CPU Governor",
+                        subtitle = "Unsupported by device",
+                        options = listOf(),
+                        selectedOption = "Unsupported",
+                        onOptionSelected = {}
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                
+                val gpuGovernors = ComposeState.availableGpuGovernors.value
+                var selectedGpuGovernor by remember { mutableStateOf(if (gpuGovernors.isNotEmpty()) gpuGovernors[0] else "") }
+                
+                if (gpuGovernors.isNotEmpty()) {
+                    SettingDropdown(
+                        title = "GPU Governor",
+                        subtitle = "Select default GPU governor",
+                        options = gpuGovernors,
+                        selectedOption = if (selectedGpuGovernor.isNotEmpty() && gpuGovernors.contains(selectedGpuGovernor)) selectedGpuGovernor else gpuGovernors[0],
+                        onOptionSelected = {
+                            selectedGpuGovernor = it
+                            mainActions?.setPreferenceString("gpu_governor", it)
+                            showSnackbar("GPU Governor set to $it")
+                        }
+                    )
+                } else {
+                    SettingDropdown(
+                        title = "GPU Governor",
+                        subtitle = "Unsupported by device",
+                        options = listOf(),
+                        selectedOption = "Unsupported",
+                        onOptionSelected = {}
+                    )
+                }
             }
         }
         

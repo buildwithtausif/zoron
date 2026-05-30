@@ -6,6 +6,8 @@ object ComposeState {
     val powerState = mutableStateOf("DETECTING...")
     val profile = mutableStateOf("Unknown")
     val cpuGovernor = mutableStateOf("Unknown")
+    val availableCpuGovernors = mutableStateOf(listOf<String>())
+    val availableGpuGovernors = mutableStateOf(listOf<String>())
     val batteryHealth = mutableStateOf("98%")
     val rulesActive = mutableStateOf("3 Active")
     val optimizationScore = mutableStateOf(85)

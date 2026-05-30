@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.7",
-  "versionCode": 41,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.7/zoron_v4.5.7.zip",
-  "changelog": "v4.5.7:\n- UI: Redesigned Learn -> Modes into a Lottie-powered blog-style documentation experience.\n- UI: Integrated Floating Navigation bar.\n- Settings: Added in-app Changelog viewer with OTA metadata integration."
+  "version": "v4.5.8",
+  "versionCode": 42,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.8/zoron_v4.5.8.zip",
+  "changelog": "v4.5.8:\n- Core: Dynamic Device Support - Detects CPU/GPU governors directly from kernel runtime with fallback detection.\n- Analytics: Critical Fix - Resolved blank chart rendering issue when data points are insufficient.\n- Analytics: Trend Insights now accurately handles and reports insufficient data states."
 }
