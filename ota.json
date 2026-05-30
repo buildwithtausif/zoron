@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.10",
-  "versionCode": 44,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.10/zoron_v4.5.10.zip",
-  "changelog": "v4.5.10:\n- Fix: Resolved a crash in the Analytics tab caused by charting library rejecting identical timestamps."
+  "version": "v4.5.11",
+  "versionCode": 45,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.11/zoron_v4.5.11.zip",
+  "changelog": "v4.5.11:\n- Analytics Fix: Refactored Vico chart async model loading to fix empty model crashes permanently.\n- UI Redesign: Transformed Settings changelog into a dedicated 'What's New' screen parsed dynamically from OTA metadata.\n- Documentation: Overhauled 'Learn Hub' with 100% factual data retrieved from backend script reverse-engineering (Fastpath, Intent Engine, Rule Engine, etc.), adding a new Table of Contents for rapid navigation."
 }

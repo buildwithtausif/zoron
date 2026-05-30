@@ -16,6 +16,7 @@ import com.zoron.whyred.ui.components.ComposeHome
 import com.zoron.whyred.ui.components.SettingsScreenUI
 import com.zoron.whyred.ui.components.ModeLearnScreenUI
 import com.zoron.whyred.ui.components.OTADialogUI
+import com.zoron.whyred.ui.components.WhatsNewScreenUI
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -134,9 +135,11 @@ fun ZoronAppNavigation(
                     isAutoPilotEnabled = ComposeState.autopilotEnabled.value,
                     onCheckUpdate = { mainActions.checkUpdates() },
                     mainActions = mainActions,
-                    showSnackbar = showSnackbar
+                    showSnackbar = showSnackbar,
+                    onNavigateToWhatsNew = { navController.navigate("whatsnew") }
                 ) 
             }
+            composable("whatsnew") { WhatsNewScreenUI(onNavigateBack = { navController.popBackStack() }) }
         }
     }
 }

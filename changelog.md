@@ -1,5 +1,11 @@
 # Zoron Changelog
 
+## v4.5.11
+- **Analytics Fix**: Refactored Vico chart async model loading to fix empty model crashes permanently and handle invalid rendering gracefully.
+- **UI Redesign**: Transformed Settings changelog into a dedicated 'What's New' screen parsed dynamically from OTA metadata.
+- **Documentation**: Overhauled 'Learn Hub' with 100% factual data retrieved from backend script reverse-engineering (Fastpath, Intent Engine, Rule Engine, etc.), adding a new Table of Contents for rapid navigation.
+
+
 ## v4.5.10
 - **Analytics Fix**: Resolved a crash in the Analytics tab caused by the charting library rejecting identical timestamps when processing battery telemetry.
 

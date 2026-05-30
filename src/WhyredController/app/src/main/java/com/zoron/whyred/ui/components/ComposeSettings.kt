@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import com.zoron.whyred.ui.ComposeState
 import com.zoron.whyred.ui.MainActions
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 
 @Composable
 fun SettingsScreenUI(
@@ -19,7 +21,8 @@ fun SettingsScreenUI(
     isAutoPilotEnabled: Boolean,
     onCheckUpdate: () -> Unit,
     mainActions: MainActions? = null,
-    showSnackbar: (String) -> Unit
+    showSnackbar: (String) -> Unit,
+    onNavigateToWhatsNew: () -> Unit
 ) {
     var fastpath by remember { mutableStateOf(ComposeState.fastpathEnabled.value) }
     var adaptive by remember { mutableStateOf(ComposeState.adaptiveLearningEnabled.value) }
@@ -174,16 +177,17 @@ fun SettingsScreenUI(
         Spacer(modifier = Modifier.height(16.dp))
         Text("WHAT'S NEW", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
 
-        BentoCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                val changelog by ComposeState.otaChangelog
-                if (changelog.isNotEmpty()) {
-                    Text(text = "Release Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = changelog, style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    Text(text = "Loading release history...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        BentoCard(modifier = Modifier.fillMaxWidth().clickable { onNavigateToWhatsNew() }) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(text = "Release Notes & History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    Text(text = "View changes, fixes, and new features", style = MaterialTheme.typography.bodyMedium)
                 }
+                Icon(Icons.Filled.ChevronRight, contentDescription = "View", tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

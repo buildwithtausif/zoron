@@ -20,7 +20,8 @@ import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
-import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
+import com.patrykandpatrick.vico.core.entry.ChartEntryModel
+import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.zoron.whyred.ui.ComposeState
 import com.zoron.whyred.ui.MainActions
@@ -136,10 +137,9 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
 fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
     val processReport by ComposeState.currentProcessReport
-    val chartEntryModelProducer = remember { ChartEntryModelProducer() }
+    var chartModel by remember { mutableStateOf<ChartEntryModel?>(null) }
     var minY by remember { mutableStateOf(0f) }
     var maxY by remember { mutableStateOf(100f) }
-    var validEntriesCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
@@ -164,14 +164,15 @@ fun BatteryChartTab(mainActions: MainActions) {
                     } catch (e: Exception) {}
                 }
             }
-            validEntriesCount = entries.size
             if (entries.size >= 2) {
-                chartEntryModelProducer.setEntries(entries)
+                chartModel = entryModelOf(entries)
                 minY = (minL - 2f).coerceAtLeast(0f)
                 maxY = (maxL + 2f).coerceAtMost(100f)
+            } else {
+                chartModel = null
             }
         } else {
-            validEntriesCount = 0
+            chartModel = null
         }
     }
 
@@ -185,7 +186,7 @@ fun BatteryChartTab(mainActions: MainActions) {
         Spacer(modifier = Modifier.height(8.dp))
         BentoCard(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-                if (validEntriesCount < 2) {
+                if (chartModel == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                         Text(if (csvData.isEmpty()) "Loading battery data..." else "Insufficient data available for analysis. Waiting for more data...", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
@@ -202,7 +203,7 @@ fun BatteryChartTab(mainActions: MainActions) {
                                 )
                             )
                         ),
-                        chartModelProducer = chartEntryModelProducer,
+                        model = chartModel!!,
                         startAxis = rememberStartAxis(
                             label = com.patrykandpatrick.vico.compose.component.textComponent(
                                 color = MaterialTheme.colorScheme.onSurface,
