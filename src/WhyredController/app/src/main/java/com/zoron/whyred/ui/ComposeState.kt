@@ -34,6 +34,7 @@ object ComposeState {
     val otaDownloadProgress = mutableStateOf(0f)
     val otaFlashing = mutableStateOf(false)
     val otaFlashResult = mutableStateOf("")
+    val otaFlashSuccess = mutableStateOf(false)
     val showOtaDialog = mutableStateOf(false)
 }
 

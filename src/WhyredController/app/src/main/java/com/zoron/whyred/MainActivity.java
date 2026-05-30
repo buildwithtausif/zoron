@@ -949,35 +949,6 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    // ==================== PROCESS REPORT EXPORT ====================
-
-    private void exportProcessReport() {
-        new Thread(() -> {
-            String reportData = getFileContent("/data/local/tmp/zoron/process_report.txt", "");
-            if (reportData.trim().isEmpty()) {
-                runOnUiThread(() -> Toast.makeText(this, "No process data to export", Toast.LENGTH_SHORT).show());
-                return;
-            }
-
-            try {
-                File exportFile = new File(getExternalCacheDir(), "zoron_process_report.txt");
-                FileWriter writer = new FileWriter(exportFile);
-                writer.write(reportData);
-                writer.close();
-
-                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("text/plain");
-                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Process Report Export");
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Process Report")));
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
-    }
-
     // ==================== FOREGROUND SERVICE ====================
 
     private void startZoronService() {
