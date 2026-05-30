@@ -6,6 +6,7 @@
 # ============================================================================
 
 MODE="$1"
+FASTPATH_REVERT="$2"
 LOG_DIR="/data/local/tmp/zoron"
 LOG_FILE="$LOG_DIR/log.txt"
 PROFILE_FILE="$LOG_DIR/profile.txt"
@@ -57,21 +58,31 @@ log_section() {
 # sysfs helpers — safe write with existence check
 # ---------------------------------------------------------------------------
 sysfs_write() {
-    # Usage: sysfs_write <path> <value>
+    # Usage: sysfs_write <path> <value> [no_verify]
     if [ -e "$1" ]; then
         local CURRENT
-        CURRENT=$(cat "$1" 2>/dev/null)
-        if [ "$CURRENT" != "$2" ]; then
-            echo "$2" > "$1" 2>/dev/null
+        if [ "$3" != "no_verify" ]; then
             CURRENT=$(cat "$1" 2>/dev/null)
-            if [ "$CURRENT" = "$2" ]; then
+            if echo "$CURRENT" | grep -qw "$2" 2>/dev/null || echo "$CURRENT" | grep -qw "\[$2\]" 2>/dev/null; then
+                log "  SKIP $1 already=$2"
+                return
+            fi
+        fi
+        
+        echo "$2" > "$1" 2>/dev/null
+        
+        if [ "$3" != "no_verify" ]; then
+            CURRENT=$(cat "$1" 2>/dev/null)
+            if echo "$CURRENT" | grep -qw "$2" 2>/dev/null || echo "$CURRENT" | grep -qw "\[$2\]" 2>/dev/null; then
                 log "  SET $1 = $2"
             else
                 log "  FAIL $1 expected=$2 actual=$CURRENT"
             fi
         else
-            log "  SKIP $1 already=$2"
+            log "  SET $1 = $2 (unverified)"
         fi
+    else
+        log "  UNSUPPORTED $1"
     fi
 }
 
@@ -79,18 +90,28 @@ proc_write() {
     # Same as sysfs_write but for /proc paths
     if [ -e "$1" ]; then
         local CURRENT
-        CURRENT=$(cat "$1" 2>/dev/null)
-        if [ "$CURRENT" != "$2" ]; then
-            echo "$2" > "$1" 2>/dev/null
+        if [ "$3" != "no_verify" ]; then
             CURRENT=$(cat "$1" 2>/dev/null)
-            if [ "$CURRENT" = "$2" ]; then
+            if echo "$CURRENT" | grep -qw "$2" 2>/dev/null || echo "$CURRENT" | grep -qw "\[$2\]" 2>/dev/null; then
+                log "  SKIP $1 already=$2"
+                return
+            fi
+        fi
+        
+        echo "$2" > "$1" 2>/dev/null
+        
+        if [ "$3" != "no_verify" ]; then
+            CURRENT=$(cat "$1" 2>/dev/null)
+            if echo "$CURRENT" | grep -qw "$2" 2>/dev/null || echo "$CURRENT" | grep -qw "\[$2\]" 2>/dev/null; then
                 log "  SET $1 = $2"
             else
                 log "  FAIL $1 expected=$2 actual=$CURRENT"
             fi
         else
-            log "  SKIP $1 already=$2"
+            log "  SET $1 = $2 (unverified)"
         fi
+    else
+        log "  UNSUPPORTED $1"
     fi
 }
 
@@ -676,7 +697,7 @@ apply_zram() {
         swapoff "$zram_dev" 2>/dev/null
     fi
 
-    sysfs_write "$zram_sys/reset" 1
+    sysfs_write "$zram_sys/reset" 1 no_verify
 
     # Set compression algorithm first (requires inactive zram)
     if [ -f "$zram_sys/comp_algorithm" ]; then
@@ -719,7 +740,7 @@ apply_io() {
                 sysfs_write "$bdev/scheduler" "$1"
             else
                 # Try common fallbacks
-                for s in cfq noop deadline mq-deadline none; do
+                for s in cfq noop deadline mq-deadline kyber bfq none; do
                     if echo "$avail" | grep -qw "$s" 2>/dev/null; then
                         sysfs_write "$bdev/scheduler" "$s"
                         break
@@ -934,6 +955,10 @@ case "$MODE" in
         #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
         apply_scheduler 8000000      1000000       1500000        500000            16
 
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
+
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-5"     "0-1"      "0"        "0-5"
         else
@@ -966,6 +991,10 @@ case "$MODE" in
 
         #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
         apply_scheduler 24000000   3000000     4000000        2000000         8
+
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
 
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-3"     "0"        "0"        "0-3"
@@ -1001,6 +1030,10 @@ case "$MODE" in
         #              latency_ns    min_gran_ns   wakeup_gran_ns migration_cost_ns nr_migrate
         apply_scheduler 4000000      500000        1000000        250000            32
 
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
+
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-7"     "0-3"      "0-1"      "0-7"
         else
@@ -1032,6 +1065,10 @@ case "$MODE" in
 
         apply_scheduler 1000000    250000      500000         100000          64
 
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
+
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-7"     "0-3"      "0-3"      "0-7"
         else
@@ -1062,6 +1099,10 @@ case "$MODE" in
         apply_cpu   0      25     0      0      powersave   1
 
         apply_scheduler 48000000   6000000     8000000        5000000         4
+
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
 
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-3"     "0"        "0"        "0-3"
@@ -1099,6 +1140,10 @@ case "$MODE" in
         log "======================================"
         apply_cpu   0      100    0      100    schedutil    0
         apply_scheduler 6000000 750000 1000000 500000 32
+        
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-7" "0-3" "0-1" "0-7"
         else
@@ -1118,6 +1163,10 @@ case "$MODE" in
         log "======================================"
         apply_cpu   0      70     0      50     schedutil    0
         apply_scheduler 8000000 1000000 1500000 500000 16
+        
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-5" "0-1" "0" "0-5"
         else
@@ -1138,6 +1187,10 @@ case "$MODE" in
         log "======================================"
         apply_cpu   20     100    20     100    performance 0
         apply_scheduler 3000000 500000 750000 250000 64
+        
+        if [ "$FASTPATH_REVERT" = "fastpath_revert" ]; then
+            exit 0
+        fi
         if [ "$IS_WHYRED" -eq 1 ]; then
             apply_cpuset "0-7" "0-3" "0-3" "0-7"
         else

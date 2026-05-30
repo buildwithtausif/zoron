@@ -1,13 +1,11 @@
 package com.zoron.whyred;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.Toast;
 
 import com.topjohnwu.superuser.Shell;
+import com.zoron.whyred.ui.ComposeState;
 
 import org.json.JSONObject;
 
@@ -21,9 +19,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class OTAUpdater {
-    // Official GitHub Raw URL for the unified module update
     private static final String OTA_URL = "https://raw.githubusercontent.com/buildwithtausif/zoron/main/update.json";
-    // Version code is now read dynamically from BuildConfig (generated from build.gradle)
 
     public static void checkUpdates(Activity activity, boolean manualCheck) {
         new Thread(() -> {
@@ -48,50 +44,35 @@ public class OTAUpdater {
                 
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (latestVersionCode > BuildConfig.VERSION_CODE) {
-                        boolean isRoot = activity.getSharedPreferences("ZoronSettings", android.content.Context.MODE_PRIVATE).getBoolean("is_root", false);
-                        if (isRoot) {
-                            new AlertDialog.Builder(activity)
-                                .setTitle("Update Available: " + latestVersionName)
-                                .setMessage("A new Magisk Module update is available!\n\n" + changelogText + "\n\nThis will automatically download and flash the module, including the latest app update.")
-                                .setPositiveButton("Download & Install", (dialog, which) -> {
-                                    downloadAndFlashUpdate(activity, zipUrl);
-                                })
-                                .setNegativeButton("Later", null)
-                                .show();
-                        } else {
-                            new AlertDialog.Builder(activity)
-                                .setTitle("Update Available: " + latestVersionName)
-                                .setMessage("A new Zoron update is available!\n\n" + changelogText + "\n\nSince this device is non-root, you can download the latest APK from the GitHub releases page.")
-                                .setPositiveButton("Open GitHub Releases", (dialog, which) -> {
-                                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/buildwithtausif/zoron/releases"));
-                                    activity.startActivity(intent);
-                                })
-                                .setNegativeButton("Later", null)
-                                .show();
-                        }
+                        ComposeState.INSTANCE.getOtaVersion().setValue(latestVersionName);
+                        ComposeState.INSTANCE.getOtaChangelog().setValue(changelogText);
+                        ComposeState.INSTANCE.getOtaZipUrl().setValue(zipUrl);
+                        ComposeState.INSTANCE.getOtaAvailable().setValue(true);
+                        ComposeState.INSTANCE.getShowOtaDialog().setValue(true);
                     } else if (manualCheck) {
-                        Toast.makeText(activity, "Zoron is up to date! (" + latestVersionName + ")", Toast.LENGTH_SHORT).show();
+                        ComposeState.INSTANCE.getOtaAvailable().setValue(false);
+                        ComposeState.INSTANCE.getOtaVersion().setValue(latestVersionName + " (Up to date)");
+                        ComposeState.INSTANCE.getOtaChangelog().setValue("You are on the latest version.");
+                        ComposeState.INSTANCE.getShowOtaDialog().setValue(true);
                     }
                 });
             } catch (Exception e) {
                 if (manualCheck) {
-                    new Handler(Looper.getMainLooper()).post(() -> 
-                        Toast.makeText(activity, "Failed to check for updates: " + e.getMessage(), Toast.LENGTH_LONG).show()
-                    );
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        ComposeState.INSTANCE.getOtaVersion().setValue("Error");
+                        ComposeState.INSTANCE.getOtaChangelog().setValue("Failed to check for updates: " + e.getMessage());
+                        ComposeState.INSTANCE.getShowOtaDialog().setValue(true);
+                    });
                 }
             }
         }).start();
     }
 
-    private static void downloadAndFlashUpdate(Activity activity, String zipUrl) {
-        ProgressDialog progressDialog = new ProgressDialog(activity);
-        progressDialog.setTitle("Downloading Update");
-        progressDialog.setMessage("Please wait while the update is downloading...");
-        progressDialog.setIndeterminate(false);
-        progressDialog.setMax(100);
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        progressDialog.setCancelable(false);
-        progressDialog.show();
+    public static void downloadAndFlashUpdate(Activity activity, String zipUrl) {
+        ComposeState.INSTANCE.getOtaDownloading().setValue(true);
+        ComposeState.INSTANCE.getOtaDownloadProgress().setValue(0f);
+        ComposeState.INSTANCE.getOtaFlashing().setValue(false);
+        ComposeState.INSTANCE.getOtaFlashResult().setValue("");
 
         new Thread(() -> {
             try {
@@ -112,8 +93,10 @@ public class OTAUpdater {
                 while ((count = input.read(data)) != -1) {
                     total += count;
                     if (fileLength > 0) {
-                        int progress = (int) (total * 100 / fileLength);
-                        new Handler(Looper.getMainLooper()).post(() -> progressDialog.setProgress(progress));
+                        float progress = (float) total / fileLength;
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            ComposeState.INSTANCE.getOtaDownloadProgress().setValue(progress);
+                        });
                     }
                     output.write(data, 0, count);
                 }
@@ -123,43 +106,33 @@ public class OTAUpdater {
                 input.close();
 
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    progressDialog.setMessage("Flashing Magisk Module...");
-                    progressDialog.setIndeterminate(true);
+                    ComposeState.INSTANCE.getOtaDownloading().setValue(false);
+                    ComposeState.INSTANCE.getOtaFlashing().setValue(true);
                 });
 
                 // Flash via Magisk natively using libsu
                 Shell.Result result = Shell.cmd("magisk --install-module " + outputFile.getAbsolutePath()).exec();
 
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    progressDialog.dismiss();
-                    
+                    ComposeState.INSTANCE.getOtaFlashing().setValue(false);
                     if (result.isSuccess()) {
-                        new AlertDialog.Builder(activity)
-                            .setTitle("Update Successful")
-                            .setMessage("The module has been successfully flashed. You must reboot your device to apply the new module and app update.")
-                            .setPositiveButton("Reboot Now", (dialog, which) -> {
-                                Shell.cmd("reboot").exec();
-                            })
-                            .setNegativeButton("Later", null)
-                            .setCancelable(false)
-                            .show();
+                        ComposeState.INSTANCE.getOtaFlashSuccess().setValue(true);
+                        ComposeState.INSTANCE.getOtaFlashResult().setValue("The module has been successfully flashed. Reboot your device to apply the update.");
                     } else {
+                        ComposeState.INSTANCE.getOtaFlashSuccess().setValue(false);
                         StringBuilder err = new StringBuilder("Flash Error:\n");
                         for (String s : result.getErr()) err.append(s).append("\n");
                         for (String s : result.getOut()) err.append(s).append("\n");
-                        
-                        new AlertDialog.Builder(activity)
-                            .setTitle("Update Failed")
-                            .setMessage(err.toString())
-                            .setPositiveButton("OK", null)
-                            .show();
+                        ComposeState.INSTANCE.getOtaFlashResult().setValue(err.toString());
                     }
                 });
                 
             } catch (Exception e) {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    progressDialog.dismiss();
-                    Toast.makeText(activity, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    ComposeState.INSTANCE.getOtaDownloading().setValue(false);
+                    ComposeState.INSTANCE.getOtaFlashing().setValue(false);
+                    ComposeState.INSTANCE.getOtaFlashSuccess().setValue(false);
+                    ComposeState.INSTANCE.getOtaFlashResult().setValue("Download failed: " + e.getMessage());
                 });
             }
         }).start();

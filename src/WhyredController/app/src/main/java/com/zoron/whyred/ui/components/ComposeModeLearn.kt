@@ -74,6 +74,31 @@ fun ModeLearnScreenUI() {
                     icon = "⚡", title = "Legacy: Perform",
                     desc = "Standard legacy performance profile. High heat output."
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "GPU Governors",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                InfoBentoCard(
+                    icon = "🎮", title = "msm-adreno-tz",
+                    desc = "Qualcomm's default dynamic governor. Balances GPU frequencies efficiently based on load. Highly recommended."
+                )
+                InfoBentoCard(
+                    icon = "🏎️", title = "performance",
+                    desc = "Locks GPU at maximum frequency. Highest performance but generates massive heat and drains battery rapidly."
+                )
+                InfoBentoCard(
+                    icon = "⚖️", title = "simple_ondemand",
+                    desc = "Standard open-source governor. Ramps up frequency immediately on load, then scales down. Good alternative to adreno-tz."
+                )
+                InfoBentoCard(
+                    icon = "🔋", title = "powersave",
+                    desc = "Locks GPU at minimum frequency. Extremely sluggish UI, but maximizes battery life."
+                )
             }
         }
     }

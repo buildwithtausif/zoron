@@ -1,5 +1,12 @@
 # Zoron Changelog
 
+## v4.5.4
+- **Backend Optimizations**: Fixed engine validation logic to prevent false FAILs for zRAM and I/O schedulers. Added support for fallback schedulers (`mq-deadline`, `kyber`, `bfq`).
+- **Engine FastPath**: Reduced redundant engine reapplication loops by utilizing FastPath for burst optimizations.
+- **Compose Migration Complete**: Migrated the Rule Editor and OTA Updater from legacy views directly into Jetpack Compose.
+- **Analytics Exporter**: Added data export capabilities, allowing users to save CSV logs and process reports directly to the `Downloads/Zoron` directory.
+- **Governor Tuning**: Added GPU Governor selection via the UI with detailed mode documentation outlining hardware impacts.
+
 ## v4.5.3
 - **Compose UI Cleanup**: Finalized the Compose migration by completely removing legacy XML dependencies and Views from the app host.
 - **Analytics UI**: Redesigned Analytics using Vico charts with Material You styling and added data export capabilities.

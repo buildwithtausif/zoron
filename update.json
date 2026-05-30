@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.3",
-  "versionCode": 37,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.3/zoron_v4.5.3.zip",
-  "changelog": "v4.5.3:\n- UI/UX Fixes: Restored Analytics Page (Charts, Process Monitor, Diagnostics) entirely in Compose using Vico charts.\n- Rules: Rebuilt Rules dashboard in Compose.\n- Modes & Navigation: Restored Mode transition dialog with a modern Termux-style console, replaced navigation emojis with Material icons, and restored Legacy & Video Mode explanations.\n- Core Integration: Fixed dynamic reading of sysfs battery cycles and optimization calculations on the Home dashboard."
+  "version": "v4.5.4",
+  "versionCode": 38,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.4/zoron_v4.5.4.zip",
+  "changelog": "v4.5.4:\n- Backend: Fixed engine validation false FAILs, scheduler fallbacks, and fastpath reapplication loops.\n- UI: Migrated Rule Management and OTA Updater completely to Compose Material You.\n- Features: Added GPU Governor selection and detailed impact explanations.\n- Analytics: Implemented Export actions (CSV, Logs, Process Report) directly to the Downloads folder."
 }

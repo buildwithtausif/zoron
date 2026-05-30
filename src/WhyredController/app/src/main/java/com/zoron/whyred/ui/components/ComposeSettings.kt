@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.zoron.whyred.ui.ComposeState
 import com.zoron.whyred.ui.MainActions
+import androidx.compose.foundation.clickable
 
 @Composable
 fun SettingsScreenUI(
@@ -24,6 +25,9 @@ fun SettingsScreenUI(
     var adaptive by remember { mutableStateOf(ComposeState.adaptiveLearningEnabled.value) }
     var devMode by remember { mutableStateOf(ComposeState.developerModeEnabled.value) }
     var zipExport by remember { mutableStateOf(ComposeState.zipExportEnabled.value) }
+    
+    val gpuGovernors = listOf("msm-adreno-tz", "performance", "simple_ondemand", "powersave")
+    var selectedGpuGovernor by remember { mutableStateOf(gpuGovernors[0]) } // You would load from SharedPreferences ideally
 
     Column(
         modifier = Modifier
@@ -61,6 +65,18 @@ fun SettingsScreenUI(
                         ComposeState.adaptiveLearningEnabled.value = it 
                         mainActions?.setPreferenceBoolean("adaptive_learning", it)
                         showSnackbar("Adaptive Learning ${if(it) "Enabled" else "Disabled"}")
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                SettingDropdown(
+                    title = "GPU Governor",
+                    subtitle = "Select default GPU governor",
+                    options = gpuGovernors,
+                    selectedOption = selectedGpuGovernor,
+                    onOptionSelected = {
+                        selectedGpuGovernor = it
+                        mainActions?.setPreferenceString("gpu_governor", it)
+                        showSnackbar("GPU Governor set to $it")
                     }
                 )
             }
@@ -131,5 +147,44 @@ fun SettingToggle(title: String, subtitle: String, checked: Boolean, onCheckedCh
             Text(subtitle, style = MaterialTheme.typography.bodyMedium)
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+fun SettingDropdown(title: String, subtitle: String, options: List<String>, selectedOption: String, onOptionSelected: (String) -> Unit) {
+    var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = true }
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium)
+        }
+        
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(selectedOption)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }

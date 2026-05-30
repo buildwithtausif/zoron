@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.zoron.whyred.ui.components.ComposeHome
 import com.zoron.whyred.ui.components.SettingsScreenUI
 import com.zoron.whyred.ui.components.ModeLearnScreenUI
+import com.zoron.whyred.ui.components.OTADialogUI
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -107,6 +108,7 @@ fun ZoronAppNavigation(
             }
         }
     ) { innerPadding ->
+        OTADialogUI(mainActions)
         NavHost(
             navController = navController,
             startDestination = "home",

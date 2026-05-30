@@ -99,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> OTAUpdater.checkUpdates(MainActivity.this, true));
                 }
                 @Override
+                public void downloadAndFlashUpdate(String zipUrl) {
+                    runOnUiThread(() -> OTAUpdater.downloadAndFlashUpdate(MainActivity.this, zipUrl));
+                }
+                @Override
                 public void toggleAutopilot(boolean enabled) {
                     runOnUiThread(() -> {
                         android.content.SharedPreferences prefs = getSharedPreferences("ZoronSettings", MODE_PRIVATE);
@@ -674,18 +678,37 @@ public class MainActivity extends AppCompatActivity {
             csvContent.append(csvData);
 
             try {
-                File exportFile = new File(getExternalCacheDir(), "zoron_battery_export.csv");
+                File dir = new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "Zoron");
+                if (!dir.exists()) dir.mkdirs();
+                File exportFile = new File(dir, "zoron_battery_export.csv");
                 FileWriter writer = new FileWriter(exportFile);
                 writer.write(csvContent.toString());
                 writer.close();
 
-                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("text/csv");
-                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Battery Analytics Export");
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Battery Data")));
+                runOnUiThread(() -> Toast.makeText(this, "Exported to Downloads/Zoron/zoron_battery_export.csv", Toast.LENGTH_LONG).show());
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+    
+    private void exportProcessReport() {
+        new Thread(() -> {
+            String procData = getFileContent("/data/local/tmp/zoron/process_report.txt", "");
+            if (procData.trim().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "No Process Report to export", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            try {
+                File dir = new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "Zoron");
+                if (!dir.exists()) dir.mkdirs();
+                File exportFile = new File(dir, "zoron_process_report.txt");
+                FileWriter writer = new FileWriter(exportFile);
+                writer.write(procData);
+                writer.close();
+
+                runOnUiThread(() -> Toast.makeText(this, "Exported to Downloads/Zoron/zoron_process_report.txt", Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
@@ -698,8 +721,9 @@ public class MainActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
-                File exportFile = new File(getExternalCacheDir(), "zoron_logs.zip");
-                String mimeType = "application/zip";
+                File dir = new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "Zoron");
+                if (!dir.exists()) dir.mkdirs();
+                File exportFile = new File(dir, "zoron_logs.zip");
                 
                 FileOutputStream fos = new FileOutputStream(exportFile);
                 ZipOutputStream zos = new ZipOutputStream(fos);
@@ -756,13 +780,7 @@ public class MainActivity extends AppCompatActivity {
                 zos.close();
                 fos.close();
 
-                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", exportFile);
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType(mimeType);
-                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoron Diagnostics Export");
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                runOnUiThread(() -> startActivity(Intent.createChooser(shareIntent, "Export Diagnostics")));
+                runOnUiThread(() -> Toast.makeText(this, "Exported to Downloads/Zoron/zoron_logs.zip", Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }

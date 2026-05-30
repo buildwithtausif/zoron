@@ -24,11 +24,23 @@ object ComposeState {
     val currentLogs = mutableStateOf("No logs yet.")
     val currentProcessReport = mutableStateOf("No process data yet.")
     val batteryCsvData = mutableStateOf("")
+
+    // OTA State
+    val otaAvailable = mutableStateOf(false)
+    val otaVersion = mutableStateOf("")
+    val otaChangelog = mutableStateOf("")
+    val otaZipUrl = mutableStateOf("")
+    val otaDownloading = mutableStateOf(false)
+    val otaDownloadProgress = mutableStateOf(0f)
+    val otaFlashing = mutableStateOf(false)
+    val otaFlashResult = mutableStateOf("")
+    val showOtaDialog = mutableStateOf(false)
 }
 
 interface MainActions {
     fun applyMode(mode: String)
     fun checkUpdates()
+    fun downloadAndFlashUpdate(zipUrl: String)
     fun toggleAutopilot(enabled: Boolean)
     fun setPreferenceBoolean(key: String, value: Boolean)
     fun setPreferenceString(key: String, value: String)

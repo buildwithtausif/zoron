@@ -36,9 +36,6 @@
         <activity
             android:name=".ModeLearnActivity"
             android:exported="false" />
-        <activity
-            android:name=".RuleEditorActivity"
-            android:exported="false" />
 
         <service
             android:name=".ZoronForegroundService"

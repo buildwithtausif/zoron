@@ -37,7 +37,7 @@ case "$ACTION" in
         
         log "Microburst ended, returning to previous state via engine update"
         PROFILE=$(cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo "balanced")
-        /system/bin/zoron_engine "$PROFILE" &
+        /system/bin/zoron_engine "$PROFILE" fastpath_revert &
         ;;
         
     set_mode)
@@ -89,7 +89,7 @@ case "$ACTION" in
         log "Fastpath: Video Boost OFF"
         # Re-apply active manual profile to restore background power savings
         PROFILE=$(cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo "balanced")
-        sh /system/bin/zoron_engine "$PROFILE" &
+        sh /system/bin/zoron_engine "$PROFILE" fastpath_revert &
         ;;
         
     *)
