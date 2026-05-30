@@ -147,8 +147,6 @@ fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
     val processReport by ComposeState.currentProcessReport
     var chartModel by remember { mutableStateOf<ChartEntryModel?>(null) }
-    var minY by remember { mutableStateOf(0f) }
-    var maxY by remember { mutableStateOf(100f) }
     var stats by remember { mutableStateOf(MathStats()) }
 
     LaunchedEffect(csvData) {
@@ -208,12 +206,7 @@ fun BatteryChartTab(mainActions: MainActions) {
                 stats = MathStats(mean, variance, stdDev)
 
                 val minL = levels.minOrNull() ?: 0f
-                val maxL = levels.maxOrNull() ?: 100f
-
                 chartModel = entryModelOf(entries)
-                // Fix Y axis strictly to data bounds to avoid hardcoded Vico grid steps issues
-                minY = (minL - 5f).coerceAtLeast(0f)
-                maxY = (maxL + 5f).coerceAtMost(100f)
             } else {
                 chartModel = null
             }
@@ -239,7 +232,6 @@ fun BatteryChartTab(mainActions: MainActions) {
                 } else {
                     Chart(
                         chart = lineChart(
-                            axisValuesOverrider = com.patrykandpatrick.vico.core.chart.values.AxisValuesOverrider.fixed(minY = minY, maxY = maxY),
                             lines = listOf(
                                 com.patrykandpatrick.vico.compose.chart.line.lineSpec(
                                     lineColor = MaterialTheme.colorScheme.primary,
