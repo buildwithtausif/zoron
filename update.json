@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.9",
-  "versionCode": 43,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.9/zoron_v4.5.9.zip",
-  "changelog": "v4.5.9:\n- UI: Modernized 'About Modes' into a full documentation experience.\n- Fix: Resolved 'What's New' page showing empty placeholders by integrating live OTA metadata history.\n- UI: Reverted navigation to fixed bottom bar with frosted-glass effect."
+  "version": "v4.5.10",
+  "versionCode": 44,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.10/zoron_v4.5.10.zip",
+  "changelog": "v4.5.10:\n- Fix: Resolved a crash in the Analytics tab caused by charting library rejecting identical timestamps."
 }

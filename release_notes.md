@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.10
+- **Analytics Fix**: Resolved a crash in the Analytics tab caused by the charting library rejecting identical timestamps when processing battery telemetry.
+
+
 ## v4.5.9
 - **UI Modernization**: Redesigned 'About Modes' into a full documentation experience with comprehensive details for 10 missing mode sections.
 - **What's New Fix**: Resolved 'What's New' page showing empty placeholders by fetching and displaying live OTA metadata history.

@@ -156,9 +156,11 @@ fun BatteryChartTab(mainActions: MainActions) {
                         val level = parts[1].toFloat()
                         if (firstTs == -1L) firstTs = ts
                         val x = (ts - firstTs) / 60f // minutes
-                        entries.add(entryOf(x, level))
-                        if (level < minL) minL = level
-                        if (level > maxL) maxL = level
+                        if (entries.isEmpty() || x > entries.last().x) {
+                            entries.add(entryOf(x, level))
+                            if (level < minL) minL = level
+                            if (level > maxL) maxL = level
+                        }
                     } catch (e: Exception) {}
                 }
             }
