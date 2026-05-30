@@ -52,7 +52,7 @@ val documentationTopics = listOf(
         recommended = "Use when under 30% battery or during long trips."
     ),
     DocTopic(
-        title = "Gaming Mode",
+        title = "Burst Mode",
         lottieRes = R.raw.lottie_burst,
         whatItIs = "Uncapped performance state (internally tracked as Burst). Onlines all cores and removes frequency limits.",
         whyExists = "To utilize race-to-idle methodology for maximum throughput.",
