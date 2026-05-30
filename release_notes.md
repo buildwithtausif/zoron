@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v4.5.13
+- **Analytics Hotfix**: Removed dynamic Vico viewport overriders. The graph now perfectly matches the exact Y-bounds of the real battery data.
+
 ## v4.5.12
 - **Analytics**: Implemented advanced bucketing compression and added Math stats (Mean, Variance, StdDev) while strictly fixing viewport rendering bugs.
 - **Documentation**: Implemented an all-new Wiki-style split-pane UX with Table of Contents auto-highlighting. Added specific facts for Gaming, Battery, and Video Modes.

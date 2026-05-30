@@ -14,7 +14,7 @@ log() {
 }
 
 log "========================================"
-log "ZORON-X v4.5.12 service.sh starting"
+log "ZORON-X v4.5.13 service.sh starting"
 log "========================================"
 
 # Wait until boot completes
@@ -178,4 +178,4 @@ else
     fi
 fi
 
-log "ZORON-X v4.5.12 service.sh initialization complete"
+log "ZORON-X v4.5.13 service.sh initialization complete"
