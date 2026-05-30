@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v4.5.12
+- **Analytics**: Implemented advanced bucketing compression and added Math stats (Mean, Variance, StdDev) while strictly fixing viewport rendering bugs.
+- **Documentation**: Implemented an all-new Wiki-style split-pane UX with Table of Contents auto-highlighting. Added specific facts for Gaming, Battery, and Video Modes.
+- **What's New**: Implemented date parsing and explicit empty states for seamless changelog rendering.
+
 ## v4.5.11
 - **Analytics Fix**: Refactored Vico chart async model loading to fix empty model crashes permanently and handle invalid rendering gracefully.
 - **UI Redesign**: Transformed Settings changelog into a dedicated 'What's New' screen parsed dynamically from OTA metadata.

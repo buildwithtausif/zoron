@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,24 +49,37 @@ fun WhatsNewScreenUI(onNavigateBack: () -> Unit) {
             
             if (changelog.isNotEmpty()) {
                 val releases = parseChangelog(changelog)
-                releases.forEach { release ->
-                    ReleaseCard(release)
+                if (releases.isEmpty()) {
+                    EmptyState()
+                } else {
+                    releases.forEach { release ->
+                        ReleaseCard(release)
+                    }
                 }
             } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Loading release history...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                EmptyState(message = "Loading release history... Please ensure you have an active internet connection to fetch the OTA metadata.")
             }
         }
     }
 }
 
-data class ReleaseInfo(val version: String, val notes: List<String>)
+@Composable
+fun EmptyState(message: String = "No release history available.") {
+    Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+    }
+}
+
+data class ReleaseInfo(val version: String, val date: String, val notes: List<String>)
 
 fun parseChangelog(changelog: String): List<ReleaseInfo> {
     val releases = mutableListOf<ReleaseInfo>()
     val lines = changelog.split("\n")
     var currentVersion = ""
+    var currentDate = ""
     var currentNotes = mutableListOf<String>()
 
     for (line in lines) {
@@ -74,9 +88,18 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
         
         if (trimmed.endsWith(":") || (trimmed.startsWith("v") && !trimmed.startsWith("-"))) {
             if (currentVersion.isNotEmpty()) {
-                releases.add(ReleaseInfo(currentVersion, currentNotes))
+                releases.add(ReleaseInfo(currentVersion, currentDate, currentNotes))
             }
-            currentVersion = trimmed.removeSuffix(":")
+            
+            val versionClean = trimmed.removeSuffix(":")
+            val match = Regex("""(v\d+\.\d+\.\d+)(?:\s*\((.*?)\))?""").find(versionClean)
+            if (match != null) {
+                currentVersion = match.groupValues[1]
+                currentDate = if (match.groupValues.size > 2 && match.groupValues[2].isNotBlank()) match.groupValues[2] else "Date unavailable"
+            } else {
+                currentVersion = versionClean
+                currentDate = "Date unavailable"
+            }
             currentNotes = mutableListOf()
         } else if (trimmed.startsWith("-")) {
             currentNotes.add(trimmed.removePrefix("-").trim())
@@ -85,7 +108,7 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
         }
     }
     if (currentVersion.isNotEmpty()) {
-        releases.add(ReleaseInfo(currentVersion, currentNotes))
+        releases.add(ReleaseInfo(currentVersion, currentDate, currentNotes))
     }
     
     return releases
@@ -95,12 +118,19 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
 fun ReleaseCard(release: ReleaseInfo) {
     BentoCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = release.version,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = release.version,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = release.date,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             release.notes.forEach { note ->
                 Row(modifier = Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.Top) {

@@ -20,19 +20,26 @@ import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.compose.chart.scroll.rememberChartScrollSpec
 import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.zoron.whyred.ui.ComposeState
 import com.zoron.whyred.ui.MainActions
-import kotlin.math.abs
+import kotlin.math.sqrt
 
 data class TrendInsights(
     val summary: String,
-    val direction: String, // Improving, Stable, Declining
+    val direction: String,
     val contributors: List<String>,
     val recommendations: List<String>,
     val confidence: String
+)
+
+data class MathStats(
+    val mean: Float = 0f,
+    val variance: Float = 0f,
+    val stdDev: Float = 0f
 )
 
 fun generateTrendRead(csvData: String, processReport: String): TrendInsights {
@@ -84,7 +91,7 @@ fun generateTrendRead(csvData: String, processReport: String): TrendInsights {
         val pLines = processReport.split("\n")
         var count = 0
         for (p in pLines) {
-            if (p.contains(Regex("\\d+%"))) { // very basic heuristic for CPU/Mem line
+            if (p.contains(Regex("\\d+%"))) {
                 val clean = p.trim().replace(Regex("\\s+"), " ")
                 topContributors.add(clean)
                 count++
@@ -133,6 +140,8 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
     }
 }
 
+data class RawEntry(val x: Float, val level: Float)
+
 @Composable
 fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
@@ -140,14 +149,14 @@ fun BatteryChartTab(mainActions: MainActions) {
     var chartModel by remember { mutableStateOf<ChartEntryModel?>(null) }
     var minY by remember { mutableStateOf(0f) }
     var maxY by remember { mutableStateOf(100f) }
+    var stats by remember { mutableStateOf(MathStats()) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
             val lines = csvData.trim().split("\n")
-            val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
+            val rawEntries = mutableListOf<RawEntry>()
             var firstTs = -1L
-            var minL = 100f
-            var maxL = 0f
+            
             for (line in lines) {
                 val parts = line.split(",")
                 if (parts.size >= 2) {
@@ -155,19 +164,56 @@ fun BatteryChartTab(mainActions: MainActions) {
                         val ts = parts[0].toLong()
                         val level = parts[1].toFloat()
                         if (firstTs == -1L) firstTs = ts
-                        val x = (ts - firstTs) / 60f // minutes
-                        if (entries.isEmpty() || x > entries.last().x) {
-                            entries.add(entryOf(x, level))
-                            if (level < minL) minL = level
-                            if (level > maxL) maxL = level
+                        val x = (ts - firstTs) / 60f
+                        if (rawEntries.isEmpty() || x > rawEntries.last().x) {
+                            rawEntries.add(RawEntry(x, level))
                         }
                     } catch (e: Exception) {}
                 }
             }
-            if (entries.size >= 2) {
+
+            if (rawEntries.size >= 2) {
+                // Compression & Aggregation
+                val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
+                val maxBuckets = 50
+                if (rawEntries.size > maxBuckets) {
+                    val bucketSize = rawEntries.size / maxBuckets.toFloat()
+                    var currentBucket = 0f
+                    var sumLevel = 0f
+                    var count = 0
+                    var bucketStartIndex = 0
+                    
+                    for (i in rawEntries.indices) {
+                        sumLevel += rawEntries[i].level
+                        count++
+                        if (i >= currentBucket + bucketSize || i == rawEntries.size - 1) {
+                            val avgLevel = sumLevel / count
+                            val avgX = rawEntries[bucketStartIndex].x
+                            entries.add(entryOf(avgX, avgLevel))
+                            sumLevel = 0f
+                            count = 0
+                            bucketStartIndex = i + 1
+                            currentBucket += bucketSize
+                        }
+                    }
+                } else {
+                    entries.addAll(rawEntries.map { entryOf(it.x, it.level) })
+                }
+
+                // Mathematical stats
+                val levels = rawEntries.map { it.level }
+                val mean = levels.average().toFloat()
+                val variance = levels.map { (it - mean) * (it - mean) }.average().toFloat()
+                val stdDev = sqrt(variance)
+                stats = MathStats(mean, variance, stdDev)
+
+                val minL = levels.minOrNull() ?: 0f
+                val maxL = levels.maxOrNull() ?: 100f
+
                 chartModel = entryModelOf(entries)
-                minY = (minL - 2f).coerceAtLeast(0f)
-                maxY = (maxL + 2f).coerceAtMost(100f)
+                // Fix Y axis strictly to data bounds to avoid hardcoded Vico grid steps issues
+                minY = (minL - 5f).coerceAtLeast(0f)
+                maxY = (maxL + 5f).coerceAtMost(100f)
             } else {
                 chartModel = null
             }
@@ -204,6 +250,7 @@ fun BatteryChartTab(mainActions: MainActions) {
                             )
                         ),
                         model = chartModel!!,
+                        chartScrollSpec = rememberChartScrollSpec(isScrollEnabled = false),
                         startAxis = rememberStartAxis(
                             label = com.patrykandpatrick.vico.compose.component.textComponent(
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -232,8 +279,33 @@ fun BatteryChartTab(mainActions: MainActions) {
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
         
+        if (chartModel != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("STATISTICAL ANALYSIS", style = MaterialTheme.typography.labelSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            BentoCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Mean", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(String.format("%.2f%%", stats.mean), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Column {
+                        Text("Variance", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(String.format("%.2f", stats.variance), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Column {
+                        Text("Std. Dev", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text(String.format("%.2f", stats.stdDev), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
         val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
         Text("TREND INSIGHTS", style = MaterialTheme.typography.labelSmall)
         Spacer(modifier = Modifier.height(8.dp))
