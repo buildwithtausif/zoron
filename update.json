@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.14",
-  "versionCode": 48,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.14/zoron_v4.5.14.zip",
-  "changelog": "v4.5.14 (2026-05-30):\n- Analytics: Implemented strict X-axis bucketing to permanently resolve Vico chart crashes and visualized statistical guidelines (Mean) directly on the trend chart.\n- Documentation: Removed deprecated FAQs and Troubleshooting sections from the Learn page.\n- What's New: Implemented robust fallback to bundled changelog.md when OTA metadata is unreachable."
+  "version": "v4.5.15",
+  "versionCode": 49,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.15/zoron_v4.5.15.zip",
+  "changelog": "v4.5.15 (2026-05-30):\n- Documentation: Corrected mode naming, replacing legacy 'Gaming Mode' references with 'Burst Mode'."
 }

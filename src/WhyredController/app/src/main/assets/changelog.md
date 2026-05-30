@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v4.5.15
+- **Documentation**: Corrected mode naming, replacing legacy 'Gaming Mode' references with 'Burst Mode'.
+
 ## v4.5.14
 - **Analytics**: Implemented strict X-axis bucketing to permanently resolve Vico chart crashes and visualized statistical guidelines (Mean) directly on the trend chart.
 - **Documentation**: Removed deprecated FAQs and Troubleshooting sections from the Learn page.
