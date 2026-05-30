@@ -48,10 +48,8 @@ fun ZoronAppNavigation(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .clip(RoundedCornerShape(32.dp)),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(

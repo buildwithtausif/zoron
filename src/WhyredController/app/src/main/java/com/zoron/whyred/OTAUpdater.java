@@ -40,20 +40,46 @@ public class OTAUpdater {
                 int latestVersionCode = json.getInt("versionCode");
                 String latestVersionName = json.getString("version");
                 String zipUrl = json.getString("zipUrl");
-                String changelogText = json.has("changelog") ? json.getString("changelog") : "New update available.";
                 
+                // Fetch the full changelog history from github
+                String changelogText = "No release history available.";
+                try {
+                    URL changelogUrl = new URL("https://raw.githubusercontent.com/buildwithtausif/zoron/main/changelog.md");
+                    HttpURLConnection clConn = (HttpURLConnection) changelogUrl.openConnection();
+                    clConn.setRequestMethod("GET");
+                    clConn.setConnectTimeout(5000);
+                    BufferedReader clReader = new BufferedReader(new InputStreamReader(clConn.getInputStream()));
+                    StringBuilder clBuilder = new StringBuilder();
+                    String clLine;
+                    while ((clLine = clReader.readLine()) != null) {
+                        clBuilder.append(clLine).append("\n");
+                    }
+                    if (clBuilder.length() > 0) {
+                        changelogText = clBuilder.toString();
+                    }
+                } catch (Exception e) {
+                    // fallback to json's simple changelog if available
+                    changelogText = json.has("changelog") ? json.getString("changelog") : "New update available.";
+                }
+
+                final String finalChangelog = changelogText;
+
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (latestVersionCode > BuildConfig.VERSION_CODE) {
                         ComposeState.INSTANCE.getOtaVersion().setValue(latestVersionName);
-                        ComposeState.INSTANCE.getOtaChangelog().setValue(changelogText);
+                        ComposeState.INSTANCE.getOtaChangelog().setValue(finalChangelog);
                         ComposeState.INSTANCE.getOtaZipUrl().setValue(zipUrl);
                         ComposeState.INSTANCE.getOtaAvailable().setValue(true);
                         ComposeState.INSTANCE.getShowOtaDialog().setValue(true);
                     } else if (manualCheck) {
                         ComposeState.INSTANCE.getOtaAvailable().setValue(false);
                         ComposeState.INSTANCE.getOtaVersion().setValue(latestVersionName + " (Up to date)");
-                        ComposeState.INSTANCE.getOtaChangelog().setValue("You are on the latest version.");
+                        ComposeState.INSTANCE.getOtaChangelog().setValue(finalChangelog);
                         ComposeState.INSTANCE.getShowOtaDialog().setValue(true);
+                    } else {
+                        // Even if not manual check, we want the changelog available for the "What's New" page
+                        ComposeState.INSTANCE.getOtaVersion().setValue(latestVersionName);
+                        ComposeState.INSTANCE.getOtaChangelog().setValue(finalChangelog);
                     }
                 });
             } catch (Exception e) {

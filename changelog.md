@@ -1,5 +1,10 @@
 # Zoron Changelog
 
+## v4.5.9
+- **UI Modernization**: Redesigned 'About Modes' into a full documentation experience with comprehensive details for 10 missing mode sections.
+- **What's New Fix**: Resolved 'What's New' page showing empty placeholders by fetching and displaying live OTA metadata history.
+- **Navigation**: Reverted floating pill navigation to a fixed bottom bar with a translucent frosted-glass effect.
+
 ## v4.5.6
 - **Analytics UI**: Decluttered the Analytics header by removing the "Trend Reads" dialog button and rendering smart insights directly inline below the chart.
 - **Chart Accuracy**: Dynamic axis scaling is now implemented. The chart axes will dynamically stretch around minimum and maximum thresholds, eliminating flat lines and ensuring visual trends are immediately obvious and meaningful.

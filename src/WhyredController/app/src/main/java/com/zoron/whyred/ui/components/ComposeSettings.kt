@@ -182,11 +182,10 @@ fun SettingsScreenUI(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = changelog, style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    Text(text = "Tap 'Check for Updates' to fetch the latest release notes.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = "Loading release history...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
-        Spacer(modifier = Modifier.height(100.dp)) // Floating nav padding
     }
 }
 

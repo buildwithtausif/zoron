@@ -12,7 +12,7 @@ else
 fi
 
 ui_print "==========================================="
-ui_print "  ZORON-X v4.4.2 Power Optimizer"
+ui_print "  ZORON-X v4.5.9 Power Optimizer"
 ui_print "  Ultra Intelligent Power Conservation"
 ui_print "==========================================="
 ui_print ""
