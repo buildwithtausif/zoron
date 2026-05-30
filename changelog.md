@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.6
+- **Analytics UI**: Decluttered the Analytics header by removing the "Trend Reads" dialog button and rendering smart insights directly inline below the chart.
+- **Chart Accuracy**: Dynamic axis scaling is now implemented. The chart axes will dynamically stretch around minimum and maximum thresholds, eliminating flat lines and ensuring visual trends are immediately obvious and meaningful.
+
 ## v4.5.5
 - **UX Enhancements**: Redesigned Rule Creation Dialog with human-readable labels, contextual hints, and examples.
 - **Trend Reads (Analytics)**: Introduced a dynamic algorithmic parser for Battery and Process analytics that generates human-readable insights, summaries, and recommendations directly within the app.

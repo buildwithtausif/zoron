@@ -129,13 +129,16 @@ fun BatteryChartTab(mainActions: MainActions) {
     val csvData by ComposeState.batteryCsvData
     val processReport by ComposeState.currentProcessReport
     val chartEntryModelProducer = remember { ChartEntryModelProducer() }
-    var showTrendReads by remember { mutableStateOf(false) }
+    var minY by remember { mutableStateOf(0f) }
+    var maxY by remember { mutableStateOf(100f) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
             val lines = csvData.trim().split("\n")
             val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
             var firstTs = -1L
+            var minL = 100f
+            var maxL = 0f
             for (line in lines) {
                 val parts = line.split(",")
                 if (parts.size >= 2) {
@@ -145,11 +148,15 @@ fun BatteryChartTab(mainActions: MainActions) {
                         if (firstTs == -1L) firstTs = ts
                         val x = (ts - firstTs) / 60f // minutes
                         entries.add(entryOf(x, level))
+                        if (level < minL) minL = level
+                        if (level > maxL) maxL = level
                     } catch (e: Exception) {}
                 }
             }
             if (entries.isNotEmpty()) {
                 chartEntryModelProducer.setEntries(entries)
+                minY = (minL - 2f).coerceAtLeast(0f)
+                maxY = (maxL + 2f).coerceAtMost(100f)
             }
         }
     }
@@ -157,13 +164,8 @@ fun BatteryChartTab(mainActions: MainActions) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("BATTERY DISCHARGE TREND", style = MaterialTheme.typography.labelSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { showTrendReads = true }) {
-                    Text("Trend Reads")
-                }
-                OutlinedButton(onClick = { mainActions.exportCsv() }) {
-                    Text("Export")
-                }
+            OutlinedButton(onClick = { mainActions.exportCsv() }) {
+                Text("Export")
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -176,6 +178,7 @@ fun BatteryChartTab(mainActions: MainActions) {
                 } else {
                     Chart(
                         chart = lineChart(
+                            axisValuesOverrider = com.patrykandpatrick.vico.core.chart.values.AxisValuesOverrider.fixed(minY = minY, maxY = maxY),
                             lines = listOf(
                                 com.patrykandpatrick.vico.compose.chart.line.lineSpec(
                                     lineColor = MaterialTheme.colorScheme.primary,
@@ -214,15 +217,14 @@ fun BatteryChartTab(mainActions: MainActions) {
                 }
             }
         }
-    }
-
-    if (showTrendReads) {
-        val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
-        AlertDialog(
-            onDismissRequest = { showTrendReads = false },
-            title = { Text("Trend Reads Insights") },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        if (csvData.isNotEmpty()) {
+            val insights = remember(csvData, processReport) { generateTrendRead(csvData, processReport) }
+            Text("TREND INSIGHTS", style = MaterialTheme.typography.labelSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            BentoCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     TrendSection("Summary", insights.summary)
                     TrendSection("Direction", insights.direction, color = when(insights.direction) {
                         "Improving" -> Color(0xFF4CAF50)
@@ -232,22 +234,21 @@ fun BatteryChartTab(mainActions: MainActions) {
                     TrendSection("Confidence", insights.confidence)
                     
                     Text("Key Contributors", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    insights.contributors.forEach { c ->
-                        Text("• $c", style = MaterialTheme.typography.bodySmall)
+                    Column {
+                        insights.contributors.forEach { c ->
+                            Text("• $c", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                     
                     Text("Recommendations", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    insights.recommendations.forEach { r ->
-                        Text("• $r", style = MaterialTheme.typography.bodySmall)
+                    Column {
+                        insights.recommendations.forEach { r ->
+                            Text("• $r", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showTrendReads = false }) {
-                    Text("Close")
-                }
             }
-        )
+        }
     }
 }
 
