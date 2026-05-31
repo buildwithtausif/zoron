@@ -174,16 +174,19 @@ fun BatteryChartTab(mainActions: MainActions) {
 
             if (rawEntries.size >= 2) {
                 try {
-                    // Determine adaptive bucket size based on total duration
+                    // Dynamic class interval: target MAX_LABELS buckets so every
+                    // label fits the viewport — no "..." truncation, no overflow.
+                    val MAX_LABELS = 10
                     val durationMins = rawEntries.last().x - rawEntries.first().x
-                    val bucketMin = when {
-                        durationMins > 24 * 60 -> 60f
-                        durationMins > 12 * 60 -> 30f
-                        durationMins > 6 * 60 -> 15f
-                        durationMins > 2 * 60 -> 10f
-                        durationMins > 60 -> 5f
-                        else -> Math.max(1f, (durationMins / 20f).toInt().toFloat())
-                    }
+                    val rawInterval = durationMins / MAX_LABELS
+
+                    // Snap to nearest clean interval for readable labels
+                    val niceIntervals = floatArrayOf(
+                        1f, 2f, 5f, 10f, 15f, 30f,          // minutes
+                        60f, 120f, 240f, 480f, 720f, 1440f   // hours (1h–24h)
+                    )
+                    val bucketMin = niceIntervals.firstOrNull { it >= rawInterval }
+                        ?: niceIntervals.last()
 
                     // Bucket data into equispaced intervals
                     val bucketedMins = mutableListOf<Float>()    // real minute value per bucket
@@ -314,12 +317,17 @@ fun BatteryChartTab(mainActions: MainActions) {
                             guideline = null,
                             valueFormatter = { value, _ ->
                                 val index = value.toInt()
-                                val totalMins = if (index in minuteLabels.indices) minuteLabels[index].toInt() else value.toInt()
-                                if (totalMins < 60) "${totalMins}m"
-                                else {
-                                    val h = totalMins / 60
-                                    val m = totalMins % 60
-                                    if (m == 0) "${h}h" else "${h}h${m}m"
+                                val rawMins = if (index in minuteLabels.indices) minuteLabels[index] else value
+                                // Round to nearest minute for clean display
+                                val totalMins = Math.round(rawMins)
+                                when {
+                                    totalMins < 1 -> "0m"
+                                    totalMins < 60 -> "${totalMins}m"
+                                    else -> {
+                                        val h = totalMins / 60
+                                        val m = totalMins % 60
+                                        if (m == 0) "${h}h" else "${h}h${m}m"
+                                    }
                                 }
                             }
                         ),

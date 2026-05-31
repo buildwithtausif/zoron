@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.18
+- **Analytics**: Introduced dynamic class interval plotting — X-axis labels always fit the viewport with no "..." truncation regardless of data volume.
+- **Analytics**: Bucket widths auto-scale to clean intervals (1m, 5m, 15m, 1h, 2h, etc.) based on total telemetry duration.
+
 ## v4.5.17
 - **Analytics**: Fixed battery chart X-axis showing unreadable dots by switching from absolute minute values to sequential indexed entries with proper time label mapping.
 - **Settings**: CPU and GPU governor selectors now apply changes to the kernel via root shell commands instead of only saving preferences.

@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.17",
-  "versionCode": 51,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.17/zoron_v4.5.17.zip",
-  "changelog": "v4.5.17 (2026-05-31):\n- Analytics: Fixed battery chart X-axis showing unreadable dots by switching from absolute minute values to sequential indexed entries with proper time label mapping.\n- Settings: CPU and GPU governor selectors now apply changes to the kernel via root shell commands."
+  "version": "v4.5.18",
+  "versionCode": 52,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.18/zoron_v4.5.18.zip",
+  "changelog": "v4.5.18 (2026-05-31):\n- Analytics: Introduced dynamic class interval plotting — X-axis labels always fit the viewport with no '...' truncation regardless of data volume.\n- Analytics: Bucket widths auto-scale to clean intervals (1m, 5m, 15m, 1h, 2h, etc.) based on total telemetry duration."
 }
