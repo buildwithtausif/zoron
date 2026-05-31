@@ -148,14 +148,15 @@ fun BatteryChartTab(mainActions: MainActions) {
     val processReport by ComposeState.currentProcessReport
     var chartModel by remember { mutableStateOf<ChartEntryModel?>(null) }
     var stats by remember { mutableStateOf(MathStats()) }
-    var bucketSize by remember { mutableStateOf(5f) }
+    // Store actual minute values for each sequential X index so the formatter can look them up
+    var minuteLabels by remember { mutableStateOf(listOf<Float>()) }
 
     LaunchedEffect(csvData) {
         if (csvData.isNotEmpty()) {
             val lines = csvData.trim().split("\n")
             val rawEntries = mutableListOf<RawEntry>()
             var firstTs = -1L
-            
+
             for (line in lines) {
                 val parts = line.split(",")
                 if (parts.size >= 2) {
@@ -173,8 +174,7 @@ fun BatteryChartTab(mainActions: MainActions) {
 
             if (rawEntries.size >= 2) {
                 try {
-                    // Equispaced Time Bucketing
-                    val entries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
+                    // Determine adaptive bucket size based on total duration
                     val durationMins = rawEntries.last().x - rawEntries.first().x
                     val bucketMin = when {
                         durationMins > 24 * 60 -> 60f
@@ -182,55 +182,63 @@ fun BatteryChartTab(mainActions: MainActions) {
                         durationMins > 6 * 60 -> 15f
                         durationMins > 2 * 60 -> 10f
                         durationMins > 60 -> 5f
-                        else -> Math.max(1f, (durationMins / 50f).toInt().toFloat())
+                        else -> Math.max(1f, (durationMins / 20f).toInt().toFloat())
                     }
-                    bucketSize = bucketMin
-                    
-                    var currentBucketLimit = rawEntries.first().x + bucketMin
+
+                    // Bucket data into equispaced intervals
+                    val bucketedMins = mutableListOf<Float>()    // real minute value per bucket
+                    val bucketedLevels = mutableListOf<Float>()  // avg battery level per bucket
+
+                    var currentBucketStart = rawEntries.first().x
+                    var currentBucketEnd = currentBucketStart + bucketMin
                     var sumLevel = 0f
                     var count = 0
-                    
+
                     for (entry in rawEntries) {
-                        if (entry.x <= currentBucketLimit) {
+                        if (entry.x <= currentBucketEnd) {
                             sumLevel += entry.level
                             count++
                         } else {
                             if (count > 0) {
-                                entries.add(entryOf(Math.round(currentBucketLimit).toFloat(), sumLevel / count))
+                                bucketedMins.add((currentBucketStart + currentBucketEnd) / 2f)
+                                bucketedLevels.add(sumLevel / count)
                             }
-                            while (currentBucketLimit < entry.x) {
-                                currentBucketLimit += bucketMin
+                            // Advance bucket until it covers the current entry
+                            while (currentBucketEnd < entry.x) {
+                                currentBucketStart = currentBucketEnd
+                                currentBucketEnd = currentBucketStart + bucketMin
                             }
                             sumLevel = entry.level
                             count = 1
                         }
                     }
+                    // Flush final bucket
                     if (count > 0) {
-                        val finalX = if (entries.isEmpty()) currentBucketLimit else maxOf(currentBucketLimit, entries.last().x + bucketMin)
-                        entries.add(entryOf(Math.round(finalX).toFloat(), sumLevel / count))
+                        bucketedMins.add((currentBucketStart + currentBucketEnd) / 2f)
+                        bucketedLevels.add(sumLevel / count)
                     }
 
-                    // Mathematical stats
+                    // Use sequential integer indices (0, 1, 2, ...) as X values
+                    // This prevents Vico from creating empty ticks between sparse minute values
+                    val entries = bucketedLevels.mapIndexed { index, level ->
+                        entryOf(index.toFloat(), level)
+                    }
+                    minuteLabels = bucketedMins.toList()
+
+                    // Mathematical stats over raw data
                     val levels = rawEntries.map { it.level }
                     val mean = levels.average().toFloat()
                     val variance = levels.map { (it - mean) * (it - mean) }.average().toFloat()
                     val stdDev = sqrt(variance)
                     stats = MathStats(mean, variance, stdDev)
 
-                    if (entries.size >= 2) {
-                        chartModel = entryModelOf(entries)
-                    } else if (rawEntries.size >= 2) {
-                        // Safe map ensuring monotonic integers
-                        val safeEntries = mutableListOf<com.patrykandpatrick.vico.core.entry.FloatEntry>()
-                        var lastX = -1f
-                        for (raw in rawEntries) {
-                            val nextX = maxOf(lastX + 1f, Math.round(raw.x).toFloat())
-                            safeEntries.add(entryOf(nextX, raw.level))
-                            lastX = nextX
-                        }
-                        chartModel = entryModelOf(safeEntries)
+                    chartModel = if (entries.size >= 2) {
+                        entryModelOf(entries)
                     } else {
-                        chartModel = null
+                        // If bucketing collapsed everything, use raw data directly
+                        val rawIndexed = rawEntries.mapIndexed { i, raw -> entryOf(i.toFloat(), raw.level) }
+                        minuteLabels = rawEntries.map { it.x }
+                        if (rawIndexed.size >= 2) entryModelOf(rawIndexed) else null
                     }
                 } catch (e: Exception) {
                     chartModel = null // Never crash analytics
@@ -305,7 +313,8 @@ fun BatteryChartTab(mainActions: MainActions) {
                             tick = com.patrykandpatrick.vico.compose.component.lineComponent(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), thickness = 1.dp),
                             guideline = null,
                             valueFormatter = { value, _ ->
-                                val totalMins = value.toInt()
+                                val index = value.toInt()
+                                val totalMins = if (index in minuteLabels.indices) minuteLabels[index].toInt() else value.toInt()
                                 if (totalMins < 60) "${totalMins}m"
                                 else {
                                     val h = totalMins / 60

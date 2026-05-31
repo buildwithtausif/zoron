@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.17
+- **Analytics**: Fixed battery chart X-axis showing unreadable dots by switching from absolute minute values to sequential indexed entries with proper time label mapping.
+- **Settings**: CPU and GPU governor selectors now apply changes to the kernel via root shell commands instead of only saving preferences.
+
 ## v4.5.16
 - **Analytics**: Fixed missing X-axis labels on battery chart with human-readable time formatting (5m, 1h, 2h30m).
 - **What's New**: Fixed changelog parser to correctly handle markdown `##` headers, fully populating release history.
