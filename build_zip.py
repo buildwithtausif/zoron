@@ -13,6 +13,16 @@ def zip_dir(source_dir, zip_filepath):
 
 if __name__ == "__main__":
     source = r"d:\Projects\zoron\src\whyred_module"
-    dest = r"d:\Projects\zoron\releases\zoron_v4.5.16.zip"
+    # Read version dynamically from module.prop
+    version = "v0.0.0"
+    prop_path = os.path.join(source, "module.prop")
+    if os.path.exists(prop_path):
+        with open(prop_path, "r") as f:
+            for line in f:
+                if line.startswith("version="):
+                    version = line.strip().split("=", 1)[1]
+                    break
+    dest = rf"d:\Projects\zoron\releases\zoron_{version}.zip"
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     zip_dir(source, dest)
+
