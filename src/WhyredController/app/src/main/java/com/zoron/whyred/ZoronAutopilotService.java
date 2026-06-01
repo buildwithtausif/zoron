@@ -27,6 +27,7 @@ public class ZoronAutopilotService extends Service {
     private boolean isVideoBoostActive = false;
     private long lastBatteryLogTime = 0;
     private long lastProcessReportTime = 0;
+    private int audioActiveTicks = 0;
 
     @Override
     public void onCreate() {
@@ -92,8 +93,13 @@ public class ZoronAutopilotService extends Service {
         // 3. Get Foreground App
         String fgApp = getForegroundApp();
         
-        // 4. Universal Video Playback Detection
-        boolean isVideoPlaying = isVideoPlaybackApp(fgApp) || isAudioActive();
+        // 4. Universal Video Playback Detection (Debounced Audio)
+        if (isAudioActive()) {
+            audioActiveTicks++;
+        } else {
+            audioActiveTicks = 0;
+        }
+        boolean isVideoPlaying = isVideoPlaybackApp(fgApp) || (audioActiveTicks >= 3);
 
         // 5. Append battery logging if needed (every 10 minutes)
         runLocalBatteryLogging(batteryLevel);

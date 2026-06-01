@@ -1,11 +1,18 @@
 package com.zoron.whyred.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -167,60 +174,20 @@ val documentationTopics = listOf(
 fun ModeLearnScreenUI() {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var showTocOverlay by remember { mutableStateOf(false) }
     
     // First item is the Hero, so topics start at index 1
     val activeIndex by remember { derivedStateOf { maxOf(0, listState.firstVisibleItemIndex - 1) } }
 
     ZoronTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 
-                // LEFT PANE: Table of Contents
-                Surface(
-                    modifier = Modifier.weight(0.35f).fillMaxHeight(),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    shadowElevation = 2.dp
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(8.dp),
-                        contentPadding = PaddingValues(bottom = 32.dp)
-                    ) {
-                        item {
-                            Text(
-                                text = "KNOWLEDGE BASE",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
-                            )
-                        }
-                        itemsIndexed(documentationTopics) { index, topic ->
-                            val isSelected = activeIndex == index
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.small)
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                                    .clickable {
-                                        scope.launch { listState.animateScrollToItem(index + 1) }
-                                    }
-                                    .padding(vertical = 12.dp, horizontal = 12.dp)
-                            ) {
-                                Text(
-                                    text = topic.title,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // RIGHT PANE: Content
+                // MAIN PANE: Content
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.weight(0.65f).fillMaxHeight(),
-                    contentPadding = PaddingValues(bottom = 64.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 100.dp) // padding for FAB
                 ) {
                     item {
                         Column(modifier = Modifier.padding(24.dp)) {
@@ -241,6 +208,72 @@ fun ModeLearnScreenUI() {
 
                     itemsIndexed(documentationTopics) { _, topic ->
                         DocSectionRender(topic)
+                    }
+                }
+                
+                // FLOATING TOC BUTTON
+                FloatingActionButton(
+                    onClick = { showTocOverlay = !showTocOverlay },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(24.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(imageVector = Icons.Default.List, contentDescription = "Toggle TOC")
+                }
+
+                // GLASSMORPHIC TOC OVERLAY
+                AnimatedVisibility(
+                    visible = showTocOverlay,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 }),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+                            .clickable { showTocOverlay = false } // Click outside to close
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth(0.85f)
+                                .fillMaxHeight()
+                                .align(Alignment.Center)
+                                .padding(vertical = 32.dp),
+                            contentPadding = PaddingValues(bottom = 64.dp)
+                        ) {
+                            item {
+                                Text(
+                                    text = "TABLE OF CONTENTS",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+                                )
+                            }
+                            itemsIndexed(documentationTopics) { index, topic ->
+                                val isSelected = activeIndex == index
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(MaterialTheme.shapes.small)
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                        .clickable {
+                                            showTocOverlay = false
+                                            scope.launch { listState.animateScrollToItem(index + 1) }
+                                        }
+                                        .padding(vertical = 14.dp, horizontal = 12.dp)
+                                ) {
+                                    Text(
+                                        text = topic.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

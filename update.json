@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.18",
-  "versionCode": 52,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.18/zoron_v4.5.18.zip",
-  "changelog": "v4.5.18 (2026-05-31):\n- Analytics: Introduced dynamic class interval plotting — X-axis labels always fit the viewport with no '...' truncation regardless of data volume.\n- Analytics: Bucket widths auto-scale to clean intervals (1m, 5m, 15m, 1h, 2h, etc.) based on total telemetry duration."
+  "version": "v4.5.19",
+  "versionCode": 53,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.19/zoron_v4.5.19.zip",
+  "changelog": "v4.5.19 (2026-06-01):\n- Fix keyboard/input issue: Debounce audio detection to prevent rapid mode switching that blocks soft keyboards.\n- Learn Modes page: Replaced persistent side TOC with floating TOC toggle button and full-screen glassmorphic overlay."
 }
