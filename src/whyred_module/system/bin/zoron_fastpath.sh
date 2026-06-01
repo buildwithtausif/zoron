@@ -43,6 +43,12 @@ case "$ACTION" in
     set_mode)
         MODE="$ARG"
         log "Fastpath mode switch to $MODE"
+        
+        # Smooth down-scaling transitions
+        if [ "$MODE" = "balanced" ] || [ "$MODE" = "deep" ] || [ "$MODE" = "hibernation" ] || [ "$MODE" = "battery" ] || [ "$MODE" = "nightwatch" ]; then
+            sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/schedutil/rate_limit_us" 20000
+            sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/schedutil/rate_limit_us" 20000
+        fi
         if [ "$MODE" = "burst" ] || [ "$MODE" = "perform" ] || [ "$MODE" = "performance" ]; then
             sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" "performance"
             sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor" "performance"
@@ -87,6 +93,11 @@ case "$ACTION" in
 
     video_boost_off)
         log "Fastpath: Video Boost OFF"
+        
+        # Smooth transition before reverting
+        sysfs_write "/sys/devices/system/cpu/cpu0/cpufreq/schedutil/rate_limit_us" 20000
+        sysfs_write "/sys/devices/system/cpu/cpu4/cpufreq/schedutil/rate_limit_us" 20000
+        
         # Re-apply active manual profile to restore background power savings
         PROFILE=$(cat /data/local/tmp/zoron/profile.txt 2>/dev/null || echo "balanced")
         sh /system/bin/zoron_engine "$PROFILE" fastpath_revert &

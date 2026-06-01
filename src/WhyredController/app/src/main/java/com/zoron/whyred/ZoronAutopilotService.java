@@ -28,11 +28,18 @@ public class ZoronAutopilotService extends Service {
     private long lastBatteryLogTime = 0;
     private long lastProcessReportTime = 0;
     private int audioActiveTicks = 0;
+    private long lastSwitchTime = 0;
+    private int modeFlapCount = 0;
+    private String flapLockMode = null;
+    private long flapLockExpireTime = 0;
+    private String lastDetectedManualMode = "";
+    private AdaptiveLearningManager learningManager;
 
     @Override
     public void onCreate() {
         super.onCreate();
         handler = new Handler(Looper.getMainLooper());
+        learningManager = new AdaptiveLearningManager(this);
     }
 
     @Override
@@ -146,7 +153,10 @@ public class ZoronAutopilotService extends Service {
                 } catch (Exception e) {}
 
                 if (!ruleMatched) {
-                    if (finalFgApp == null || finalFgApp.isEmpty()) {
+                    String predictedMode = learningManager.getPredictedMode(finalFgApp);
+                    if (predictedMode != null) {
+                        targetMode = predictedMode;
+                    } else if (finalFgApp == null || finalFgApp.isEmpty()) {
                         targetMode = "deep";
                     } else if (finalIsVideoPlaying) {
                         targetMode = "video";
@@ -168,7 +178,29 @@ public class ZoronAutopilotService extends Service {
                     isVideoBoostActive = false;
                 }
 
+                long now = System.currentTimeMillis();
+                if (flapLockExpireTime > now) {
+                    targetMode = flapLockMode;
+                } else {
+                    if (!targetMode.equals(lastMode)) {
+                        long timeSinceLastSwitch = now - lastSwitchTime;
+                        if (timeSinceLastSwitch < 20000) {
+                            modeFlapCount++;
+                            if (modeFlapCount >= 3) {
+                                flapLockMode = "balanced";
+                                if ("burst".equals(targetMode) || "video".equals(targetMode)) flapLockMode = targetMode;
+                                flapLockExpireTime = now + 120000;
+                                modeFlapCount = 0;
+                                targetMode = flapLockMode;
+                            }
+                        } else {
+                            modeFlapCount = 0;
+                        }
+                    }
+                }
+
                 if (!targetMode.equals(lastMode)) {
+                    lastSwitchTime = now;
                     String finalTargetMode = targetMode;
                     if (finalIsRoot) {
                         Shell.cmd("cat /data/local/tmp/zoron/profile.txt").submit(out -> {
@@ -231,6 +263,23 @@ public class ZoronAutopilotService extends Service {
                         applyNonRootZoronMode(manualMode);
                     }
                     isVideoBoostActive = false;
+                } else {
+                    // Monitor manual overrides to train AdaptiveLearningManager
+                    File zoronDir = new File(getFilesDir(), "zoron");
+                    File profileFile = new File(zoronDir, "profile.txt");
+                    String currentManualMode = "balanced";
+                    if (profileFile.exists()) {
+                        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(profileFile))) {
+                            String m = br.readLine();
+                            if (m != null) currentManualMode = m.trim();
+                        } catch (Exception ignored) {}
+                    }
+                    if (!currentManualMode.equals(lastDetectedManualMode)) {
+                        if (!lastDetectedManualMode.isEmpty() && fgApp != null && !fgApp.isEmpty()) {
+                            learningManager.registerOverride(fgApp, currentManualMode);
+                        }
+                        lastDetectedManualMode = currentManualMode;
+                    }
                 }
             }
         }

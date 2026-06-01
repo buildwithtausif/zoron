@@ -335,6 +335,7 @@ CURRENT_STATE=-1
 LAST_TOUCH_TIME=$(date +%s)
 SCREEN_OFF_TIME=0
 LAST_STATE_CHANGE=$(date +%s)
+LAST_INTENSIVE_TIME=0
 CHECK_INTERVAL=10
 
 log "Main loop starting (interval=${CHECK_INTERVAL}s)"
@@ -363,8 +364,15 @@ while true; do
     if [ "$SCREEN_ON" -eq 1 ]; then
         SCREEN_OFF_TIME=0
         INTENSIVE=$(is_intensive_app "$FG_APP")
-        if [ "$INTENSIVE" -eq 1 ] || [ "$TOUCH_RECENT" -eq 1 ]; then
-            if [ "$INTENSIVE" -eq 1 ]; then
+        
+        # Hysteresis for intensive apps (keep HYPER_ACTIVE for 15s after closing)
+        if [ "$INTENSIVE" -eq 1 ]; then
+            LAST_INTENSIVE_TIME=$NOW
+        fi
+        local time_since_intensive=$((NOW - LAST_INTENSIVE_TIME))
+        
+        if [ "$INTENSIVE" -eq 1 ] || [ "$time_since_intensive" -lt 15 ] || [ "$TOUCH_RECENT" -eq 1 ]; then
+            if [ "$INTENSIVE" -eq 1 ] || [ "$time_since_intensive" -lt 15 ]; then
                 TARGET_STATE=$STATE_HYPER_ACTIVE
             else
                 TARGET_STATE=$STATE_INTERACTIVE

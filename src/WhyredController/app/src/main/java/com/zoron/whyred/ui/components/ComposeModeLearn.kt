@@ -167,6 +167,15 @@ val documentationTopics = listOf(
         benefits = "Identifies rogue apps by classifying them into Tiers S (System) through D (Denied).",
         tradeoffs = "Process monitor adds minor overhead when active.",
         recommended = "Review weekly to identify battery abusers."
+    ),
+    DocTopic(
+        title = "Adaptive Learning",
+        whatItIs = "On-device intelligence that tracks your manual profile overrides and learns your app preferences.",
+        whyExists = "To personalize the Autopilot experience over time, reducing the need for manual toggles.",
+        whenToUse = "Always active alongside Autopilot. Works automatically in the background.",
+        benefits = "Gradually molds device behavior to your specific usage habits. Runs entirely offline.",
+        tradeoffs = "Takes time to build confidence in patterns. Can be temporarily confused by abnormal usage.",
+        recommended = "Leave enabled. It decays outdated patterns automatically after 7 days."
     )
 )
 

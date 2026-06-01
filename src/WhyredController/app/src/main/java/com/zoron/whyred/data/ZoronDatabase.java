@@ -5,11 +5,12 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import android.content.Context;
 
-@Database(entities = {RuleEntity.class, CycleEntity.class, RecommendationEntity.class}, version = 1, exportSchema = false)
+@Database(entities = {RuleEntity.class, CycleEntity.class, RecommendationEntity.class, LearningEntity.class}, version = 2, exportSchema = false)
 public abstract class ZoronDatabase extends RoomDatabase {
     public abstract RuleDao ruleDao();
     public abstract CycleDao cycleDao();
     public abstract RecommendationDao recommendationDao();
+    public abstract LearningDao learningDao();
 
     private static volatile ZoronDatabase INSTANCE;
 

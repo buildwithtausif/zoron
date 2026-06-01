@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -115,8 +116,8 @@ fun generateTrendRead(csvData: String, processReport: String): TrendInsights {
 @Composable
 fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) {
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Battery Trends", "Process Monitor", "Diagnostics")
-    val icons = listOf(Icons.Filled.Timeline, Icons.Filled.List, Icons.Filled.Warning)
+    val tabs = listOf("Battery Trends", "Process Monitor", "Diagnostics", "Learning Patterns")
+    val icons = listOf(Icons.Filled.Timeline, Icons.Filled.List, Icons.Filled.Warning, Icons.Filled.Star)
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = selectedTab) {
@@ -135,6 +136,7 @@ fun AnalyticsScreenUI(mainActions: MainActions, showSnackbar: (String) -> Unit) 
                 0 -> BatteryChartTab(mainActions)
                 1 -> ProcessReportTab(mainActions)
                 2 -> DiagnosticsTab(mainActions, showSnackbar)
+                3 -> LearningPatternsTab()
             }
         }
     }
@@ -450,6 +452,45 @@ fun DiagnosticsTab(mainActions: MainActions, showSnackbar: (String) -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun LearningPatternsTab() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var patterns by remember { mutableStateOf(emptyList<com.zoron.whyred.data.LearningEntity>()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val db = com.zoron.whyred.data.ZoronDatabase.getDatabase(context)
+            patterns = db.learningDao().getAllPatterns()
+            isLoading = false
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text("ZORON LEARNING PATTERNS", style = MaterialTheme.typography.labelSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        BentoCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            Column(modifier = Modifier.padding(16.dp).fillMaxSize().verticalScroll(rememberScrollState())) {
+                if (isLoading) {
+                    Text("Loading patterns...", color = Color.Gray)
+                } else if (patterns.isEmpty()) {
+                    Text("No patterns learned yet. Zoron is observing your manual profile overrides.", color = Color.Gray)
+                } else {
+                    Text("Zoron continuously learns from your manual overrides and automatically prepares the right performance profile for your favorite apps.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    patterns.sortedByDescending { it.confidenceScore }.forEach { pattern ->
+                        TrendSection(
+                            title = pattern.packageName,
+                            content = "Prefers: ${pattern.preferredMode.uppercase()} (Confidence: ${pattern.confidenceScore})"
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
     }

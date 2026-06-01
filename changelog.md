@@ -1,5 +1,11 @@
 # Zoron Changelog
 
+## v4.5.22
+- **Adaptive Learning**: Added an on-device machine learning model that tracks your manual profile overrides and adapts the Autopilot.
+- **Autopilot Refactor**: Added hysteresis, flapping prevention, and debouncing to prevent excessive state switches.
+- **FastPath Smooth Transitions**: Enabled `schedutil` rate limiting during scaling to prevent micro-stutters and UI jank.
+- **Analytics UI**: Added an interactive "Learning Patterns" tab to monitor the system's learning progress.
+
 ## v4.5.21
 - **Hotfix**: Enhanced Markdown parser to fully support `# Heading` sizing and formatting in Release Notes and OTA prompts.
 
