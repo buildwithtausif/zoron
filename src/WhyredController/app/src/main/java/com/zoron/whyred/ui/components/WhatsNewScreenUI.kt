@@ -13,6 +13,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.zoron.whyred.ui.ComposeState
 
@@ -142,6 +146,21 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
     return releases
 }
 
+fun parseMarkdownToAnnotatedString(text: String): AnnotatedString {
+    return buildAnnotatedString {
+        val parts = text.split("**")
+        for (i in parts.indices) {
+            if (i % 2 == 1) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(parts[i])
+                }
+            } else {
+                append(parts[i])
+            }
+        }
+    }
+}
+
 @Composable
 fun ReleaseCard(release: ReleaseInfo) {
     BentoCard(modifier = Modifier.fillMaxWidth()) {
@@ -163,7 +182,7 @@ fun ReleaseCard(release: ReleaseInfo) {
             release.notes.forEach { note ->
                 Row(modifier = Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.Top) {
                     Text("•", modifier = Modifier.padding(end = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = note, style = MaterialTheme.typography.bodyMedium)
+                    Text(text = parseMarkdownToAnnotatedString(note), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

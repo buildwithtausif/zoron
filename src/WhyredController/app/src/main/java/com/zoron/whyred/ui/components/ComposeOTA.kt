@@ -53,7 +53,7 @@ fun OTADialogUI(mainActions: MainActions?) {
                         LinearProgressIndicator(progress = downloadProgress, modifier = Modifier.fillMaxWidth())
                     } else {
                         Text("Changelog:", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-                        Text(changelog, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = parseMarkdownToAnnotatedString(changelog), style = MaterialTheme.typography.bodyMedium)
                         if (available) {
                             Text(
                                 "\nThis will automatically download and flash the module, including the latest app update.",

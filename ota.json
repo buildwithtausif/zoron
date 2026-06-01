@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.19",
-  "versionCode": 53,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.19/zoron_v4.5.19.zip",
-  "changelog": "v4.5.19 (2026-06-01):\n- Fix keyboard/input issue: Zoron blocks Gboard and other soft keyboards while typing. Ensure all text inputs properly focus, keyboard appears, stays visible, and input is not obstructed.\n- Learn Modes page: Remove persistent side TOC. Add floating TOC toggle button. On click, open TOC as full-screen glassmorphic overlay. Selecting a topic should smooth-scroll to the section and close the overlay automatically. Support mobile and desktop. Preserve scroll position and existing content layout. Add subtle open/close and scroll animations."
+  "version": "v4.5.20",
+  "versionCode": 54,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.20/zoron_v4.5.20.zip",
+  "changelog": "v4.5.20 (2026-06-01):\n- **Hotfix**: Added Markdown parsing support to correctly display bold text formatting in the OTA Update Prompt and Release History screens."
 }

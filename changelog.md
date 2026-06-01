@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v4.5.20
+- **Hotfix**: Added Markdown parsing support to correctly display bold text formatting in the OTA Update Prompt and Release History screens.
+
 ## v4.5.19
 - **Fix keyboard/input issue**: Zoron blocks Gboard and other soft keyboards while typing. Ensure all text inputs properly focus, keyboard appears, stays visible, and input is not obstructed.
 - **Learn Modes page**: Remove persistent side TOC. Add floating TOC toggle button. On click, open TOC as full-screen glassmorphic overlay. Selecting a topic should smooth-scroll to the section and close the overlay automatically. Support mobile and desktop. Preserve scroll position and existing content layout. Add subtle open/close and scroll animations.
