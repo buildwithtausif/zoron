@@ -18,6 +18,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zoron.whyred.ui.ComposeState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,7 +136,7 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
             currentNotes = mutableListOf()
         } else if (trimmed.startsWith("-")) {
             currentNotes.add(trimmed.removePrefix("-").trim())
-        } else if (!trimmed.startsWith("#")) {
+        } else if (!trimmed.startsWith("# Zoron")) {
             currentNotes.add(trimmed)
         }
     }
@@ -148,14 +149,47 @@ fun parseChangelog(changelog: String): List<ReleaseInfo> {
 
 fun parseMarkdownToAnnotatedString(text: String): AnnotatedString {
     return buildAnnotatedString {
-        val parts = text.split("**")
-        for (i in parts.indices) {
-            if (i % 2 == 1) {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                    append(parts[i])
-                }
+        val lines = text.split("\n")
+        lines.forEachIndexed { index, line ->
+            var processLine = line.trim()
+            var isHeading = false
+            var headingLevel = 0
+            
+            val headingMatch = Regex("""^(#+)\s+(.*)""").find(processLine)
+            if (headingMatch != null) {
+                isHeading = true
+                headingLevel = headingMatch.groupValues[1].length
+                processLine = headingMatch.groupValues[2]
+            }
+
+            val style = if (isHeading) {
+                SpanStyle(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = when (headingLevel) {
+                        1 -> 20.sp
+                        2 -> 18.sp
+                        3 -> 16.sp
+                        else -> 14.sp
+                    }
+                )
             } else {
-                append(parts[i])
+                SpanStyle()
+            }
+
+            withStyle(style) {
+                val parts = processLine.split("**")
+                for (i in parts.indices) {
+                    if (i % 2 == 1) {
+                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                            append(parts[i])
+                        }
+                    } else {
+                        append(parts[i])
+                    }
+                }
+            }
+            if (index < lines.size - 1) {
+                append("\n")
             }
         }
     }
@@ -180,8 +214,17 @@ fun ReleaseCard(release: ReleaseInfo) {
             }
             Spacer(modifier = Modifier.height(12.dp))
             release.notes.forEach { note ->
-                Row(modifier = Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.Top) {
-                    Text("•", modifier = Modifier.padding(end = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val isHeading = note.trim().startsWith("#")
+                Row(
+                    modifier = Modifier.padding(
+                        bottom = if (isHeading) 4.dp else 8.dp, 
+                        top = if (isHeading) 8.dp else 0.dp
+                    ), 
+                    verticalAlignment = Alignment.Top
+                ) {
+                    if (!isHeading) {
+                        Text("•", modifier = Modifier.padding(end = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Text(text = parseMarkdownToAnnotatedString(note), style = MaterialTheme.typography.bodyMedium)
                 }
             }

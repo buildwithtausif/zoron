@@ -1,5 +1,8 @@
 # Zoron Changelog
 
+## v4.5.21
+- **Hotfix**: Enhanced Markdown parser to fully support `# Heading` sizing and formatting in Release Notes and OTA prompts.
+
 ## v4.5.20
 - **Hotfix**: Added Markdown parsing support to correctly display bold text formatting in the OTA Update Prompt and Release History screens.
 

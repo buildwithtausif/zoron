@@ -1,6 +1,6 @@
 {
-  "version": "v4.5.20",
-  "versionCode": 54,
-  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.20/zoron_v4.5.20.zip",
-  "changelog": "v4.5.20 (2026-06-01):\n- **Hotfix**: Added Markdown parsing support to correctly display bold text formatting in the OTA Update Prompt and Release History screens."
+  "version": "v4.5.21",
+  "versionCode": 55,
+  "zipUrl": "https://github.com/buildwithtausif/zoron/releases/download/v4.5.21/zoron_v4.5.21.zip",
+  "changelog": "v4.5.21 (2026-06-01):\n- **Hotfix**: Enhanced Markdown parser to fully support `# Heading` sizing and formatting in Release Notes and OTA prompts."
 }
