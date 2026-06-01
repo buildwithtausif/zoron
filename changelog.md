@@ -1,5 +1,9 @@
 # Zoron Changelog
 
+## v4.5.19
+- **Fix keyboard/input issue**: Zoron blocks Gboard and other soft keyboards while typing. Ensure all text inputs properly focus, keyboard appears, stays visible, and input is not obstructed.
+- **Learn Modes page**: Remove persistent side TOC. Add floating TOC toggle button. On click, open TOC as full-screen glassmorphic overlay. Selecting a topic should smooth-scroll to the section and close the overlay automatically. Support mobile and desktop. Preserve scroll position and existing content layout. Add subtle open/close and scroll animations.
+
 ## v4.5.18
 - **Analytics**: Introduced dynamic class interval plotting — X-axis labels always fit the viewport with no "..." truncation regardless of data volume.
 - **Analytics**: Bucket widths auto-scale to clean intervals (1m, 5m, 15m, 1h, 2h, etc.) based on total telemetry duration.
